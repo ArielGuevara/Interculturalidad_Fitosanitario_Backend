@@ -1,0 +1,64 @@
+<header class="dashboard-header">
+    <h2 class="dashboard-title">Resumen de Actividad</h2>
+    <p class="dashboard-subtitle">Control administrativo del ecosistema vegetal.</p>
+</header>
+
+<div class="stats-grid">
+    <div class="new-stat-card" *ngFor="let stat of stats()">
+        <span class="card-label">{{stat.label}}</span>
+        <div class="flex justify-content-between align-items-end">
+            <div class="card-value">{{stat.value}}</div>
+            <div class="icon-box" [ngClass]="stat.color">
+                <i [class]="stat.icon + ' text-3xl'"></i>
+            </div>
+        </div>
+        <div class="mt-4 font-bold text-green-600 text-sm tracking-wide">
+            {{stat.trend}}
+        </div>
+    </div>
+</div>
+
+<div class="main-grid">
+    <div class="white-section">
+        <h3 class="font-black text-3xl mb-5 uppercase tracking-tighter" style="color: #000000 !important;">Actividad del Sistema</h3>
+        <div class="flex flex-column gap-5">
+            <div class="flex align-items-center p-3 border-round-2xl hover:bg-slate-50 transition-all border-1" style="border-color: #e2e8f0;">
+                <div class="w-4rem h-4rem bg-green-100 border-round-xl flex align-items-center justify-content-center mr-4 shadow-sm">
+                    <i class="pi pi-check-circle text-2xl" style="color: #000000 !important;"></i>
+                </div>
+                <div class="flex flex-column">
+                    <span class="font-black text-xl" style="color: #000000 !important;">Módulo de Cultivos Activo</span>
+                    <span class="font-bold text-base" style="color: #000000 !important;">Sincronización en tiempo real establecida con el backend.</span>
+                </div>
+            </div>
+            <div class="flex align-items-center p-3 border-round-2xl hover:bg-slate-50 transition-all border-1" style="border-color: #e2e8f0;">
+                <div class="w-4rem h-4rem bg-blue-100 border-round-xl flex align-items-center justify-content-center mr-4 shadow-sm">
+                    <i class="pi pi-shield text-2xl" style="color: #000000 !important;"></i>
+                </div>
+                <div class="flex flex-column">
+                    <span class="font-black text-xl" style="color: #000000 !important;">Seguridad JWT Validada</span>
+                    <span class="font-bold text-base" style="color: #000000 !important;">Protección de datos perimetral activa y monitoreada.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dark-section">
+        <h3 class="font-black text-3xl mb-2 text-white">Acciones Rápidas</h3>
+        <p class="text-slate-400 mb-6 font-medium">Gestión directa de catálogos técnicos.</p>
+        
+        <div class="flex flex-column gap-3 relative z-2">
+            <p-button label="Nuevo Cultivo" 
+                      icon="pi pi-plus" 
+                      styleClass="action-btn btn-emerald"
+                      (onClick)="navigateTo('/cultivos')"></p-button>
+            
+            <p-button label="Reportar Amenaza" 
+                      icon="pi pi-shield" 
+                      styleClass="action-btn p-button-outlined p-button-plain border-white-alpha-20 text-white"
+                      (onClick)="navigateTo('/plagas')"></p-button>
+        </div>
+        
+        <div class="absolute" style="width: 250px; height: 250px; background: radial-gradient(circle, rgba(16, 185, 129, 0.15) 0%, transparent 70%); bottom: -80px; right: -80px; border-radius: 50%; filter: blur(40px)"></div>
+    </div>
+</div>

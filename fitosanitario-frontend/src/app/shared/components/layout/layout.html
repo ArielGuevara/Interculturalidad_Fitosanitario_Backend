@@ -1,0 +1,63 @@
+<div class="layout-wrapper" [class.collapsed]="isCollapsed()">
+    <!-- Máscara para móvil -->
+    <div class="sidebar-mask" (click)="toggleSidebar()"></div>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar shadow-4">
+        <header class="sidebar-header">
+            <div class="logo-area" [routerLink]="['/dashboard']">
+                <div class="logo-box bg-green-500 shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M7 20h10"/><path d="M10 20c5.5-2.5 8-6.4 8-10 0-4.4-3.6-8-8-8s-8 3.6-8 8c0 3.6 2.5 7.5 8 10Z"/><path d="M10 20c-5.5-2.5-8-6.4-8-10 0-4.4 3.6-8 8-8s8 3.6 8 8c0 3.6-2.5 7.5-8 10Z"/><path d="M10 20c1.5-3 3-6.5 3-10"/></svg>
+                </div>
+                <span class="brand-name">Fitosani</span>
+            </div>
+            <p-button [icon]="isCollapsed() ? 'pi pi-angle-right' : 'pi pi-angle-left'" 
+                      styleClass="p-button-rounded p-button-text p-button-secondary toggle-btn" 
+                      (onClick)="toggleSidebar()"></p-button>
+        </header>
+
+        <nav class="sidebar-nav">
+            <a *ngFor="let item of navItems" 
+               [routerLink]="[item.route]" 
+               routerLinkActive="active-link"
+               class="nav-item"
+               [pTooltip]="isCollapsed() ? item.label : ''"
+               [tooltipDisabled]="!isCollapsed()"
+               tooltipPosition="right">
+                <i [class]="item.icon + ' nav-icon'"></i>
+                <span class="nav-label">{{item.label}}</span>
+            </a>
+        </nav>
+
+        <footer class="sidebar-footer">
+            <div class="profile-section">
+                <div class="user-avatar-box shadow-sm">
+                    <i class="pi pi-user" style="font-size: 1.1rem"></i>
+                </div>
+                <div class="user-details">
+                    <span class="user-name">{{ authService.currentUser()?.nombre }}</span>
+                    <span class="user-role">{{ authService.currentUser()?.rol }}</span>
+                </div>
+                <p-button icon="pi pi-sign-out" 
+                          styleClass="p-button-text p-button-danger ml-auto p-2 logout-btn" 
+                          (onClick)="onLogout()"></p-button>
+            </div>
+        </footer>
+    </aside>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <div class="main-wrapper">
+        <!-- CABECERA MÓVIL -->
+        <header class="mobile-header lg:hidden">
+            <p-button icon="pi pi-bars" styleClass="p-button-text p-button-secondary" (onClick)="toggleSidebar()"></p-button>
+            <span class="font-black text-xl text-900 tracking-tighter">Fitosani</span>
+            <div class="flex align-items-center justify-content-center bg-green-500 border-round-lg p-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M7 20h10"/><path d="M10 20c5.5-2.5 8-6.4 8-10 0-4.4-3.6-8-8-8s-8 3.6-8 8c0 3.6 2.5 7.5 8 10Z"/><path d="M10 20c-5.5-2.5-8-6.4-8-10 0-4.4 3.6-8 8-8s8 3.6 8 8c0 3.6-2.5 7.5-8 10Z"/><path d="M10 20c1.5-3 3-6.5 3-10"/></svg>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <router-outlet></router-outlet>
+        </main>
+    </div>
+</div>

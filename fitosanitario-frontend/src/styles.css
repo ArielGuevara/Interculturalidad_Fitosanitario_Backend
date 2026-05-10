@@ -1,0 +1,161 @@
+/* 
+   ==========================================================================
+   GLOBAL DESIGN SYSTEM: PURE WHITE & EMERALD
+   Philosophy: Ultra-clean, high-fidelity SaaS aesthetic.
+   ========================================================================== 
+*/
+
+@import "primeicons/primeicons.css";
+@import "primeflex/primeflex.css";
+
+:root {
+    --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    
+    /* Brand Palette */
+    --primary: #10b981;
+    --primary-dark: #059669;
+    --primary-light: #d1fae5;
+    
+    /* Neutrals - High Fidelity */
+    --slate-50: #f8fafc;
+    --slate-100: #f1f5f9;
+    --slate-200: #e2e8f0;
+    --slate-300: #cbd5e1;
+    --slate-400: #94a3b8;
+    --slate-500: #64748b;
+    --slate-600: #475569;
+    --slate-700: #334155;
+    --slate-800: #1e293b;
+    --slate-900: #0f172a;
+
+    /* Semantic */
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --info: #3b82f6;
+    
+    /* Surfaces */
+    --bg-main: var(--slate-50);
+    --bg-card: #ffffff;
+}
+
+/* Base Reset */
+html, body {
+    margin: 0;
+    padding: 0;
+    font-family: var(--font-family);
+    background-color: var(--bg-main);
+    color: var(--slate-900);
+    -webkit-font-smoothing: antialiased;
+    font-size: 16px;
+    width: 100%;
+    overflow-x: hidden;
+}
+
+h1, h2, h3, h4 {
+    color: var(--slate-900);
+    letter-spacing: -0.02em;
+    margin: 0;
+}
+
+/* 
+   ==========================================================================
+   PRIMENG PREMIUM OVERRIDES (GLOBAL)
+   ========================================================================== 
+*/
+
+/* Buttons */
+.p-button {
+    border-radius: 12px !important;
+    font-weight: 600 !important;
+    padding: 0.75rem 1.25rem !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.p-button.p-button-success {
+    background: var(--primary) !important;
+    border: none !important;
+}
+
+/* Forced high contrast for dialogs, alerts and notifications */
+.p-dialog .p-dialog-header .p-dialog-title,
+.p-dialog .p-dialog-content,
+.p-confirm-dialog-message,
+.p-toast-summary,
+.p-toast-detail {
+    color: #000000 !important;
+    font-weight: 500 !important;
+}
+
+/* 
+   RECONSTRUCCIÓN TOTAL DE MODALS: 
+   Eliminación de espacios vacíos a la derecha y simetría forzada.
+*/
+.p-dialog {
+    border-radius: 24px !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15) !important;
+    border: none !important;
+    background: #ffffff !important;
+}
+
+.p-dialog .p-dialog-header {
+    background: #ffffff !important;
+    padding: 2.5rem 2.5rem 0.5rem 2.5rem !important;
+    border-top-left-radius: 24px !important;
+    border-top-right-radius: 24px !important;
+    border-bottom: none !important;
+}
+
+.p-dialog .p-dialog-content {
+    background: #ffffff !important;
+    padding: 1rem 2.5rem 2rem 2.5rem !important;
+    width: 100% !important; /* Forzar ancho total */
+}
+
+/* Evitar huecos en el footer */
+.p-dialog .p-dialog-footer,
+.p-confirm-dialog .p-dialog-footer {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 1rem !important;
+    padding: 1.5rem 2.5rem 2.5rem 2.5rem !important;
+    background: #ffffff !important;
+    border-top: none !important;
+    border-bottom-left-radius: 24px !important;
+    border-bottom-right-radius: 24px !important;
+}
+
+/* Responsive Modals para iPhone y otros */
+@media (max-width: 768px) {
+    .p-dialog, .p-confirm-dialog {
+        width: 92vw !important;
+        margin: 0 auto !important;
+        left: 4vw !important; /* Centrado forzado */
+    }
+    .p-dialog .p-dialog-header,
+    .p-dialog .p-dialog-content,
+    .p-dialog .p-dialog-footer {
+        padding-left: 1.5rem !important;
+        padding-right: 1.5rem !important;
+    }
+}
+
+/* Tables */
+.p-datatable .p-datatable-thead > tr > th {
+    background: transparent !important;
+    color: var(--slate-500) !important;
+    font-size: 0.75rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    font-weight: 800 !important;
+    border: none !important;
+}
+
+/* Inputs */
+.p-inputtext {
+    border-radius: 12px !important;
+    border: 1px solid var(--slate-300) !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    width: 100% !important; /* Forzar que ocupen todo el ancho */
+}

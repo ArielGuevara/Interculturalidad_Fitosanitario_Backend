@@ -1,0 +1,97 @@
+<p-toast></p-toast>
+
+<div class="login-viewport">
+    
+    <!-- PANEL IZQUIERDO: IDENTIDAD CON ONDAS DINÁMICAS (SOLO ESCRITORIO) -->
+    <aside class="side-brand">
+        <!-- Contenedor de Ondas Animadas (3 Capas para mayor profundidad) -->
+        <div class="waves-container">
+            <div class="wave wave-1"></div>
+            <div class="wave wave-2"></div>
+            <div class="wave wave-3"></div>
+        </div>
+
+        <div class="brand-hero-box">
+            <div class="nature-icon-container">
+                <svg xmlns="http://www.w3.org/2000/svg" width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 20h10"/><path d="M10 20c5.5-2.5 8-6.4 8-10 0-4.4-3.6-8-8-8s-8 3.6-8 8c0 3.6 2.5 7.5 8 10Z"/><path d="M10 20c-5.5-2.5-8-6.4-8-10 0-4.4 3.6-8 8-8s8 3.6 8 8c0 3.6-2.5 7.5-8 10Z"/><path d="M10 20c1.5-3 3-6.5 3-10"/></svg>
+            </div>
+
+            <h1 class="brand-heading">Gestión Fitosanitaria</h1>
+            
+            <p class="brand-subtext">
+                Control inteligente y monitoreo avanzado para la salud de tus cultivos.
+            </p>
+        </div>
+    </aside>
+
+    <!-- PANEL DERECHO: LOGIN -->
+    <main class="side-form">
+        <div class="form-container">
+            
+            <!-- Cabecera de Marca Exclusiva para Móvil -->
+            <div class="mobile-brand-header">
+                <div class="mobile-logo-circle">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 20h10"/><path d="M10 20c5.5-2.5 8-6.4 8-10 0-4.4-3.6-8-8-8s-8 3.6-8 8c0 3.6 2.5 7.5 8 10Z"/><path d="M10 20c-5.5-2.5-8-6.4-8-10 0-4.4 3.6-8 8-8s8 3.6 8 8c0 3.6-2.5 7.5-8 10Z"/><path d="M10 20c1.5-3 3-6.5 3-10"/></svg>
+                </div>
+                <span class="mobile-brand-title">Gestión Fitosanitaria</span>
+            </div>
+
+            <header class="form-header">
+                <h2 class="form-title">Bienvenido</h2>
+                <p class="form-subtitle">Ingresa tus credenciales para acceder al panel.</p>
+            </header>
+
+            <form class="input-stack" (submit)="onLogin(); $event.preventDefault()">
+                
+                <div class="input-field">
+                    <label for="email" class="input-label">Email</label>
+                    <div class="input-control-wrapper">
+                        <div class="lucide-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        </div>
+                        <input pInputText 
+                               id="email" 
+                               [(ngModel)]="email" 
+                               name="email"
+                               placeholder="admin@fitosanitario.com" 
+                               autocomplete="email"/>
+                    </div>
+                </div>
+                
+                <div class="input-field">
+                    <label for="password" class="input-label">Contraseña</label>
+                    <div class="input-control-wrapper">
+                        <div class="lucide-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        </div>
+                        <p-password id="password" 
+                                    [(ngModel)]="password" 
+                                    name="password"
+                                    [feedback]="false" 
+                                    [toggleMask]="true" 
+                                    placeholder="••••••••"></p-password>
+                    </div>
+                </div>
+
+                <div class="action-row">
+                    <div class="flex align-items-center gap-2">
+                        <p-checkbox [binary]="true" inputId="remember"></p-checkbox>
+                        <label for="remember" class="text-600 cursor-pointer">Recordarme</label>
+                    </div>
+                    <a href="javascript:void(0)" class="forgot-link no-underline hover:underline">¿Olvidaste tu contraseña?</a>
+                </div>
+
+                <div class="btn-submit-area">
+                    <p-button label="Iniciar Sesión" 
+                              [loading]="loading" 
+                              type="submit"></p-button>
+                </div>
+            </form>
+            
+            <footer class="form-footer">
+                <p class="m-0 text-sm">Sistema Integral de Gestión Fitosanitaria &copy; 2026</p>
+            </footer>
+
+        </div>
+    </main>
+</div>

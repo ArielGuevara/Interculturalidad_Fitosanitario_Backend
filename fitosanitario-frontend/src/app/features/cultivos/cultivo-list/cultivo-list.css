@@ -1,0 +1,90 @@
+.page-header {
+    margin-bottom: 4rem;
+}
+
+.title {
+    font-size: 3rem;
+    font-weight: 900;
+    letter-spacing: -0.05em;
+    color: var(--slate-900);
+}
+
+.subtitle {
+    font-size: 1.15rem;
+    color: var(--slate-500);
+    font-weight: 500;
+}
+
+/* Row-as-Card Table Design */
+::ng-deep .premium-table .p-datatable-thead > tr > th {
+    background: transparent !important;
+    color: var(--slate-400) !important;
+    font-weight: 800 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.15em !important;
+    font-size: 0.7rem !important;
+    border: none !important;
+}
+
+::ng-deep .premium-table .p-datatable-tbody > tr {
+    background: #ffffff !important;
+    border-radius: 24px !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+::ng-deep .premium-table .p-datatable-tbody > tr:hover {
+    background: #f8fafc !important;
+    transform: scale(1.005);
+    box-shadow: 0 20px 40px -20px rgba(0, 0, 0, 0.05);
+}
+
+::ng-deep .premium-table .p-datatable-tbody > tr > td {
+    border: none !important;
+    padding: 1.5rem 1rem !important;
+    color: var(--slate-800);
+    font-weight: 600;
+}
+
+/* Rounding corners of the imaginary card row */
+::ng-deep .premium-table .p-datatable-tbody > tr > td:first-child {
+    border-top-left-radius: 24px !important;
+    border-bottom-left-radius: 24px !important;
+    padding-left: 2rem !important;
+}
+
+::ng-deep .premium-table .p-datatable-tbody > tr > td:last-child {
+    border-top-right-radius: 24px !important;
+    border-bottom-right-radius: 24px !important;
+    padding-right: 2rem !important;
+}
+
+.btn-icon {
+    width: 44px !important;
+    height: 44px !important;
+    border-radius: 14px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: var(--slate-50) !important;
+    border: none !important;
+    color: var(--slate-600) !important;
+}
+
+.btn-icon:hover {
+    background: var(--slate-100) !important;
+    color: var(--slate-900) !important;
+}
+
+.btn-delete:hover {
+    background: #fee2e2 !important;
+    color: #ef4444 !important;
+}
+
+.img-preview {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 18px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    border: 3px solid white;
+}

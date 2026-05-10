@@ -1,0 +1,100 @@
+<p-toast></p-toast>
+<p-confirmDialog></p-confirmDialog>
+
+<div class="page-header flex flex-column md:flex-row justify-content-between align-items-end gap-4">
+    <div>
+        <h2 class="title m-0">Catálogo de Cultivos</h2>
+        <p class="subtitle m-0">Gestión de especies y variedades vegetales.</p>
+    </div>
+    <p-button label="Nuevo Registro" icon="pi pi-plus" (onClick)="openNew()" 
+              styleClass="p-button-success border-round-2xl py-3 px-5 shadow-3"></p-button>
+</div>
+
+<div class="table-wrapper">
+    <p-table [value]="cultivos()" [loading]="loading()" [rows]="10" [paginator]="true" 
+             styleClass="premium-table">
+        <ng-template pTemplate="header">
+            <tr>
+                <th style="width: 120px">Referencia</th>
+                <th style="width: 140px">Visual</th>
+                <th>Nombre</th>
+                <th>Descripción Técnica</th>
+                <th style="width: 160px" class="text-center">Acciones</th>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-cultivo>
+            <tr>
+                <td><span class="text-slate-400 font-mono text-xs">#{{cultivo.id}}</span></td>
+                <td>
+                    <img [src]="cultivo.imagenUrl || 'https://via.placeholder.com/80?text=C'" 
+                         [alt]="cultivo.nombre" class="img-preview">
+                </td>
+                <td>
+                    <div class="font-black text-2xl text-slate-900">{{cultivo.nombre}}</div>
+                </td>
+                <td>
+                    <div class="text-slate-500 line-height-3 max-w-30rem text-sm font-medium">{{cultivo.descripcion}}</div>
+                </td>
+                <td>
+                    <div class="flex justify-content-center gap-3">
+                        <p-button icon="pi pi-pencil" styleClass="btn-icon" (onClick)="editCultivo(cultivo)"></p-button>
+                        <p-button icon="pi pi-trash" styleClass="btn-icon btn-delete" (onClick)="deleteCultivo(cultivo)"></p-button>
+                    </div>
+                </td>
+            </tr>
+            <tr style="height: 1rem; background: transparent !important" class="spacer-row"></tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+            <tr>
+                <td colspan="5" class="text-center p-8 bg-white border-round-3xl">
+                    <div class="flex flex-column align-items-center gap-3">
+                        <i class="pi pi-inbox text-5xl text-slate-200"></i>
+                        <span class="text-slate-400 font-bold text-lg">No se han encontrado cultivos en la red.</span>
+                    </div>
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>
+
+<!-- Premium Dialog -->
+<p-dialog [(visible)]="displayDialog" [modal]="true" [style]="{width: '550px', maxWidth: '95vw'}" 
+          styleClass="p-fluid custom-dialog" [draggable]="false" [resizable]="false" [showHeader]="false" [dismissableMask]="true">
+    
+    <div class="flex flex-column align-items-center text-center p-4 w-full">
+        <div class="w-4rem h-4rem bg-green-50 text-green-600 border-round-2xl flex align-items-center justify-content-center mb-4">
+            <!-- Lucide: Leaf (Hoja) -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8a8 8 0 0 1-8 8Z"/><path d="M18 21a8 8 0 0 0-4-14"/><path d="M7 21c4 0 7-3 7-7 0-3 2-5 2-5"/></svg>
+        </div>
+        <h2 class="font-black text-3xl text-900 m-0 w-full">{{isEditMode() ? 'Actualizar Ficha' : 'Nuevo Cultivo'}}</h2>
+        <p class="text-slate-500 font-medium mt-2 w-full">Complete la información técnica del ejemplar.</p>
+    </div>
+
+    <div class="flex flex-column gap-4 px-3 w-full">
+        <div class="field w-full">
+            <label class="font-black text-slate-800 ml-1 mb-2 block uppercase text-xs tracking-widest">Nombre Común</label>
+            <input type="text" pInputText [(ngModel)]="selectedCultivo.nombre" 
+                   placeholder="Ej: Maíz Amarillo" class="p-4 text-900 font-bold w-full" />
+        </div>
+        <div class="field w-full">
+            <label class="font-black text-slate-800 ml-1 mb-2 block uppercase text-xs tracking-widest">Descripción Técnica</label>
+            <textarea pInputText [(ngModel)]="selectedCultivo.descripcion" 
+                      rows="4" placeholder="Especificaciones sobre suelo, clima..." 
+                      class="p-4 text-900 font-medium w-full" style="resize: none"></textarea>
+        </div>
+        <div class="field w-full">
+            <label class="font-black text-slate-800 ml-1 mb-2 block uppercase text-xs tracking-widest">URL de Imagen</label>
+            <input type="text" pInputText [(ngModel)]="selectedCultivo.imagenUrl" 
+                   placeholder="https://..." class="p-4 text-900 w-full" />
+        </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+        <div class="flex justify-content-center gap-3 w-full px-2">
+            <p-button label="Descartar" styleClass="p-button-text p-button-secondary font-bold px-4 py-3" (onClick)="displayDialog.set(false)"></p-button>
+            <p-button [label]="isEditMode() ? 'Guardar Cambios' : 'Registrar Cultivo'" 
+                      icon="pi pi-check" styleClass="p-button-success border-round-2xl shadow-3 px-6 py-3 font-bold" 
+                      (onClick)="saveCultivo()"></p-button>
+        </div>
+    </ng-template>
+</p-dialog>
