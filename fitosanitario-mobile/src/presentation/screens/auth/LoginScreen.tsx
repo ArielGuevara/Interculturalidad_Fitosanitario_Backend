@@ -13,7 +13,12 @@ export function LoginScreen() {
       setLoading(true);
       await login(email.trim(), password);
     } catch (e: any) {
-      Alert.alert('Error', e?.message || 'No se pudo iniciar sesión');
+      const msg =
+        e?.response?.data?.message ||
+        (typeof e?.response?.data === 'string' ? e.response.data : null) ||
+        e?.message ||
+        'No se pudo iniciar sesión';
+      Alert.alert('Error', String(msg));
     } finally {
       setLoading(false);
     }

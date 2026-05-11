@@ -1,4 +1,4 @@
-import { createReporte } from '../../data/reportes/reportesApi';
+import { createReporteMultipart } from '../../data/reportes/reportesApi';
 import { deletePendingReporte, listPendingReportes } from './pendingReportes';
 import { getAccessToken } from '../auth/authStore';
 
@@ -7,15 +7,23 @@ export async function syncPendingReportes(): Promise<{ synced: number; failed: n
   let synced = 0;
   let failed = 0;
 
+  const token = getAccessToken();
+  if (!token) {
+    // Not authenticated: cannot sync to API.
+    return { synced: 0, failed: pending.length };
+  }
+
   for (const item of pending) {
     try {
-      await createReporte(item.payload);
+      await createReporteMultipart(item.payload, token);
       await deletePendingReporte(item.id);
       synced += 1;
-    } catch {
+    } catch (e: any) {
+      const msg = e?.message ? String(e.message) : String(e);
+      console.warn(`[syncPendingReportes] failed id=${item.id}: ${msg}`);
       failed += 1;
     }
   }
 
   return { synced, failed };
-}
+}

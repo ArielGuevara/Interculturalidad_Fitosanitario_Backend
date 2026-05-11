@@ -1,7 +1,7 @@
 ﻿import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import * as Location from 'expo-location';
-import { CameraView, useCameraPermissions } from 'expo-camera';
+import { CameraView, type CameraViewRef, useCameraPermissions } from 'expo-camera';
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
 import { enqueueReporte } from '../../../infrastructure/offline/pendingReportes';
@@ -9,6 +9,26 @@ import { syncPendingReportes } from '../../../infrastructure/offline/sync';
 
 function ensureDocDir() {
   return FileSystem.documentDirectory ?? FileSystem.cacheDirectory ?? '';
+}
+
+async function ensureMediaDir() {
+  const base = ensureDocDir();
+  if (!base) return '';
+  const dir = `${base}media/`;
+  try {
+    await FileSystem.makeDirectoryAsync(dir, { intermediates: true });
+  } catch {
+    // If it already exists or cannot be created, we still try to use base.
+  }
+  return dir;
+}
+
+async function persistUri(fromUri: string, filename: string) {
+  const mediaDir = await ensureMediaDir();
+  if (!mediaDir) return fromUri;
+  const dest = `${mediaDir}${filename}`;
+  await FileSystem.copyAsync({ from: fromUri, to: dest });
+  return dest;
 }
 
 export function CreateReporteScreen() {
@@ -23,7 +43,7 @@ export function CreateReporteScreen() {
   const [audioUri, setAudioUri] = useState<string | null>(null);
 
   const [cameraMode, setCameraMode] = useState(false);
-  const cameraRef = useRef<CameraView>(null);
+  const cameraRef = useRef<CameraViewRef>(null);
   const [permission, requestPermission] = useCameraPermissions();
 
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
@@ -59,21 +79,31 @@ export function CreateReporteScreen() {
   };
 
   const takePhoto = async () => {
-    if (!cameraRef.current) return;
+    if (!cameraRef.current) {
+      Alert.alert('Cámara', 'La cámara no está lista todavía.');
+      return;
+    }
     if (!canTakeMore) {
       Alert.alert('Límite', 'Máximo 10 imágenes.');
       return;
     }
 
-    const photo = await cameraRef.current.takePictureAsync({ quality: 0.8 });
-    if (!photo?.uri) return;
+    try {
+      const photo = await cameraRef.current.takePictureAsync({ quality: 0.8 });
+      if (!photo?.uri) {
+        Alert.alert('Cámara', 'No se pudo obtener la foto.');
+        return;
+      }
 
-    const ext = photo.uri.toLowerCase().endsWith('.png') ? 'png' : 'jpg';
-    const dest = `${ensureDocDir()}reporte_${Date.now()}_${Math.random().toString(16).slice(2)}.${ext}`;
-    await FileSystem.copyAsync({ from: photo.uri, to: dest });
+      const ext = photo.uri.toLowerCase().includes('.png') ? 'png' : 'jpg';
+      const filename = `reporte_${Date.now()}_${Math.random().toString(16).slice(2)}.${ext}`;
+      const persisted = await persistUri(photo.uri, filename);
 
-    setImageUris((prev) => [...prev, dest]);
-    setCameraMode(false);
+      setImageUris((prev) => [...prev, persisted]);
+      setCameraMode(false);
+    } catch (e: any) {
+      Alert.alert('Error', e?.message || 'No se pudo tomar la foto');
+    }
   };
 
   const startRecording = async () => {
@@ -101,10 +131,14 @@ export function CreateReporteScreen() {
       const uri = recording.getURI();
       setRecording(null);
 
-      if (!uri) return;
-      const dest = `${ensureDocDir()}audio_${Date.now()}.m4a`;
-      await FileSystem.copyAsync({ from: uri, to: dest });
-      setAudioUri(dest);
+      if (!uri) {
+        Alert.alert('Audio', 'No se pudo obtener el archivo de audio.');
+        return;
+      }
+
+      const filename = `audio_${Date.now()}.m4a`;
+      const persisted = await persistUri(uri, filename);
+      setAudioUri(persisted);
     } catch (e: any) {
       setRecording(null);
       Alert.alert('Error', e?.message || 'No se pudo detener la grabación');
