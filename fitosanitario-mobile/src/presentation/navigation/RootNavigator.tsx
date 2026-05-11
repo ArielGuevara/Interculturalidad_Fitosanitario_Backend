@@ -3,7 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { Text } from 'react-native';
+import { Text, View, Alert } from 'react-native';
 import { useAuthStore } from '../../infrastructure/auth/authStore';
 import { LoginScreen } from '../screens/auth/LoginScreen';
 import { HomeScreen } from '../screens/home/HomeScreen';
@@ -49,6 +49,7 @@ function AuthNavigator() {
 }
 
 function TabsNavigator() {
+  const usuario = useAuthStore((s) => s.usuario);
   return (
     <Tabs.Navigator>
       <Tabs.Screen
@@ -110,15 +111,46 @@ function AppNavigator() {
 
 export function RootNavigator() {
   const status = useAuthStore((s) => s.status);
+  const usuario = useAuthStore((s) => s.usuario);
   const hydrate = useAuthStore((s) => s.hydrate);
+  const logout = useAuthStore((s) => s.logout);
+
+  const isAgricultor = usuario?.rol === 'AGRICULTOR';
 
   useEffect(() => {
     hydrate();
   }, [hydrate]);
 
+  useEffect(() => {
+    if (status === 'authenticated' && usuario && !isAgricultor) {
+      Alert.alert(
+        'Acceso denegado',
+        'Esta aplicación solo puede ser utilizada por agricultores',
+        [
+          {
+            text: 'OK',
+            onPress: async () => {
+              await logout();
+            },
+          },
+        ]
+      );
+    }
+  }, [status, usuario, isAgricultor, logout]);
+
   if (status === 'unknown') {
     return <Text style={{ padding: 16 }}>Cargando...</Text>;
   }
 
-  return <NavigationContainer>{status === 'authenticated' ? <AppNavigator /> : <AuthNavigator />}</NavigationContainer>;
+  return (
+    <NavigationContainer>
+      {status === 'authenticated' && isAgricultor ? (
+        <AppNavigator />
+      ) : (
+        <AuthNavigator />
+      )}
+    </NavigationContainer>
+  );
 }
+
+
