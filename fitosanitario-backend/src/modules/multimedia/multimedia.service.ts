@@ -34,6 +34,9 @@ export class MultimediaService {
     if (file.size > this.maxImageSizeBytes) {
       throw new BadRequestException('Imagen supera el tamaño máximo permitido');
     }
+    if (!file?.buffer) {
+  throw new BadRequestException('Archivo inválido: buffer vacío');
+}
   }
 
   private validateAudioFile(file: Express.Multer.File) {

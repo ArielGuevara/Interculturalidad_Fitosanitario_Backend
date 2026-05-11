@@ -9,7 +9,10 @@ import { ConfigService } from '@nestjs/config';
 import { Client } from 'minio';
 import { randomUUID } from 'crypto';
 import * as path from 'path';
-import { buildMinioPublicUrl, MINIO_CLIENT } from '../../infrastructure/storage/minio.provider';
+import {
+  buildMinioPublicUrl,
+  MINIO_CLIENT,
+} from '../../infrastructure/storage/minio.provider';
 
 @Injectable()
 export class StorageService implements OnModuleInit {
@@ -44,14 +47,16 @@ export class StorageService implements OnModuleInit {
   private async ensureBucket() {
     try {
       const exists = await this.minio.bucketExists(this.bucket);
+
       if (!exists) {
         await this.minio.makeBucket(this.bucket);
-        this.logger.log(`Bucket '${this.bucket}' creado en MinIO`);
+        this.logger.log(`Bucket creado: ${this.bucket}`);
       }
     } catch (error) {
-      this.logger.error('No se pudo verificar/crear bucket en MinIO', error as Error);
+      this.logger.error('Error creando/verificando bucket', error as Error);
+
       throw new InternalServerErrorException(
-        'Error inicializando storage. Verifica MINIO_ACCESS_KEY/MINIO_SECRET_KEY y que MinIO esté corriendo.',
+        'Error inicializando storage (MinIO)',
       );
     }
   }
@@ -65,7 +70,6 @@ export class StorageService implements OnModuleInit {
       ? path.extname(params.originalName).toLowerCase()
       : '';
 
-    // Fallback de extensión mínima si no viene nombre original.
     const fallbackExt = params.contentType.startsWith('image/')
       ? '.jpg'
       : params.contentType.startsWith('audio/')
@@ -73,6 +77,7 @@ export class StorageService implements OnModuleInit {
         : '';
 
     const ext = extFromName || fallbackExt;
+
     return `${params.folder}/${randomUUID()}${ext}`;
   }
 
@@ -82,24 +87,47 @@ export class StorageService implements OnModuleInit {
     contentType: string;
   }) {
     try {
-      await this.minio.putObject(this.bucket, params.objectKey, params.buffer, params.buffer.length, {
-        'Content-Type': params.contentType,
+      // 🔥 VALIDACIÓN CRÍTICA
+      if (!params.buffer || params.buffer.length === 0) {
+        throw new InternalServerErrorException('Archivo vacío (buffer)');
+      }
+
+      await this.minio.putObject(
+        this.bucket,
+        params.objectKey,
+        params.buffer,
+        params.buffer.length,
+        {
+          'Content-Type': params.contentType,
+        } as any, 
+      );
+
+      const url = buildMinioPublicUrl({
+        endpoint: this.endpoint,
+        port: this.port,
+        bucket: this.bucket,
+        objectKey: params.objectKey,
+        useSSL: this.useSSL,
       });
 
       return {
         bucket: this.bucket,
         objectKey: params.objectKey,
-        url: buildMinioPublicUrl({
-          endpoint: this.endpoint,
-          port: this.port,
-          bucket: this.bucket,
-          objectKey: params.objectKey,
-          useSSL: this.useSSL,
-        }),
+        url,
       };
     } catch (error) {
-      this.logger.error('Error subiendo a MinIO', error as Error);
-      throw new InternalServerErrorException('Error subiendo archivo');
+      this.logger.error('Error subiendo archivo a MinIO', error as Error);
+
+      console.log('MINIO DEBUG:', {
+        bucket: this.bucket,
+        objectKey: params.objectKey,
+        contentType: params.contentType,
+        error,
+      });
+
+      throw new InternalServerErrorException(
+        'Error subiendo archivo a almacenamiento (MinIO)',
+      );
     }
   }
 }
