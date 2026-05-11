@@ -12,10 +12,11 @@
 
 <div class="table-wrapper">
     <p-table [value]="cultivos()" [loading]="loading()" [rows]="10" [paginator]="true" 
+             responsiveLayout="stack" [breakpoint]="'960px'"
              styleClass="premium-table">
         <ng-template pTemplate="header">
             <tr>
-                <th style="width: 120px">Referencia</th>
+                <th style="width: 100px">Referencia</th>
                 <th style="width: 140px">Visual</th>
                 <th>Nombre</th>
                 <th>Descripción Técnica</th>
@@ -26,11 +27,14 @@
             <tr>
                 <td><span class="text-slate-400 font-mono text-xs">#{{cultivo.id}}</span></td>
                 <td>
+                    <!-- Miniatura interactiva con visor -->
                     <img [src]="cultivo.imagenUrl || 'https://via.placeholder.com/80?text=C'" 
-                         [alt]="cultivo.nombre" class="img-preview">
+                         [alt]="cultivo.nombre" class="img-preview cursor-pointer"
+                         (click)="showPreview(cultivo.imagenUrl)"
+                         pTooltip="Click para ampliar">
                 </td>
                 <td>
-                    <div class="font-black text-2xl text-slate-900">{{cultivo.nombre}}</div>
+                    <div class="font-black text-xl text-slate-900">{{cultivo.nombre}}</div>
                 </td>
                 <td>
                     <div class="text-slate-500 line-height-3 max-w-30rem text-sm font-medium">{{cultivo.descripcion}}</div>
@@ -49,7 +53,7 @@
                 <td colspan="5" class="text-center p-8 bg-white border-round-3xl">
                     <div class="flex flex-column align-items-center gap-3">
                         <i class="pi pi-inbox text-5xl text-slate-200"></i>
-                        <span class="text-slate-400 font-bold text-lg">No se han encontrado cultivos en la red.</span>
+                        <span class="text-slate-400 font-bold text-lg">No se han encontrado cultivos.</span>
                     </div>
                 </td>
             </tr>
@@ -57,13 +61,24 @@
     </p-table>
 </div>
 
-<!-- Premium Dialog -->
+<!-- Diálogo para Visualizar Imagen (Viewer) -->
+<p-dialog [(visible)]="previewVisible" [modal]="true" [dismissableMask]="true" 
+          [style]="{width: 'auto', maxWidth: '90vw'}" styleClass="custom-dialog-preview"
+          [showHeader]="false">
+    <div class="p-2 bg-white border-round-3xl overflow-hidden shadow-8">
+        <img [src]="previewImage()" style="max-width: 100%; max-height: 85vh; display: block;" class="border-round-2xl">
+        <div class="p-3 text-center">
+            <p-button label="Cerrar Vista" icon="pi pi-times" styleClass="p-button-text p-button-secondary font-bold" (onClick)="previewVisible.set(false)"></p-button>
+        </div>
+    </div>
+</p-dialog>
+
+<!-- Diálogo de Edición/Creación -->
 <p-dialog [(visible)]="displayDialog" [modal]="true" [style]="{width: '550px', maxWidth: '95vw'}" 
           styleClass="p-fluid custom-dialog" [draggable]="false" [resizable]="false" [showHeader]="false" [dismissableMask]="true">
     
     <div class="flex flex-column align-items-center text-center p-4 w-full">
         <div class="w-4rem h-4rem bg-green-50 text-green-600 border-round-2xl flex align-items-center justify-content-center mb-4">
-            <!-- Lucide: Leaf (Hoja) -->
             <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8a8 8 0 0 1-8 8Z"/><path d="M18 21a8 8 0 0 0-4-14"/><path d="M7 21c4 0 7-3 7-7 0-3 2-5 2-5"/></svg>
         </div>
         <h2 class="font-black text-3xl text-900 m-0 w-full">{{isEditMode() ? 'Actualizar Ficha' : 'Nuevo Cultivo'}}</h2>
@@ -79,13 +94,50 @@
         <div class="field w-full">
             <label class="font-black text-slate-800 ml-1 mb-2 block uppercase text-xs tracking-widest">Descripción Técnica</label>
             <textarea pInputText [(ngModel)]="selectedCultivo.descripcion" 
-                      rows="4" placeholder="Especificaciones sobre suelo, clima..." 
+                      rows="4" placeholder="Especificaciones técnicas..." 
                       class="p-4 text-900 font-medium w-full" style="resize: none"></textarea>
         </div>
+        
+        <!-- DRAG AND DROP AREA CORREGIDA -->
         <div class="field w-full">
-            <label class="font-black text-slate-800 ml-1 mb-2 block uppercase text-xs tracking-widest">URL de Imagen</label>
-            <input type="text" pInputText [(ngModel)]="selectedCultivo.imagenUrl" 
-                   placeholder="https://..." class="p-4 text-900 w-full" />
+            <label class="font-black text-slate-800 ml-1 mb-2 block uppercase text-xs tracking-widest">Fotografía del Cultivo</label>
+            
+            <div class="drop-zone border-round-2xl border-2 border-dashed p-4 flex flex-column align-items-center gap-3 transition-all cursor-pointer"
+                 [class.drag-active]="isDragging()"
+                 (dragover)="onDragOver($event)"
+                 (dragleave)="onDragLeave($event)"
+                 (drop)="onDrop($event)"
+                 (click)="fileInput.click()">
+                
+                <input type="file" #fileInput (change)="onFileSelect($event)" accept="image/*" class="hidden">
+
+                <!-- Imagen cargada con visibilidad real -->
+                <img *ngIf="selectedCultivo.imagenUrl && selectedCultivo.imagenUrl.length > 10" 
+                     [src]="selectedCultivo.imagenUrl" 
+                     class="border-round-xl shadow-2 mb-2" style="width: 140px; height: 140px; object-fit: cover;">
+                
+                <div *ngIf="!uploading(); else uploadLoader" class="flex flex-column align-items-center gap-2 text-center">
+                    <i class="pi pi-cloud-upload text-4xl" [class.text-primary]="isDragging()" [class.text-slate-300]="!isDragging()"></i>
+                    
+                    <!-- Lógica de mensajes: Prioriza 'Cargada' solo si hay un link real -->
+                    <p class="m-0 font-bold text-slate-600" 
+                       *ngIf="!selectedCultivo.imagenUrl || selectedCultivo.imagenUrl.length < 10">Sube tu imagen (arrastra o haz clic)</p>
+                    
+                    <p class="m-0 font-bold text-green-600" 
+                       *ngIf="selectedCultivo.imagenUrl && selectedCultivo.imagenUrl.length > 10">✅ Imagen Cargada</p>
+                </div>
+
+                <ng-template #uploadLoader>
+                    <div class="flex flex-column align-items-center gap-2">
+                        <i class="pi pi-spin pi-spinner text-4xl text-primary"></i>
+                        <span class="font-bold text-slate-600 text-sm">Cargando al servidor...</span>
+                    </div>
+                </ng-template>
+            </div>
+            <!-- Botón para limpiar imagen si ya hay una -->
+            <div *ngIf="selectedCultivo.imagenUrl" class="text-center mt-2">
+                <p-button label="Cambiar Imagen" icon="pi pi-refresh" styleClass="p-button-text p-button-secondary p-button-sm" (onClick)="selectedCultivo.imagenUrl = undefined"></p-button>
+            </div>
         </div>
     </div>
 

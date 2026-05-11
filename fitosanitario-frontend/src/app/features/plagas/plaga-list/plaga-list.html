@@ -1,16 +1,17 @@
 <p-toast></p-toast>
 <p-confirmDialog></p-confirmDialog>
 
-<div class="page-header flex flex-column md:flex-row justify-content-between align-items-end gap-4">
-    <div>
+<div class="page-header flex flex-column sm:flex-row justify-content-between align-items-center mb-6 gap-4">
+    <div class="header-text text-center sm:text-left">
         <h2 class="title m-0">Plagas y Amenazas</h2>
         <p class="subtitle m-0">Control de patógenos y malezas del sistema.</p>
     </div>
     <p-button label="Nuevo Registro" icon="pi pi-shield" (onClick)="openNew()" 
-              styleClass="p-button-success border-round-2xl py-3 px-5 shadow-3"></p-button>
+              styleClass="p-button-success border-round-2xl py-3 px-5 shadow-3 ml-auto"></p-button>
 </div>
 
 <p-table [value]="plagas()" [loading]="loading()" [rows]="10" [paginator]="true" 
+         responsiveLayout="stack" [breakpoint]="'960px'"
          styleClass="premium-table">
     <ng-template pTemplate="header">
         <tr>
@@ -24,22 +25,29 @@
     </ng-template>
     <ng-template pTemplate="body" let-plaga>
         <tr>
-            <td><span class="text-slate-400 font-mono text-xs">#{{plaga.id}}</span></td>
+            <td><span class="p-column-title">ID</span><span class="text-slate-400 font-mono text-xs">#{{plaga.id}}</span></td>
             <td>
+                <span class="p-column-title">Muestra</span>
                 <img [src]="plaga.imagenUrl || 'https://via.placeholder.com/60?text=P'" 
-                     class="img-circle">
+                     class="img-circle cursor-pointer shadow-1"
+                     (click)="showPreview(plaga.imagenUrl)"
+                     pTooltip="Click para ampliar">
             </td>
             <td>
+                <span class="p-column-title">Nombre</span>
                 <div class="font-black text-xl text-slate-900">{{plaga.nombre}}</div>
             </td>
             <td>
+                <span class="p-column-title">Clasificación</span>
                 <p-tag [value]="plaga.tipo" [severity]="getSeverity(plaga.tipo)" 
                        styleClass="px-3 py-2 border-round-lg font-black text-xs uppercase tracking-wider"></p-tag>
             </td>
             <td>
+                <span class="p-column-title">Sintomatología</span>
                 <div class="text-slate-500 text-sm font-medium line-height-3">{{plaga.descripcion}}</div>
             </td>
             <td>
+                <span class="p-column-title">Gestión</span>
                 <div class="flex justify-content-center gap-2">
                     <p-button icon="pi pi-pencil" styleClass="btn-icon" (onClick)="editPlaga(plaga)"></p-button>
                     <p-button icon="pi pi-trash" styleClass="btn-icon" (onClick)="deletePlaga(plaga)"></p-button>
@@ -50,45 +58,86 @@
     </ng-template>
 </p-table>
 
-<!-- Premium Dialog -->
+<!-- Diálogo para Visualizar Imagen (Viewer) -->
+<p-dialog [(visible)]="previewVisible" [modal]="true" [dismissableMask]="true" 
+          [style]="{width: 'auto', maxWidth: '90vw'}" styleClass="custom-dialog-preview"
+          [showHeader]="false">
+    <div class="p-2 bg-white border-round-3xl overflow-hidden shadow-8">
+        <img [src]="previewImage()" style="max-width: 100%; max-height: 85vh; display: block;" class="border-round-2xl">
+        <div class="p-3 text-center">
+            <p-button label="Cerrar Vista" icon="pi pi-times" styleClass="p-button-text p-button-secondary font-bold" (onClick)="previewVisible.set(false)"></p-button>
+        </div>
+    </div>
+</p-dialog>
+
+<!-- Premium Dialog de Edición -->
 <p-dialog [(visible)]="displayDialog" [modal]="true" [style]="{width: '550px', maxWidth: '95vw'}" 
-          styleClass="p-fluid custom-dialog" [draggable]="false" [resizable]="false" [showHeader]="false">
+          styleClass="p-fluid custom-dialog" [draggable]="false" [resizable]="false" [showHeader]="false" [dismissableMask]="true">
     
-    <div class="flex flex-column align-items-center text-center p-4">
+    <div class="flex flex-column align-items-center text-center p-4 w-full">
         <div class="w-4rem h-4rem bg-orange-50 text-orange-600 border-round-2xl flex align-items-center justify-content-center mb-4">
-            <!-- Lucide: ShieldAlert (Escudo Alerta) -->
             <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
         </div>
-        <h2 class="font-black text-3xl text-900 m-0">{{isEditMode() ? 'Actualizar Amenaza' : 'Nueva Amenaza'}}</h2>
+        <h2 class="font-black text-3xl text-900 m-0">{{isEditMode() ? 'Actualizar Amenaza' : 'Nuevo Registro'}}</h2>
         <p class="text-slate-500 font-medium mt-2">Gestione la taxonomía de la amenaza biológica.</p>
     </div>
 
-    <div class="flex flex-column gap-4 px-2">
-        <div class="field">
+    <div class="flex flex-column gap-4 px-3 w-full">
+        <div class="field w-full">
             <label class="font-black text-slate-800 ml-1 mb-2 block uppercase text-xs tracking-widest">Tipo de Amenaza</label>
             <p-selectButton [options]="tiposOptions" [(ngModel)]="selectedPlaga.tipo" 
                             optionLabel="label" optionValue="value" styleClass="custom-select-btn"></p-selectButton>
         </div>
-        <div class="field">
+        <div class="field w-full">
             <label class="font-black text-slate-800 ml-1 mb-2 block uppercase text-xs tracking-widest">Nombre Identificador</label>
             <input type="text" pInputText [(ngModel)]="selectedPlaga.nombre" 
-                   placeholder="Ej: Pulgón de la Hoja" class="p-4 text-900 font-bold" />
+                   placeholder="Ej: Pulgón de la Hoja" class="p-4 text-900 font-bold w-full" />
         </div>
-        <div class="field">
+        <div class="field w-full">
             <label class="font-black text-slate-800 ml-1 mb-2 block uppercase text-xs tracking-widest">Descripción de Daños</label>
             <textarea pInputText [(ngModel)]="selectedPlaga.descripcion" 
-                      rows="4" placeholder="Sintomatología, comportamiento y medidas..." 
-                      class="p-4 text-900 font-medium" style="resize: none"></textarea>
+                      rows="4" placeholder="Sintomatología y medidas..." 
+                      class="p-4 text-900 font-medium w-full" style="resize: none"></textarea>
         </div>
-        <div class="field">
-            <label class="font-black text-slate-800 ml-1 mb-2 block uppercase text-xs tracking-widest">URL de Muestra</label>
-            <input type="text" pInputText [(ngModel)]="selectedPlaga.imagenUrl" 
-                   placeholder="https://..." class="p-4 text-900" />
+        
+        <!-- DROP ZONE PARA PLAGAS -->
+        <div class="field w-full">
+            <label class="font-black text-slate-800 ml-1 mb-2 block uppercase text-xs tracking-widest">Muestra Visual</label>
+            
+            <div class="drop-zone border-round-2xl border-2 border-dashed p-4 flex flex-column align-items-center gap-3 transition-all cursor-pointer"
+                 [class.drag-active]="isDragging()"
+                 (dragover)="onDragOver($event)"
+                 (dragleave)="onDragLeave($event)"
+                 (drop)="onDrop($event)"
+                 (click)="fileInput.click()">
+                
+                <input type="file" #fileInput (change)="onFileSelect($event)" accept="image/*" class="hidden">
+
+                <img *ngIf="selectedPlaga.imagenUrl && selectedPlaga.imagenUrl.length > 10" 
+                     [src]="selectedPlaga.imagenUrl" 
+                     class="border-round-xl shadow-2 mb-2" style="width: 140px; height: 140px; object-fit: cover;">
+                
+                <div *ngIf="!uploading(); else uploadLoader" class="flex flex-column align-items-center gap-2 text-center">
+                    <i class="pi pi-cloud-upload text-4xl" [class.text-primary]="isDragging()" [class.text-slate-300]="!isDragging()"></i>
+                    <p class="m-0 font-bold text-slate-600" *ngIf="!selectedPlaga.imagenUrl || selectedPlaga.imagenUrl.length < 10">Sube tu imagen (arrastra o haz clic)</p>
+                    <p class="m-0 font-bold text-green-600" *ngIf="selectedPlaga.imagenUrl && selectedPlaga.imagenUrl.length > 10">✅ Imagen Cargada</p>
+                </div>
+
+                <ng-template #uploadLoader>
+                    <div class="flex flex-column align-items-center gap-2">
+                        <i class="pi pi-spin pi-spinner text-4xl text-primary"></i>
+                        <span class="font-bold text-slate-600 text-sm">Cargando...</span>
+                    </div>
+                </ng-template>
+            </div>
+            <div *ngIf="selectedPlaga.imagenUrl" class="text-center mt-2">
+                <p-button label="Cambiar Imagen" icon="pi pi-refresh" styleClass="p-button-text p-button-secondary p-button-sm" (onClick)="selectedPlaga.imagenUrl = undefined"></p-button>
+            </div>
         </div>
     </div>
 
     <ng-template pTemplate="footer">
-        <div class="flex justify-content-center gap-3 w-full">
+        <div class="flex justify-content-center gap-3 w-full px-2">
             <p-button label="Descartar" styleClass="p-button-text p-button-secondary font-bold px-6 py-3" (onClick)="displayDialog.set(false)"></p-button>
             <p-button label="Guardar Amenaza" 
                       icon="pi pi-shield" styleClass="p-button-success border-round-2xl shadow-3 px-6 py-3 font-bold" 

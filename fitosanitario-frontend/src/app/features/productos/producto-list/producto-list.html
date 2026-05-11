@@ -11,6 +11,7 @@
 </div>
 
 <p-table [value]="productos()" [loading]="loading()" [rows]="10" [paginator]="true" 
+         responsiveLayout="stack" [breakpoint]="'960px'"
          styleClass="premium-table">
     <ng-template pTemplate="header">
         <tr>

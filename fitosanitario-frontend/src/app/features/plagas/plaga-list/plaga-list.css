@@ -41,6 +41,8 @@
 ::ng-deep .premium-table .p-datatable-tbody > tr > td {
     border: none !important;
     padding: 1.5rem 1rem !important;
+    color: #000000 !important; /* Negro absoluto forzado */
+    font-weight: 500;
 }
 
 ::ng-deep .premium-table .p-datatable-tbody > tr > td:first-child {

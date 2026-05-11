@@ -34,7 +34,6 @@
 
 ::ng-deep .premium-table .p-datatable-tbody > tr:hover {
     background: #f8fafc !important;
-    transform: scale(1.005);
     box-shadow: 0 20px 40px -20px rgba(0, 0, 0, 0.05);
 }
 
@@ -45,7 +44,6 @@
     font-weight: 600;
 }
 
-/* Rounding corners of the imaginary card row */
 ::ng-deep .premium-table .p-datatable-tbody > tr > td:first-child {
     border-top-left-radius: 24px !important;
     border-bottom-left-radius: 24px !important;
@@ -87,4 +85,35 @@
     border-radius: 18px;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     border: 3px solid white;
+    transition: transform 0.2s ease;
+}
+
+.img-preview:hover {
+    transform: scale(1.1);
+}
+
+/* Drop Zone Styles */
+.drop-zone {
+    background: var(--slate-50);
+    border-color: var(--slate-200);
+    min-height: 180px;
+    justify-content: center;
+}
+
+.drop-zone.drag-active {
+    background: #ecfdf5;
+    border-color: var(--primary);
+    border-style: solid;
+}
+
+/* Image Preview Modal */
+::ng-deep .custom-dialog-preview .p-dialog {
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+}
+
+::ng-deep .custom-dialog-preview .p-dialog-content {
+    background: transparent !important;
+    padding: 0 !important;
 }

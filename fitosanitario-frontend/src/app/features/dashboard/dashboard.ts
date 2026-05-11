@@ -38,7 +38,7 @@ export class Dashboard implements OnInit {
       productos: this.productosService.findAll()
     }).subscribe(data => {
       this.stats.set([
-        { label: 'Cultivos', value: data.cultivos.length, icon: 'pi pi-leaf', color: 'bg-green-100 text-green-700', trend: 'Catálogo de plantas' },
+        { label: 'Cultivos', value: data.cultivos.length, icon: 'pi pi-map', color: 'bg-green-100 text-green-700', trend: 'Catálogo de plantas' },
         { label: 'Plagas/Enf.', value: data.plagas.length, icon: 'pi pi-exclamation-triangle', color: 'bg-orange-100 text-orange-700', trend: 'Amenazas activas' },
         { label: 'Productos', value: data.productos.length, icon: 'pi pi-box', color: 'bg-blue-100 text-blue-700', trend: 'Insumos registrados' },
         { label: 'Alertas', value: '0', icon: 'pi pi-bell', color: 'bg-purple-100 text-purple-700', trend: 'Sin alertas hoy' }

@@ -71,10 +71,10 @@ export class Login {
         let detail = 'Ha ocurrido un problema inesperado';
         let summary = 'Error del Sistema';
 
-        // Lógica de detección de error mejorada
-        if (err.status === 401) {
-          summary = 'Credenciales Incorrectas';
-          detail = 'El correo o la contraseña no son válidos';
+        // Lógica de detección de error unificada por seguridad
+        if (err.status === 400 || err.status === 401) {
+          summary = 'Acceso Denegado';
+          detail = 'Las credenciales ingresadas no son válidas';
         } else if (err.status === 403) {
           summary = 'Acceso Prohibido';
           detail = 'No tienes permisos para acceder a este recurso';
