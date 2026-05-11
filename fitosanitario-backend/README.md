@@ -31,6 +31,42 @@
 $ npm install
 ```
 
+## Multimedia y reportes (MinIO)
+
+Variables requeridas:
+
+```bash
+MINIO_ENDPOINT=localhost
+MINIO_PORT=9000
+MINIO_ACCESS_KEY=root
+MINIO_SECRET_KEY=root12345
+MINIO_BUCKET=fitosanitario
+MINIO_USE_SSL=false
+```
+
+Endpoints (todos requieren JWT Bearer):
+
+- `POST /api/multimedia/upload-image` (multipart, field: `images`, hasta 10 archivos)
+- `POST /api/multimedia/upload-audio` (multipart, field: `audio`)
+- `POST /api/reportes` (multipart, fields: `titulo`, `descripcion?`, `cultivoId`, `latitud`, `longitud`, opcional `images[]` y/o `audio`)
+- `GET /api/reportes`
+- `GET /api/reportes/:id`
+
+Ejemplo crear reporte:
+
+```bash
+curl -X POST "http://localhost:3000/api/reportes" \
+  -H "Authorization: Bearer <TOKEN>" \
+  -F "titulo=Incidencia en cultivo" \
+  -F "descripcion=Se observan daños en hojas" \
+  -F "cultivoId=1" \
+  -F "latitud=-12.046374" \
+  -F "longitud=-77.042793" \
+  -F "images=@./foto1.jpg" \
+  -F "images=@./foto2.jpg" \
+  -F "audio=@./nota.m4a"
+```
+
 ## Compile and run the project
 
 ```bash

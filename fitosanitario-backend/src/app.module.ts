@@ -7,6 +7,8 @@ import { UsuariosModule } from './modules/usuarios/usuarios.module';
 import { CultivosModule } from './modules/cultivos/cultivos.module';
 import { PlagasModule } from './modules/plagas/plagas.module';
 import { ProductosModule } from './modules/productos/productos.module';
+import { MultimediaModule } from './modules/multimedia/multimedia.module';
+import { ReportesModule } from './modules/reportes/reportes.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DbModule } from './db/db.module';
@@ -22,7 +24,9 @@ import { DbModule } from './db/db.module';
     UsuariosModule,
     CultivosModule,
     PlagasModule,
-    ProductosModule
+    ProductosModule,
+    MultimediaModule,
+    ReportesModule,
   ],
   controllers: [AppController], 
   providers: [AppService],

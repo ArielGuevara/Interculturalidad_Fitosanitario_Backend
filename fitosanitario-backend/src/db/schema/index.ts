@@ -1,5 +1,14 @@
 import {
-  pgTable, serial, varchar, text, timestamp, boolean, pgEnum
+  pgTable,
+  serial,
+  varchar,
+  text,
+  timestamp,
+  boolean,
+  pgEnum,
+  integer,
+  doublePrecision,
+  jsonb,
 } from 'drizzle-orm/pg-core';
 
 // ── Enums ──────────────────────────────────────────────────
@@ -45,4 +54,18 @@ export const productosFitosanitarios = pgTable('productos_fitosanitarios', {
   ingredienteActivo: varchar('ingrediente_activo', { length: 200 }),
   tipo:              tipoProductoEnum('tipo').notNull(),
   unidadBase:        varchar('unidad_base', { length: 50 }),
+});
+
+// ── Tabla: REPORTES ───────────────────────────────────────
+export const reportes = pgTable('reportes', {
+  id:          serial('id').primaryKey(),
+  titulo:      varchar('titulo', { length: 200 }).notNull(),
+  descripcion: text('descripcion'),
+  usuarioId:   integer('usuario_id').notNull().references(() => usuarios.id),
+  cultivoId:   integer('cultivo_id').notNull().references(() => cultivos.id),
+  imagenesUrls: jsonb('imagenes_urls').$type<string[]>().notNull(),
+  audioUrl:    varchar('audio_url', { length: 500 }),
+  latitud:     doublePrecision('latitud').notNull(),
+  longitud:    doublePrecision('longitud').notNull(),
+  createdAt:   timestamp('created_at').notNull().defaultNow(),
 });
