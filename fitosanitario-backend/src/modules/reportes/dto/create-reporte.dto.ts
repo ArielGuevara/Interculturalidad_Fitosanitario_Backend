@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer';
 import {
+  IsBoolean,
   IsInt,
   IsLatitude,
   IsLongitude,
@@ -19,9 +20,18 @@ export class CreateReporteDto {
   @IsString()
   descripcion?: string;
 
+  @IsString()
+  @IsOptional()
+  descripcionProblema?: string;
+
   @Type(() => Number)
   @IsInt()
   cultivoId!: number;
+
+  @IsInt()
+  @IsOptional()
+  @Type(() => Number)
+  plagaId?: number;
 
   @Type(() => Number)
   @IsLatitude()
@@ -30,4 +40,9 @@ export class CreateReporteDto {
   @Type(() => Number)
   @IsLongitude()
   longitud!: number;
+
+  @IsBoolean()
+  @IsOptional()
+  @Type(() => Boolean)
+  sincronizado?: boolean;
 }

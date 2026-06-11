@@ -1,7 +1,13 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { MultimediaService } from '../multimedia/multimedia.service';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { MultimediaService }  from '../multimedia/multimedia.service';
 import { ReportesRepository } from './reportes.repository';
-import { CreateReporteDto } from './dto/create-reporte.dto';
+import { CreateReporteDto }   from './dto/create-reporte.dto';
+import * as schema from '../../db/schema';
 
 @Injectable()
 export class ReportesService {
@@ -30,14 +36,17 @@ export class ReportesService {
       : { url: null as string | null };
 
     return this.reportesRepository.create({
-      titulo: params.dto.titulo,
-      descripcion: params.dto.descripcion,
-      usuarioId: params.usuarioId,
-      cultivoId: params.dto.cultivoId,
-      imagenesUrls: imagenesUpload.urls,
-      audioUrl: audioUpload.url,
-      latitud: params.dto.latitud,
-      longitud: params.dto.longitud,
+      titulo:              params.dto.titulo,
+      descripcion:         params.dto.descripcion,
+      descripcionProblema: params.dto.descripcionProblema,
+      usuarioId:           params.usuarioId,
+      cultivoId:           params.dto.cultivoId,
+      plagaId:             params.dto.plagaId,
+      imagenesUrls:        imagenesUpload.urls,
+      audioUrl:            audioUpload.url,
+      latitud:             params.dto.latitud,
+      longitud:            params.dto.longitud,
+      sincronizado:        params.dto.sincronizado,
     });
   }
 
@@ -45,11 +54,39 @@ export class ReportesService {
     return this.reportesRepository.findAll();
   }
 
+  findByUsuario(usuarioId: number) {
+    return this.reportesRepository.findByUsuario(usuarioId);
+  }
+
+  findPendientes() {
+    return this.reportesRepository.findPendientes();
+  }
+
   async findById(id: number) {
     const reporte = await this.reportesRepository.findById(id);
-    if (!reporte) {
-      throw new NotFoundException('Reporte no encontrado');
-    }
+    if (!reporte) throw new NotFoundException('Reporte no encontrado');
     return reporte;
+  }
+
+  async cambiarEstado(params: {
+    reporteId: number;
+    usuarioId: number;
+    estadoNuevo: typeof schema.estadoReporteEnum.enumValues[number];
+    motivo?: string;
+  }) {
+    const reporte = await this.findById(params.reporteId);
+
+    return this.reportesRepository.cambiarEstado({
+      reporteId:      params.reporteId,
+      usuarioId:      params.usuarioId,
+      estadoAnterior: reporte.estado,
+      estadoNuevo:    params.estadoNuevo,
+      motivo:         params.motivo,
+    });
+  }
+
+  async getHistorial(reporteId: number) {
+    await this.findById(reporteId); // valida que existe
+    return this.reportesRepository.getHistorial(reporteId);
   }
 }

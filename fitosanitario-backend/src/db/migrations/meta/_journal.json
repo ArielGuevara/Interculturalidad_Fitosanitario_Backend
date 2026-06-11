@@ -15,6 +15,20 @@
       "when": 1778435996814,
       "tag": "0001_sleepy_hitman",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1781146940204,
+      "tag": "0002_hot_crusher_hogan",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1781148167754,
+      "tag": "0003_big_dakota_north",
+      "breakpoints": true
     }
   ]
 }
