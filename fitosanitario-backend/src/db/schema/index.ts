@@ -20,7 +20,10 @@ export const tipoProductoEnum = pgEnum('tipo_producto', [
   'INSECTICIDA', 'FUNGICIDA', 'HERBICIDA', 'BIOLOGICO',
 ]);
 
-// ── Enums nuevos ───────────────────────────────────────────
+export const metodoAplicacionEnum = pgEnum('metodo_aplicacion', [
+  'FOLIAR', 'SUELO', 'RIEGO',
+]);
+
 export const estadoReporteEnum = pgEnum('estado_reporte', [
   'PENDIENTE', 'COMUNIDAD', 'VALIDADO', 'RECHAZADO',
 ]);
@@ -88,4 +91,38 @@ export const reporteHistorialEstado = pgTable('reporte_historial_estado', {
   estadoNuevo:    estadoReporteEnum('estado_nuevo').notNull(),
   motivo:         text('motivo'),
   fechaCambio:    timestamp('fecha_cambio').notNull().defaultNow(),
+});
+
+
+// ── Tabla: TRATAMIENTO_OFICIAL ─────────────────────────────
+export const tratamientosOficiales = pgTable('tratamientos_oficiales', {
+  id:                    serial('id').primaryKey(),
+  reporteId:             integer('reporte_id').references(() => reportes.id),
+  recomendacionOrigenId: integer('recomendacion_origen_id'), // FK a comunidad, se agrega en Sprint 4
+  moderadorId:           integer('moderador_id').notNull().references(() => usuarios.id),
+  cultivoId:             integer('cultivo_id').notNull().references(() => cultivos.id),
+  plagaId:               integer('plaga_id').notNull().references(() => plagasEnfermedades.id),
+  productoId:            integer('producto_id').notNull().references(() => productosFitosanitarios.id),
+
+  dosis:                 doublePrecision('dosis').notNull(),
+  unidadDosis:           varchar('unidad_dosis', { length: 50 }).notNull(),
+
+  volumenAgua:           doublePrecision('volumen_agua'),
+  unidadVolumen:         varchar('unidad_volumen', { length: 50 }),
+
+  metodoAplicacion:      metodoAplicacionEnum('metodo_aplicacion').notNull(),
+
+  intervaloDias:         integer('intervalo_dias').notNull(),
+  numeroAplicaciones:    integer('numero_aplicaciones').notNull(),
+  duracionTotalDias:     integer('duracion_total_dias').notNull(),
+
+  diasCarencia:          integer('dias_carencia').notNull(),
+  periodoReingresoHoras: integer('periodo_reingreso_horas'),
+
+  etapaCultivo:          varchar('etapa_cultivo', { length: 100 }),
+  condicionesAplicacion: text('condiciones_aplicacion'),
+
+  enEnciclopedia:           boolean('en_enciclopedia').notNull().default(false),
+  fechaValidacion:          timestamp('fecha_validacion').notNull().defaultNow(),
+  fechaUltimaActualizacion: timestamp('fecha_ultima_actualizacion').notNull().defaultNow(),
 });

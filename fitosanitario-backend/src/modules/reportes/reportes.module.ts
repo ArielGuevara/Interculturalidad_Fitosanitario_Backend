@@ -8,5 +8,6 @@ import { MultimediaModule } from '../multimedia/multimedia.module';
   imports: [MultimediaModule],
   controllers: [ReportesController],
   providers: [ReportesService, ReportesRepository],
+  exports: [ReportesService],
 })
 export class ReportesModule {}

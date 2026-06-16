@@ -1,0 +1,74 @@
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
+import { TratamientosRepository } from './tratamientos.repository';
+import { ReportesService }        from '../reportes/reportes.service';
+import { CreateTratamientoDto }   from './dto/create-tratamiento.dto';
+import { UpdateTratamientoDto }   from './dto/update-tratamiento.dto';
+
+@Injectable()
+export class TratamientosService {
+  constructor(
+    private readonly tratamientosRepo: TratamientosRepository,
+    private readonly reportesService:  ReportesService,
+  ) {}
+
+  findAll() {
+    return this.tratamientosRepo.findAll();
+  }
+
+  async findById(id: number) {
+    const tratamiento = await this.tratamientosRepo.findById(id);
+    if (!tratamiento) {
+      throw new NotFoundException(`Tratamiento #${id} no encontrado`);
+    }
+    return tratamiento;
+  }
+
+  // Enciclopedia completa — para primera descarga offline
+  findEnciclopedia() {
+    return this.tratamientosRepo.findEnciclopedia();
+  }
+
+  // Enciclopedia incremental — solo lo nuevo desde fecha dada
+  findEnciclopediaDesde(fechaDesde: Date) {
+    return this.tratamientosRepo.findEnciclopediaDesde(fechaDesde);
+  }
+
+  async create(dto: CreateTratamientoDto, moderadorId: number) {
+    // Valida que si viene reporteId, el reporte exista
+    if (dto.reporteId) {
+      const reporte = await this.reportesService.findById(dto.reporteId);
+
+      // Si el reporte ya tiene tratamiento, no se puede crear otro
+      const existing = await this.tratamientosRepo.findByReporte(dto.reporteId);
+      if (existing) {
+        throw new BadRequestException(
+          `El reporte #${dto.reporteId} ya tiene un tratamiento oficial asignado`,
+        );
+      }
+
+      // Cambia estado del reporte a VALIDADO automáticamente
+      await this.reportesService.cambiarEstado({
+        reporteId:   reporte.id,
+        usuarioId:   moderadorId,
+        estadoNuevo: 'VALIDADO',
+        motivo:      'Tratamiento oficial emitido',
+      });
+    }
+
+    return this.tratamientosRepo.create(dto, moderadorId);
+  }
+
+  async update(id: number, dto: UpdateTratamientoDto) {
+    await this.findById(id);
+    return this.tratamientosRepo.update(id, dto);
+  }
+
+  async marcarEnciclopedia(id: number, enEnciclopedia: boolean) {
+    await this.findById(id);
+    return this.tratamientosRepo.marcarEnciclopedia(id, enEnciclopedia);
+  }
+}

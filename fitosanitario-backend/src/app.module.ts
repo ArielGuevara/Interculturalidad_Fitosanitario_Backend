@@ -9,6 +9,8 @@ import { PlagasModule } from './modules/plagas/plagas.module';
 import { ProductosModule } from './modules/productos/productos.module';
 import { MultimediaModule } from './modules/multimedia/multimedia.module';
 import { ReportesModule } from './modules/reportes/reportes.module';
+import { StorageModule }       from './modules/storage/storage.module';
+import { TratamientosModule }  from './modules/tratamientos/tratamientos.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DbModule } from './db/db.module';
@@ -27,6 +29,8 @@ import { DbModule } from './db/db.module';
     ProductosModule,
     MultimediaModule,
     ReportesModule,
+    TratamientosModule,
+    StorageModule,
   ],
   controllers: [AppController], 
   providers: [AppService],
