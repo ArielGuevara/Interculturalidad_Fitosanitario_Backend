@@ -2,6 +2,7 @@
 import { 
   Alert, 
   FlatList, 
+  Image,
   Text, 
   View, 
   StyleSheet, 
@@ -47,16 +48,19 @@ export function PlagasScreen() {
   // Función para renderizar cada tarjeta de plaga
   const renderItem = ({ item }: { item: Plaga }) => (
     <View style={styles.card}>
-      {/* Icono con fondo rojizo/rosado para diferenciar de cultivos */}
-      <View style={styles.iconContainer}>
-        <Text style={styles.iconText}>🐛</Text> 
-      </View>
+      {/* Imagen o icono */}
+      {item.imagenUrl ? (
+        <Image source={{ uri: item.imagenUrl }} style={styles.image} resizeMode="cover" />
+      ) : (
+        <View style={styles.iconContainer}>
+          <Text style={styles.iconText}>🐛</Text>
+        </View>
+      )}
       
       {/* Información principal */}
       <View style={styles.textContainer}>
         <View style={styles.titleRow}>
           <Text style={styles.title} numberOfLines={1}>{item.nombre}</Text>
-          {/* Badge para el Tipo */}
           {!!item.tipo && (
             <View style={styles.badge}>
               <Text style={styles.badgeText}>{item.tipo}</Text>
@@ -169,6 +173,9 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   // Icono diferenciado para plagas (fondo rojizo pálido)
+  image: {
+    width: 56, height: 56, borderRadius: 16, marginRight: 16,
+  },
   iconContainer: {
     width: 56,
     height: 56,

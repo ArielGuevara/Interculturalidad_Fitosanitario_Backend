@@ -4,7 +4,6 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import type { AuthStackParamList } from '../../navigation/RootNavigator';
 import { useAuthStore } from '../../../infrastructure/auth/authStore';
-import type { Rol } from '../../../domain/auth/types';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Register'>;
 
@@ -14,15 +13,21 @@ export function RegisterScreen({ navigation }: Props) {
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [rol, setRol] = useState<Rol>('AGRICULTOR');
   const [loading, setLoading] = useState(false);
 
   const onSubmit = async () => {
     try {
       setLoading(true);
-      await register({ nombre: nombre.trim(), email: email.trim(), password, rol });
+      console.log('[REGISTER] Enviando registro...', { nombre: nombre.trim(), email: email.trim() });
+      await register({ nombre: nombre.trim(), email: email.trim(), password });
+      console.log('[REGISTER] Registro exitoso');
     } catch (e: any) {
-      Alert.alert('Error', e?.message || 'No se pudo registrar');
+      console.log('[REGISTER] Error completo:', JSON.stringify(e));
+      console.log('[REGISTER] Response:', e?.response?.data);
+      console.log('[REGISTER] Status:', e?.response?.status);
+      console.log('[REGISTER] Message:', e?.message);
+      const msg = e?.response?.data?.message?.[0] || e?.response?.data?.message || e?.message || 'No se pudo registrar';
+      Alert.alert('Error', String(msg));
     } finally {
       setLoading(false);
     }
@@ -30,7 +35,7 @@ export function RegisterScreen({ navigation }: Props) {
 
   return (
     <View className="flex-1 bg-white p-4">
-      <Text className="text-2xl font-semibold text-slate-900">Crear cuenta</Text>
+      <Text className="text-2xl font-semibold text-slate-900">Crear cuenta de agricultor</Text>
 
       <Text className="mt-6 text-slate-700">Nombre</Text>
       <TextInput
@@ -58,26 +63,6 @@ export function RegisterScreen({ navigation }: Props) {
         onChangeText={setPassword}
         placeholder="mínimo 8 caracteres"
       />
-
-      <Text className="mt-4 text-slate-700">Rol</Text>
-      <View className="mt-2 flex-row gap-2">
-        <Pressable
-          className={`flex-1 rounded-xl border px-3 py-3 ${
-            rol === 'AGRICULTOR' ? 'border-emerald-600 bg-emerald-50' : 'border-slate-200'
-          }`}
-          onPress={() => setRol('AGRICULTOR')}
-        >
-          <Text className="text-center text-slate-800">AGRICULTOR</Text>
-        </Pressable>
-        <Pressable
-          className={`flex-1 rounded-xl border px-3 py-3 ${
-            rol === 'MODERADOR' ? 'border-emerald-600 bg-emerald-50' : 'border-slate-200'
-          }`}
-          onPress={() => setRol('MODERADOR')}
-        >
-          <Text className="text-center text-slate-800">MODERADOR</Text>
-        </Pressable>
-      </View>
 
       <Pressable
         className={`mt-6 rounded-xl bg-emerald-600 px-4 py-4 ${loading ? 'opacity-70' : ''}`}

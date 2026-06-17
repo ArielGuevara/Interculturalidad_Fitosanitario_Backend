@@ -30,12 +30,8 @@
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO",
-        "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION",
-        "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO",
-        "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION"
+        "android.permission.ACCESS_COARSE_LOCATION"
       ],
       "package": "com.anonymous.fitosanitariomobile"
     },
@@ -44,7 +40,14 @@
     },
     "plugins": [
       "expo-sqlite",
-      "expo-audio"
+      "expo-audio",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Permitir a Fitosanitario acceder a tu ubicación para reportes agrícolas.",
+          "locationWhenInUsePermission": "Permitir a Fitosanitario acceder a tu ubicación para reportes agrícolas."
+        }
+      ]
     ]
   }
 }

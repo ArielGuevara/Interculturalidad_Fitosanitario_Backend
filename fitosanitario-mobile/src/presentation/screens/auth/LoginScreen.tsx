@@ -12,6 +12,7 @@ import {
   View,
   StatusBar,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { useAuthStore } from '../../../infrastructure/auth/authStore';
 
 const { width: W } = Dimensions.get('window');
@@ -21,6 +22,7 @@ function Blob({ style }: { style: any }) {
 }
 
 export function LoginScreen() {
+  const navigation = useNavigation<any>();
   const login = useAuthStore((s) => s.login);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -141,7 +143,13 @@ export function LoginScreen() {
               </Pressable>
             </Animated.View>
 
-        
+            {/* ── Crear cuenta link ── */}
+            <Pressable style={styles.footerLink} onPress={() => navigation.navigate('Register')}>
+              <Text style={styles.footerText}>
+                ¿No tienes cuenta?{' '}
+                <Text style={styles.linkBold}>Crear una</Text>
+              </Text>
+            </Pressable>
           </View>
 
           <Text style={styles.poweredBy}>Powered by Fitosanitario</Text>
@@ -225,6 +233,7 @@ const styles = StyleSheet.create({
   form: {
     width: '100%',
   },
+  fieldWrap: { width: '100%' },
   fieldLabel: {
     color: '#ffffff',
     fontSize: 14,

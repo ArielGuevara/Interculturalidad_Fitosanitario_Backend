@@ -2,6 +2,7 @@
 import { 
   Alert, 
   FlatList, 
+  Image,
   Text, 
   View, 
   StyleSheet, 
@@ -47,10 +48,14 @@ export function CultivosScreen() {
 
   const renderItem = ({ item }: { item: Cultivo }) => (
     <View style={styles.card}>
-      {/* Icono representativo del cultivo */}
-      <View style={styles.iconContainer}>
-        <Text style={styles.iconText}>🌱</Text>
-      </View>
+      {/* Imagen o icono representativo */}
+      {item.imagenUrl ? (
+        <Image source={{ uri: item.imagenUrl }} style={styles.image} resizeMode="cover" />
+      ) : (
+        <View style={styles.iconContainer}>
+          <Text style={styles.iconText}>🌱</Text>
+        </View>
+      )}
       
       {/* Información */}
       <View style={styles.textContainer}>
@@ -156,11 +161,14 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 2,
   },
+  image: {
+    width: 56, height: 56, borderRadius: 16, marginRight: 16,
+  },
   iconContainer: {
     width: 56,
     height: 56,
     borderRadius: 16,
-    backgroundColor: '#f0fdf4', // Fondo verde muy claro
+    backgroundColor: '#f0fdf4',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 16,

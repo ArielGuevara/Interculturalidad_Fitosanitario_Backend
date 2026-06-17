@@ -1,5 +1,5 @@
 import { apiClient } from '../../http/apiClient';
-import type { Plaga } from '../../../../domain/catalogos/types';
+import type { Plaga } from '../../../domain/catalogos/types';
 
 // GET /plagas
 export const getPlagas = async (): Promise<Plaga[]> => {

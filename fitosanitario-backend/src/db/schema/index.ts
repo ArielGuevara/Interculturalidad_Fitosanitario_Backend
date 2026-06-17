@@ -127,38 +127,37 @@ export const tratamientosOficiales = pgTable('tratamientos_oficiales', {
   fechaUltimaActualizacion: timestamp('fecha_ultima_actualizacion').notNull().defaultNow(),
 });
 
-// ── Tabla: RECOMENDACION_COMUNIDAD ─────────────────────────
+// ── Enum: TIPO_RECOMENDACION ────────────────────────────────
+export const tipoRecomendacionEnum = pgEnum('tipo_recomendacion', [
+  'RECOMENDACION', 'CONSULTA', 'CONOCIMIENTO_ANCESTRAL',
+]);
+
+// ── Tabla: RECOMENDACION_COMUNIDAD ──────────────────────────
 export const recomendacionesComunidad = pgTable('recomendaciones_comunidad', {
-  id:                  serial('id').primaryKey(),
-  reporteId:           integer('reporte_id').notNull().references(() => reportes.id),
-  usuarioId:           integer('usuario_id').notNull().references(() => usuarios.id),
-
-  productoId:          integer('producto_id').references(() => productosFitosanitarios.id),
-  productoNombreLibre: varchar('producto_nombre_libre', { length: 150 }),
-
-  dosis:               doublePrecision('dosis').notNull(),
-  unidadDosis:         varchar('unidad_dosis', { length: 50 }).notNull(),
-
-  intervaloDias:       integer('intervalo_dias').notNull(),
-  numeroAplicaciones:  integer('numero_aplicaciones').notNull(),
-  duracionTotalDias:   integer('duracion_total_dias').notNull(),
-
-  metodoAplicacion:    varchar('metodo_aplicacion', { length: 50 }),
-  observaciones:       text('observaciones'),
-
-  activo:              boolean('activo').notNull().default(true),
-  moderadoPor:         integer('moderado_por').references(() => usuarios.id),
-  fechaModeracion:     timestamp('fecha_moderacion'),
-  fechaAporte:         timestamp('fecha_aporte').notNull().defaultNow(),
+  id:                serial('id').primaryKey(),
+  reporteId:         integer('reporte_id').references(() => reportes.id),
+  usuarioId:         integer('usuario_id').notNull().references(() => usuarios.id),
+  cultivoId:         integer('cultivo_id').references(() => cultivos.id),
+  plagaId:           integer('plaga_id').references(() => plagasEnfermedades.id),
+  titulo:            varchar('titulo', { length: 200 }).notNull(),
+  descripcion:       text('descripcion').notNull(),
+  tipo:              tipoRecomendacionEnum('tipo').notNull().default('RECOMENDACION'),
+  valoracionPromedio: doublePrecision('valoracion_promedio').notNull().default(0),
+  totalValoraciones: integer('total_valoraciones').notNull().default(0),
+  moderado:          boolean('moderado').notNull().default(false),
+  activo:            boolean('activo').notNull().default(true),
+  createdAt:         timestamp('created_at').notNull().defaultNow(),
+  updatedAt:         timestamp('updated_at').notNull().defaultNow(),
 });
 
-// ── Tabla: VALORACION_RECOMENDACION ────────────────────────
-export const valoracionesRecomendacion = pgTable('valoraciones_recomendacion', {
+// ── Tabla: VALORACION ───────────────────────────────────────
+export const valoraciones = pgTable('valoraciones', {
   id:               serial('id').primaryKey(),
   recomendacionId:  integer('recomendacion_id').notNull().references(() => recomendacionesComunidad.id, { onDelete: 'cascade' }),
   usuarioId:        integer('usuario_id').notNull().references(() => usuarios.id),
-  puntuacion:       integer('puntuacion').notNull(), // 1 a 5
-  fechaValoracion:  timestamp('fecha_valoracion').notNull().defaultNow(),
+  puntuacion:       integer('puntuacion').notNull(),
+  comentario:       text('comentario'),
+  createdAt:        timestamp('created_at').notNull().defaultNow(),
 });
 
 // ── Tabla: COMENTARIO_FORO ─────────────────────────────────
@@ -166,7 +165,7 @@ export const comentariosForo = pgTable('comentarios_foro', {
   id:                serial('id').primaryKey(),
   recomendacionId:   integer('recomendacion_id').notNull().references(() => recomendacionesComunidad.id, { onDelete: 'cascade' }),
   usuarioId:         integer('usuario_id').notNull().references(() => usuarios.id),
-  comentarioPadreId: integer('comentario_padre_id'), // recursivo, sin FK directa para evitar circular
+  comentarioPadreId: integer('comentario_padre_id'),
   contenido:         text('contenido').notNull(),
   activo:            boolean('activo').notNull().default(true),
   moderadoPor:       integer('moderado_por').references(() => usuarios.id),

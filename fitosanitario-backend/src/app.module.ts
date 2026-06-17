@@ -12,6 +12,7 @@ import { ReportesModule } from './modules/reportes/reportes.module';
 import { StorageModule }       from './modules/storage/storage.module';
 import { TratamientosModule }  from './modules/tratamientos/tratamientos.module';
 import { ComunidadModule } from './modules/comunidad/comunidad.module';
+import { RecomendacionesModule } from './modules/recomendaciones/recomendaciones.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DbModule } from './db/db.module';
@@ -31,6 +32,7 @@ import { DbModule } from './db/db.module';
     MultimediaModule,
     ReportesModule,
     TratamientosModule,
+    RecomendacionesModule,
     StorageModule,
     ComunidadModule,
   ],

@@ -11,13 +11,17 @@ import {
   TextInput,
   View,
   StyleSheet,
+  ActivityIndicator,
 } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import * as Location from 'expo-location';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system/legacy';
 import { enqueueReporte } from '../../../infrastructure/offline/pendingReportes';
 import { syncPendingReportes } from '../../../infrastructure/offline/sync';
+import { getCultivos } from '../../../infrastructure/data/catalogos/cultivosApi';
+import type { Cultivo } from '../../../domain/catalogos/types';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -144,11 +148,14 @@ function useRecordingTimer(active: boolean) {
 export function CreateReporteScreen() {
   const [titulo, setTitulo] = useState('');
   const [descripcion, setDescripcion] = useState('');
-  const [cultivoId, setCultivoId] = useState('');
+  const [cultivoId, setCultivoId] = useState<number>(0);
+  const [cultivos, setCultivos] = useState<Cultivo[]>([]);
+  const [cultivosLoading, setCultivosLoading] = useState(true);
 
   const [latitud, setLatitud] = useState<number | null>(null);
   const [longitud, setLongitud] = useState<number | null>(null);
   const [locationLoading, setLocationLoading] = useState(false);
+  const [locationError, setLocationError] = useState(false);
 
   const [imageUris, setImageUris] = useState<string[]>([]);
   const [audioUri, setAudioUri] = useState<string | null>(null);
@@ -182,23 +189,63 @@ export function CreateReporteScreen() {
     }
   }, [isRecording]);
 
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await getCultivos();
+        setCultivos(data);
+      } catch {
+        // silently fail, user can still type
+      } finally {
+        setCultivosLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  const DEF_LAT = 0.4167;
+  const DEF_LNG = -78.5833;
+
   const getLocation = async () => {
     setLocationLoading(true);
+    setLocationError(false);
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permiso requerido', 'Se necesita ubicación para crear reportes.');
+        setLatitud(DEF_LAT);
+        setLongitud(DEF_LNG);
+        setLocationError(true);
+        setLocationLoading(false);
         return;
       }
-      const pos = await Location.getCurrentPositionAsync({});
+      const last = await Location.getLastKnownPositionAsync();
+      if (last) {
+        setLatitud(last.coords.latitude);
+        setLongitud(last.coords.longitude);
+        setLocationError(false);
+        setLocationLoading(false);
+        return;
+      }
+      const pos = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+        timeInterval: 3000,
+      });
       setLatitud(pos.coords.latitude);
       setLongitud(pos.coords.longitude);
+      setLocationError(false);
+    } catch (e: any) {
+      console.log('[GPS] Error:', e?.message);
+      setLatitud(DEF_LAT);
+      setLongitud(DEF_LNG);
+      setLocationError(true);
     } finally {
       setLocationLoading(false);
     }
   };
 
-  useEffect(() => { void getLocation(); }, []);
+  useEffect(() => {
+    getLocation();
+  }, []);
 
   const openCamera = async () => {
     if (!permission?.granted) {
@@ -302,13 +349,12 @@ export function CreateReporteScreen() {
 
   const saveOfflineAndSync = async () => {
     if (!titulo.trim()) { Alert.alert('Falta información', 'El título es obligatorio.'); return; }
-    const cultivoIdNum = Number(cultivoId);
-    if (!Number.isInteger(cultivoIdNum) || cultivoIdNum <= 0) {
-      Alert.alert('Falta información', 'El ID de cultivo debe ser un número entero positivo.');
+    if (!cultivoId || cultivoId === 0) {
+      Alert.alert('Falta información', 'Selecciona un cultivo.');
       return;
     }
     if (!locationReady || latitud === null || longitud === null) {
-      Alert.alert('Falta información', 'La ubicación no está disponible. Intenta actualizarla.');
+      Alert.alert('Falta información', 'La ubicación no está disponible. Espera a que se obtenga o actualízala.');
       return;
     }
     setIsSaving(true);
@@ -316,7 +362,7 @@ export function CreateReporteScreen() {
       const pending = await enqueueReporte({
         titulo: titulo.trim(),
         descripcion: descripcion.trim() || undefined,
-        cultivoId: cultivoIdNum,
+        cultivoId,
         latitud,
         longitud,
         imageUris,
@@ -326,17 +372,17 @@ export function CreateReporteScreen() {
         const result = await syncPendingReportes();
         Alert.alert(
           '✓ Reporte enviado',
-          `Guardado correctamente (id: ${pending.id}).\nEnviados: ${result.synced}  |  Fallidos: ${result.failed}`
+          `Guardado correctamente.\nEnviados: ${result.synced}  |  Fallidos: ${result.failed}`
         );
       } catch {
-        Alert.alert('Guardado offline', `El reporte se sincronizará cuando haya conexión (id: ${pending.id}).`);
+        Alert.alert('Guardado offline', `El reporte se sincronizará cuando haya conexión.`);
       }
       setTitulo('');
       setDescripcion('');
-      setCultivoId('');
+      setCultivoId(0);
       setImageUris([]);
       setAudioUri(null);
-      await getLocation();
+      getLocation();
     } finally {
       setIsSaving(false);
     }
@@ -411,28 +457,38 @@ export function CreateReporteScreen() {
         />
       </View>
 
-      {/* Cultivo ID */}
+      {/* Cultivo selector */}
       <View style={styles.card}>
-        <Text style={styles.label}>  ID de Cultivo <Text style={styles.required}>*</Text></Text>
-        <TextInput
-          style={styles.input}
-          value={cultivoId}
-          onChangeText={setCultivoId}
-          placeholder="Ej. 42"
-          placeholderTextColor="#94a3b8"
-          keyboardType="number-pad"
-        />
+        <Text style={styles.label}>  Cultivo <Text style={styles.required}>*</Text></Text>
+        {cultivosLoading ? (
+          <ActivityIndicator size="small" color="#10b981" />
+        ) : (
+          <View style={styles.pickerWrap}>
+            <Picker
+              selectedValue={cultivoId}
+              onValueChange={(value: number) => setCultivoId(value)}
+              style={styles.picker}
+            >
+              <Picker.Item label="Selecciona un cultivo..." value={0} color="#94a3b8" />
+              {cultivos.map((c) => (
+                <Picker.Item key={c.id} label={c.nombre} value={c.id} />
+              ))}
+            </Picker>
+          </View>
+        )}
       </View>
 
       {/* Ubicación */}
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <Text style={styles.label}>  Ubicación</Text>
-          <View style={[styles.statusDot, { backgroundColor: locationReady ? '#10b981' : '#f59e0b' }]} />
+          <View style={[styles.statusDot, { backgroundColor: locationReady ? '#10b981' : locationError ? '#ef4444' : '#f59e0b' }]} />
         </View>
         <Text style={styles.coordText}>
           {locationReady
             ? `${latitud?.toFixed(6)}, ${longitud?.toFixed(6)}`
+            : locationError
+            ? 'No disponible. Toca actualizar.'
             : 'Obteniendo ubicación…'}
         </Text>
         <Pressable
@@ -441,7 +497,7 @@ export function CreateReporteScreen() {
           disabled={locationLoading}
         >
           <Text style={styles.btnSecondaryText}>
-            {locationLoading ? 'Actualizando…' : '↺  Actualizar ubicación'}
+            {locationLoading ? 'Obteniendo…' : '↺  Obtener ubicación'}
           </Text>
         </Pressable>
       </View>
@@ -564,6 +620,11 @@ const styles = StyleSheet.create({
   inputMultiline: { minHeight: 90 },
 
   statusDot: { width: 10, height: 10, borderRadius: 5 },
+  pickerWrap: {
+    borderWidth: 1.5, borderColor: '#e2e8f0', borderRadius: 10,
+    backgroundColor: '#f8fafc', overflow: 'hidden',
+  },
+  picker: { height: 50, color: '#0f172a' },
   coordText: { fontSize: 13, color: '#475569', fontVariant: ['tabular-nums'], marginBottom: 10 },
   counter: { fontSize: 13, fontWeight: '600', color: '#10b981' },
 

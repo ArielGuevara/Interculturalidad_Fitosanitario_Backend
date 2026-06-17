@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useRef } from 'react';
+﻿import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { 
   Alert, 
   Animated, 
@@ -14,6 +14,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { useAuthStore } from '../../../infrastructure/auth/authStore';
 import { syncPendingReportes } from '../../../infrastructure/offline/sync';
+import { recomendacionesApi } from '../../../infrastructure/data/recomendaciones/recomendacionesApi';
 
 const { width: W } = Dimensions.get('window');
 
@@ -34,9 +35,20 @@ interface QuickCardProps {
 export function HomeScreen() {
   const navigation = useNavigation<any>();
   const usuario = useAuthStore((s) => s.usuario);
+  const [comunidadCount, setComunidadCount] = useState(0);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
+
+  useEffect(() => {
+    const loadCount = async () => {
+      try {
+        const data = await recomendacionesApi.getAll();
+        setComunidadCount(data.length);
+      } catch {}
+    };
+    loadCount();
+  }, []);
 
   useEffect(() => {
     Animated.parallel([
@@ -140,6 +152,13 @@ export function HomeScreen() {
             label="Productos"
             color="#1e3a5f"
             onPress={() => navigation.navigate('Productos')}
+          />
+
+          <QuickCardWide
+            emoji="💬"
+            label={`Foro Comunitario (${comunidadCount})`}
+            color="#7c3aed"
+            onPress={() => navigation.navigate('ForoList')}
           />
 
           <View style={{ height: 32 }} />

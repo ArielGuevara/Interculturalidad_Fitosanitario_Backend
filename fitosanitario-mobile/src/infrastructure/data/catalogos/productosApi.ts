@@ -1,5 +1,5 @@
 import { apiClient } from '../../http/apiClient';
-import type { Producto } from '../../../../domain/catalogos/types';
+import type { Producto } from '../../../domain/catalogos/types';
 
 // GET /productos
 export const getProductos = async (): Promise<Producto[]> => {
