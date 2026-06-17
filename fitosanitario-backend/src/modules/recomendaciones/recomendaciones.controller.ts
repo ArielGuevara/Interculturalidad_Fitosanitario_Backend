@@ -34,6 +34,11 @@ export class RecomendacionesController {
     return this.service.findAll();
   }
 
+  @Get(':id/comentarios')
+  getComentarios(@Param('id', ParseIntPipe) id: number) {
+    return this.service.getComentarios(id);
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.service.findById(id);

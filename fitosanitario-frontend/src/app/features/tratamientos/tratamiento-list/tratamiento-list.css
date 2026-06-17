@@ -1,0 +1,201 @@
+.page-header {
+    margin-bottom: 3rem;
+}
+
+.title {
+    color: var(--slate-900);
+    font-size: 3rem;
+    font-weight: 900;
+    letter-spacing: -0.05em;
+}
+
+.subtitle {
+    color: var(--slate-500);
+    font-size: 1.15rem;
+    font-weight: 500;
+}
+
+.stats-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 26px;
+    box-shadow: 0 20px 40px -24px rgba(15, 23, 42, 0.22);
+    padding: 1.5rem;
+}
+
+.stat-card span {
+    color: var(--slate-400);
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.stat-card strong {
+    color: var(--slate-900);
+    display: block;
+    font-size: 2.4rem;
+    font-weight: 900;
+    margin-top: 0.4rem;
+}
+
+.stat-card p {
+    color: var(--slate-500);
+    font-weight: 700;
+    margin: 0.25rem 0 0;
+}
+
+.stat-card.emerald {
+    background: linear-gradient(135deg, #ecfdf5, #ffffff);
+}
+
+.stat-card.amber {
+    background: linear-gradient(135deg, #fffbeb, #ffffff);
+}
+
+::ng-deep .premium-table .p-datatable-thead > tr > th {
+    background: transparent !important;
+    border: none !important;
+    color: var(--slate-400) !important;
+    font-size: 0.7rem !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.15em !important;
+    text-transform: uppercase !important;
+}
+
+::ng-deep .premium-table .p-datatable-tbody > tr {
+    background: #ffffff !important;
+    border-radius: 24px !important;
+}
+
+::ng-deep .premium-table .p-datatable-tbody > tr > td {
+    border: none !important;
+    color: var(--slate-800);
+    font-weight: 600;
+    padding: 1.5rem 1rem !important;
+}
+
+::ng-deep .premium-table .p-datatable-tbody > tr > td:first-child {
+    border-bottom-left-radius: 24px !important;
+    border-top-left-radius: 24px !important;
+    padding-left: 2rem !important;
+}
+
+::ng-deep .premium-table .p-datatable-tbody > tr > td:last-child {
+    border-bottom-right-radius: 24px !important;
+    border-top-right-radius: 24px !important;
+    padding-right: 2rem !important;
+}
+
+.treatment-id {
+    color: var(--slate-400);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.8rem;
+    font-weight: 900;
+    margin-bottom: 0.45rem;
+}
+
+small {
+    color: var(--slate-400);
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 800;
+    margin-top: 0.25rem;
+}
+
+.btn-icon {
+    align-items: center !important;
+    background: var(--slate-50) !important;
+    border: none !important;
+    border-radius: 14px !important;
+    color: var(--slate-600) !important;
+    display: flex !important;
+    height: 44px !important;
+    justify-content: center !important;
+    width: 44px !important;
+}
+
+.btn-icon:hover {
+    background: #dcfce7 !important;
+    color: #16a34a !important;
+}
+
+.detail-card {
+    background: #ffffff;
+}
+
+.detail-head {
+    align-items: flex-start;
+    background: linear-gradient(135deg, #ecfdf5, #ffffff);
+    border: 1px solid #d1fae5;
+    border-radius: 24px;
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.5rem;
+}
+
+.detail-head span,
+.detail-grid span,
+.detail-footer span {
+    color: var(--slate-400);
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.detail-head h3 {
+    color: var(--slate-900);
+    font-size: 1.8rem;
+    font-weight: 900;
+    margin: 0.35rem 0;
+}
+
+.detail-head p {
+    color: var(--slate-500);
+    font-weight: 700;
+    margin: 0;
+}
+
+.detail-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: 1rem;
+}
+
+.detail-grid div {
+    background: var(--slate-50);
+    border-radius: 18px;
+    padding: 1rem;
+}
+
+.detail-grid strong {
+    color: var(--slate-900);
+    display: block;
+    font-size: 1.1rem;
+    font-weight: 900;
+    margin-top: 0.35rem;
+}
+
+.detail-footer {
+    border-top: 1px solid #e2e8f0;
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+}
+
+@media (max-width: 860px) {
+    .stats-grid,
+    .detail-grid {
+        grid-template-columns: 1fr;
+    }
+}

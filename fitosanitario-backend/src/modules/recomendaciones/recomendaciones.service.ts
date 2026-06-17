@@ -78,4 +78,13 @@ export class RecomendacionesService {
   getValoraciones(recomendacionId: number) {
     return this.repo.getValoraciones(recomendacionId);
   }
+
+  async getComentarios(recomendacionId: number) {
+    const rec = await this.repo.findById(recomendacionId);
+    if (!rec || !rec.activo) {
+      throw new NotFoundException(`Recomendación #${recomendacionId} no encontrada`);
+    }
+
+    return this.repo.getComentarios(recomendacionId);
+  }
 }

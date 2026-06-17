@@ -176,6 +176,37 @@ export class RecomendacionesRepository {
       .orderBy(desc(schema.valoraciones.createdAt));
   }
 
+  async getComentarios(recomendacionId: number) {
+    const todos = await this.db
+      .select({
+        id:                schema.comentariosForo.id,
+        comentarioPadreId: schema.comentariosForo.comentarioPadreId,
+        contenido:         schema.comentariosForo.contenido,
+        fechaComentario:   schema.comentariosForo.fechaComentario,
+        usuario: {
+          id:     schema.usuarios.id,
+          nombre: schema.usuarios.nombre,
+        },
+      })
+      .from(schema.comentariosForo)
+      .leftJoin(schema.usuarios, eq(schema.comentariosForo.usuarioId, schema.usuarios.id))
+      .where(
+        and(
+          eq(schema.comentariosForo.recomendacionId, recomendacionId),
+          eq(schema.comentariosForo.activo, true),
+        ),
+      )
+      .orderBy(schema.comentariosForo.fechaComentario);
+
+    const raices = todos.filter((comentario) => !comentario.comentarioPadreId);
+    const respuestas = todos.filter((comentario) => comentario.comentarioPadreId);
+
+    return raices.map((comentario) => ({
+      ...comentario,
+      respuestas: respuestas.filter((respuesta) => respuesta.comentarioPadreId === comentario.id),
+    }));
+  }
+
   async actualizarPromedio(recomendacionId: number) {
     const stats = await this.db
       .select({

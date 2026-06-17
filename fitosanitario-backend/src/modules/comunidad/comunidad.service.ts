@@ -21,7 +21,7 @@ export class ComunidadService {
 
   async createRecomendacion(dto: CreateRecomendacionDto, usuarioId: number) {
     // Valida que el reporte exista y no esté ya validado
-    const reporte = await this.reportesService.findById(dto.reporteId);
+    const reporte = await this.reportesService.findById(dto.reporteId!);
     if (reporte.estado === 'VALIDADO') {
       throw new BadRequestException(
         'Este reporte ya tiene un tratamiento oficial — no acepta más recomendaciones',
@@ -31,12 +31,14 @@ export class ComunidadService {
       throw new BadRequestException('No se pueden agregar recomendaciones a un reporte rechazado');
     }
 
-    // Valida que venga al menos un producto
-    if (!dto.productoId && !dto.productoNombreLibre) {
-      throw new BadRequestException('Debes indicar un producto del catálogo o escribir el nombre del producto');
-    }
-
-    const recomendacion = await this.comunidadRepo.createRecomendacion(dto, usuarioId);
+    const recomendacion = await this.comunidadRepo.createRecomendacion(
+      {
+        ...dto,
+        cultivoId: dto.cultivoId ?? reporte.cultivoId,
+        plagaId: dto.plagaId ?? reporte.plagaId ?? undefined,
+      },
+      usuarioId,
+    );
 
     // Si el reporte estaba PENDIENTE, pasa a COMUNIDAD automáticamente
     if (reporte.estado === 'PENDIENTE') {
@@ -93,7 +95,7 @@ export class ComunidadService {
       dto.puntuacion,
     );
 
-    const promedio = await this.comunidadRepo.getPromedioValoracion(recomendacionId);
+    const promedio = await this.comunidadRepo.actualizarPromedioValoracion(recomendacionId);
     return { valoracion, promedio };
   }
 

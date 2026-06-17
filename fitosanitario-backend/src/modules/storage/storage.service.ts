@@ -22,6 +22,9 @@ export class StorageService implements OnModuleInit {
   private readonly port: number;
   private readonly bucket: string;
   private readonly useSSL: boolean;
+  private readonly publicEndpoint: string;
+  private readonly publicPort: number;
+  private readonly publicUseSSL: boolean;
 
   constructor(
     @Inject(MINIO_CLIENT) private readonly minio: Client,
@@ -32,12 +35,18 @@ export class StorageService implements OnModuleInit {
       port: number;
       bucket: string;
       useSSL: boolean;
+      publicEndpoint: string;
+      publicPort: number;
+      publicUseSSL: boolean;
     }>('minio');
 
     this.endpoint = minioConfig?.endpoint ?? 'localhost';
     this.port = minioConfig?.port ?? 9000;
     this.bucket = minioConfig?.bucket ?? 'fitosanitario';
     this.useSSL = minioConfig?.useSSL ?? false;
+    this.publicEndpoint = minioConfig?.publicEndpoint ?? this.endpoint;
+    this.publicPort = minioConfig?.publicPort ?? this.port;
+    this.publicUseSSL = minioConfig?.publicUseSSL ?? this.useSSL;
   }
 
   async onModuleInit() {
@@ -52,6 +61,8 @@ export class StorageService implements OnModuleInit {
         await this.minio.makeBucket(this.bucket);
         this.logger.log(`Bucket creado: ${this.bucket}`);
       }
+
+      await this.ensurePublicReadPolicy();
     } catch (error) {
       this.logger.error('Error creando/verificando bucket', error as Error);
 
@@ -59,6 +70,22 @@ export class StorageService implements OnModuleInit {
         'Error inicializando storage (MinIO)',
       );
     }
+  }
+
+  private async ensurePublicReadPolicy() {
+    const policy = {
+      Version: '2012-10-17',
+      Statement: [
+        {
+          Effect: 'Allow',
+          Principal: { AWS: ['*'] },
+          Action: ['s3:GetObject'],
+          Resource: [`arn:aws:s3:::${this.bucket}/*`],
+        },
+      ],
+    };
+
+    await this.minio.setBucketPolicy(this.bucket, JSON.stringify(policy));
   }
 
   generateObjectKey(params: {
@@ -103,11 +130,11 @@ export class StorageService implements OnModuleInit {
       );
 
       const url = buildMinioPublicUrl({
-        endpoint: this.endpoint,
-        port: this.port,
+        endpoint: this.publicEndpoint,
+        port: this.publicPort,
         bucket: this.bucket,
         objectKey: params.objectKey,
-        useSSL: this.useSSL,
+        useSSL: this.publicUseSSL,
       });
 
       return {

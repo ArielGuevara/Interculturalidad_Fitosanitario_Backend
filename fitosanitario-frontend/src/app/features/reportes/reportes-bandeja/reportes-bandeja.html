@@ -1,0 +1,57 @@
+<p-toast></p-toast>
+
+<div class="page-header flex flex-column md:flex-row justify-content-between align-items-end gap-4">
+    <div>
+        <h2 class="title m-0">Bandeja de Reportes</h2>
+        <p class="subtitle m-0">Casos pendientes enviados desde la app móvil por agricultores.</p>
+    </div>
+    <p-button label="Actualizar" icon="pi pi-refresh" styleClass="p-button-success border-round-2xl py-3 px-5 shadow-3" (onClick)="loadReportes()"></p-button>
+</div>
+
+<div class="table-wrapper">
+    <p-table [value]="reportes()" [loading]="loading()" [rows]="10" [paginator]="true" responsiveLayout="stack" [breakpoint]="'960px'" styleClass="premium-table">
+        <ng-template pTemplate="header">
+            <tr>
+                <th style="width: 90px">Caso</th>
+                <th>Reporte</th>
+                <th>Cultivo</th>
+                <th>Diagnóstico</th>
+                <th>Ubicación</th>
+                <th>Fecha</th>
+                <th style="width: 150px" class="text-center">Acciones</th>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-reporte>
+            <tr>
+                <td><span class="case-id">#{{reporte.id}}</span></td>
+                <td>
+                    <div class="font-black text-xl text-slate-900">{{reporte.titulo}}</div>
+                    <div class="text-slate-500 text-sm font-medium mt-1 line-clamp">{{reporte.descripcion || reporte.descripcionProblema || 'Sin descripción adicional'}}</div>
+                    <p-tag [value]="reporte.estado" [severity]="estadoSeverity(reporte.estado)" styleClass="mt-2"></p-tag>
+                </td>
+                <td>{{cultivoNombre(reporte.cultivoId)}}</td>
+                <td>{{plagaNombre(reporte.plagaId)}}</td>
+                <td>
+                    <div class="coords">{{reporte.latitud | number:'1.4-4'}}, {{reporte.longitud | number:'1.4-4'}}</div>
+                </td>
+                <td>{{reporte.createdAt | date:'short'}}</td>
+                <td>
+                    <div class="flex justify-content-center gap-3">
+                        <p-button label="Revisar" icon="pi pi-eye" styleClass="btn-review" (onClick)="revisar(reporte)"></p-button>
+                    </div>
+                </td>
+            </tr>
+            <tr style="height: 1rem; background: transparent !important" class="spacer-row"></tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+            <tr>
+                <td colspan="7" class="text-center p-8 bg-white border-round-3xl">
+                    <div class="flex flex-column align-items-center gap-3">
+                        <i class="pi pi-inbox text-5xl text-slate-200"></i>
+                        <span class="text-slate-400 font-bold text-lg">No hay reportes pendientes.</span>
+                    </div>
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>

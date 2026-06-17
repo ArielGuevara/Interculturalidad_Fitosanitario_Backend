@@ -12,6 +12,9 @@ export const envConfig = () => ({
     secretKey: process.env.MINIO_SECRET_KEY || 'root12345',
     bucket: process.env.MINIO_BUCKET || 'fitosanitario',
     useSSL: (process.env.MINIO_USE_SSL || 'false').toLowerCase() === 'true',
+    publicEndpoint: process.env.MINIO_PUBLIC_ENDPOINT || process.env.MINIO_ENDPOINT || 'localhost',
+    publicPort: parseInt(process.env.MINIO_PUBLIC_PORT || process.env.MINIO_PORT || '9000', 10),
+    publicUseSSL: (process.env.MINIO_PUBLIC_USE_SSL || process.env.MINIO_USE_SSL || 'false').toLowerCase() === 'true',
   },
   uploads: {
     // Límites por archivo (en bytes). Si no se setean, se usan defaults seguros en código.

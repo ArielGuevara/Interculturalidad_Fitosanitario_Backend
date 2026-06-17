@@ -1,0 +1,90 @@
+<p-toast></p-toast>
+
+<div class="treatment-form">
+    <div class="form-grid">
+        <div class="field">
+            <label>Cultivo</label>
+            <p-select [options]="cultivos()" optionLabel="nombre" optionValue="id" [(ngModel)]="form.cultivoId" placeholder="Seleccione cultivo" class="w-full"></p-select>
+        </div>
+
+        <div class="field">
+            <label>Plaga o enfermedad</label>
+            <p-select [options]="plagas()" optionLabel="nombre" optionValue="id" [(ngModel)]="form.plagaId" placeholder="Seleccione plaga" class="w-full"></p-select>
+        </div>
+
+        <div class="field field-wide">
+            <label>Producto fitosanitario</label>
+            <p-select [options]="productos()" optionLabel="nombreComercial" optionValue="id" [(ngModel)]="form.productoId" placeholder="Seleccione producto" class="w-full"></p-select>
+        </div>
+
+        <div class="field">
+            <label>Dosis</label>
+            <input type="number" pInputText [(ngModel)]="form.dosis" min="0.01" step="0.01" class="w-full">
+        </div>
+
+        <div class="field">
+            <label>Unidad de dosis</label>
+            <input type="text" pInputText [(ngModel)]="form.unidadDosis" placeholder="Ej: ml/L, kg/ha" class="w-full">
+        </div>
+
+        <div class="field">
+            <label>Volumen de agua</label>
+            <input type="number" pInputText [(ngModel)]="form.volumenAgua" min="0" class="w-full">
+        </div>
+
+        <div class="field">
+            <label>Unidad de volumen</label>
+            <input type="text" pInputText [(ngModel)]="form.unidadVolumen" placeholder="Ej: L/ha" class="w-full">
+        </div>
+
+        <div class="field">
+            <label>Método</label>
+            <p-select [options]="metodos" optionLabel="label" optionValue="value" [(ngModel)]="form.metodoAplicacion" class="w-full"></p-select>
+        </div>
+
+        <div class="field">
+            <label>Intervalo días</label>
+            <input type="number" pInputText [(ngModel)]="form.intervaloDias" min="1" class="w-full">
+        </div>
+
+        <div class="field">
+            <label>N. aplicaciones</label>
+            <input type="number" pInputText [(ngModel)]="form.numeroAplicaciones" min="1" class="w-full">
+        </div>
+
+        <div class="field">
+            <label>Duración total</label>
+            <input type="number" pInputText [(ngModel)]="form.duracionTotalDias" min="1" class="w-full">
+        </div>
+
+        <div class="field">
+            <label>Días de carencia</label>
+            <input type="number" pInputText [(ngModel)]="form.diasCarencia" min="0" class="w-full">
+        </div>
+
+        <div class="field">
+            <label>Reingreso horas</label>
+            <input type="number" pInputText [(ngModel)]="form.periodoReingresoHoras" min="0" class="w-full">
+        </div>
+
+        <div class="field field-wide">
+            <label>Etapa del cultivo</label>
+            <input type="text" pInputText [(ngModel)]="form.etapaCultivo" placeholder="Ej: floración, crecimiento vegetativo" class="w-full">
+        </div>
+
+        <div class="field field-wide">
+            <label>Condiciones de aplicación</label>
+            <textarea pTextarea [(ngModel)]="form.condicionesAplicacion" rows="4" placeholder="Indicaciones técnicas, clima, horario, protección personal..." class="w-full"></textarea>
+        </div>
+
+        <div class="field encyclopedia-field">
+            <label>Agregar a enciclopedia</label>
+            <p-toggleswitch [(ngModel)]="form.enEnciclopedia"></p-toggleswitch>
+        </div>
+    </div>
+
+    <div class="form-actions">
+        <p-button label="Cancelar" styleClass="p-button-text p-button-secondary font-bold" (onClick)="cancelled.emit()"></p-button>
+        <p-button [label]="submitLabel" icon="pi pi-check" styleClass="p-button-success border-round-2xl px-5 font-bold" [loading]="saving()" (onClick)="save()"></p-button>
+    </div>
+</div>

@@ -1,0 +1,117 @@
+<p-toast></p-toast>
+
+<div class="page-header flex flex-column md:flex-row justify-content-between align-items-end gap-4">
+    <div>
+        <h2 class="title m-0">Tratamientos Oficiales</h2>
+        <p class="subtitle m-0">Recetas técnicas validadas por moderadores y agrónomos.</p>
+    </div>
+    <p-button label="Actualizar" icon="pi pi-refresh" styleClass="p-button-success border-round-2xl py-3 px-5 shadow-3" (onClick)="loadTratamientos()"></p-button>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <span>Total registrados</span>
+        <strong>{{tratamientos().length}}</strong>
+        <p>Tratamientos emitidos</p>
+    </div>
+    <div class="stat-card emerald">
+        <span>Enciclopedia</span>
+        <strong>{{totalEnciclopedia()}}</strong>
+        <p>Disponibles para consulta</p>
+    </div>
+    <div class="stat-card amber">
+        <span>Carencia alta</span>
+        <strong>{{totalCarenciaAlta()}}</strong>
+        <p>14 días o más</p>
+    </div>
+</div>
+
+<div class="table-wrapper">
+    <p-table [value]="tratamientos()" [loading]="loading()" [rows]="10" [paginator]="true" responsiveLayout="stack" [breakpoint]="'960px'" styleClass="premium-table">
+        <ng-template pTemplate="header">
+            <tr>
+                <th>Tratamiento</th>
+                <th>Cultivo</th>
+                <th>Plaga</th>
+                <th>Producto</th>
+                <th>Dosis</th>
+                <th>Seguridad</th>
+                <th>Validación</th>
+                <th style="width: 120px" class="text-center">Acción</th>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-tratamiento>
+            <tr>
+                <td>
+                    <div class="treatment-id">#{{tratamiento.id}}</div>
+                    <p-tag [value]="metodoLabel(tratamiento.metodoAplicacion)" [severity]="metodoSeverity(tratamiento.metodoAplicacion)"></p-tag>
+                </td>
+                <td>{{tratamiento.cultivo?.nombre || 'Cultivo #' + tratamiento.cultivoId}}</td>
+                <td>
+                    <div class="font-black text-slate-900">{{tratamiento.plaga?.nombre || 'Plaga #' + tratamiento.plagaId}}</div>
+                    <small>{{tratamiento.plaga?.tipo || 'Sin tipo'}}</small>
+                </td>
+                <td>
+                    <div class="font-black text-slate-900">{{tratamiento.producto?.nombreComercial || 'Producto #' + tratamiento.productoId}}</div>
+                    <small>{{tratamiento.producto?.tipo || 'Sin tipo'}}</small>
+                </td>
+                <td>
+                    <strong>{{tratamiento.dosis}} {{tratamiento.unidadDosis}}</strong>
+                    <small>{{tratamiento.numeroAplicaciones}} aplicación(es), cada {{tratamiento.intervaloDias}} día(s)</small>
+                </td>
+                <td>
+                    <strong>{{tratamiento.diasCarencia}} días</strong>
+                    <small>Carencia</small>
+                </td>
+                <td>
+                    <strong>{{tratamiento.fechaValidacion | date:'shortDate'}}</strong>
+                    <small>{{tratamiento.moderador?.nombre || 'Moderador'}}</small>
+                </td>
+                <td>
+                    <div class="flex justify-content-center">
+                        <p-button icon="pi pi-eye" styleClass="btn-icon" (onClick)="openDetail(tratamiento)"></p-button>
+                    </div>
+                </td>
+            </tr>
+            <tr style="height: 1rem; background: transparent !important" class="spacer-row"></tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+            <tr>
+                <td colspan="8" class="text-center p-8 bg-white border-round-3xl">
+                    <div class="flex flex-column align-items-center gap-3">
+                        <i class="pi pi-file-check text-5xl text-slate-200"></i>
+                        <span class="text-slate-400 font-bold text-lg">Aún no hay tratamientos oficiales registrados.</span>
+                    </div>
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>
+
+<p-dialog [(visible)]="detailDialog" [modal]="true" [style]="{width: '780px', maxWidth: '96vw'}" styleClass="custom-dialog" [draggable]="false" [resizable]="false" [dismissableMask]="true" header="Detalle del tratamiento">
+    <ng-container *ngIf="selectedTratamiento() as t">
+        <div class="detail-card">
+            <div class="detail-head">
+                <div>
+                    <span>Tratamiento oficial #{{t.id}}</span>
+                    <h3>{{t.producto?.nombreComercial || 'Producto #' + t.productoId}}</h3>
+                    <p>{{t.cultivo?.nombre || 'Cultivo #' + t.cultivoId}} · {{t.plaga?.nombre || 'Plaga #' + t.plagaId}}</p>
+                </div>
+                <p-tag [value]="metodoLabel(t.metodoAplicacion)" [severity]="metodoSeverity(t.metodoAplicacion)"></p-tag>
+            </div>
+
+            <div class="detail-grid">
+                <div><span>Dosis</span><strong>{{t.dosis}} {{t.unidadDosis}}</strong></div>
+                <div><span>Aplicaciones</span><strong>{{t.numeroAplicaciones}}</strong></div>
+                <div><span>Intervalo</span><strong>{{t.intervaloDias}} días</strong></div>
+                <div><span>Duración</span><strong>{{t.duracionTotalDias}} días</strong></div>
+                <div><span>Días carencia</span><strong>{{t.diasCarencia}}</strong></div>
+                <div><span>Enciclopedia</span><strong>{{t.enEnciclopedia ? 'Sí' : 'No'}}</strong></div>
+            </div>
+
+            <div class="detail-footer">
+                <span>Validado por {{t.moderador?.nombre || 'moderador'}} el {{t.fechaValidacion | date:'medium'}}</span>
+            </div>
+        </div>
+    </ng-container>
+</p-dialog>

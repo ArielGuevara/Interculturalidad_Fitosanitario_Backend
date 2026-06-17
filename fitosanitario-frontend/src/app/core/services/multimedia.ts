@@ -36,14 +36,14 @@ export class MultimediaService {
   fixMinioUrl(url: string | undefined | null): string {
     if (!url) return '';
     
-    // Obtenemos la IP de la API desde el environment (ej: 192.168.1.54)
-    const apiHost = new URL(environment.apiUrl).hostname;
-    
     try {
         const urlObj = new URL(url);
-        // Si la URL apunta a localhost pero estamos en red, la corregimos
-        if (urlObj.hostname === 'localhost' || urlObj.hostname === '127.0.0.1') {
-            urlObj.hostname = apiHost;
+        const publicMinioUrl = new URL(environment.minioPublicUrl);
+
+        if (urlObj.port === '9000' || urlObj.hostname === 'localhost' || urlObj.hostname === '127.0.0.1') {
+            urlObj.protocol = publicMinioUrl.protocol;
+            urlObj.hostname = publicMinioUrl.hostname;
+            urlObj.port = publicMinioUrl.port;
         }
         return urlObj.toString();
     } catch (e) {

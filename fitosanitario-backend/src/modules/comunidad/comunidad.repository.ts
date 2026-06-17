@@ -2,9 +2,8 @@ import { Inject, Injectable } from '@nestjs/common';
 import { NodePgDatabase }     from 'drizzle-orm/node-postgres';
 import { DB_CONNECTION }      from '../../db/db.module';
 import * as schema            from '../../db/schema';
-import { eq, desc, avg, count, and, isNull } from 'drizzle-orm';
+import { eq, desc, avg, count, and } from 'drizzle-orm';
 import { CreateRecomendacionDto } from './dto/create-recomendacion.dto';
-import { CreateValoracionDto }    from './dto/create-valoracion.dto';
 import { CreateComentarioDto }    from './dto/create-comentario.dto';
 
 @Injectable()
@@ -16,20 +15,19 @@ export class ComunidadRepository {
   // ── Recomendaciones ────────────────────────────────────────
 
   async createRecomendacion(dto: CreateRecomendacionDto, usuarioId: number) {
+    const titulo = dto.titulo?.trim() || this.buildTitulo(dto);
+    const descripcion = dto.descripcion?.trim() || this.buildDescripcion(dto);
+
     const result = await this.db
       .insert(schema.recomendacionesComunidad)
       .values({
-        reporteId:           dto.reporteId,
+        reporteId:           dto.reporteId ?? null,
         usuarioId,
-        productoId:          dto.productoId ?? null,
-        productoNombreLibre: dto.productoNombreLibre ?? null,
-        dosis:               dto.dosis,
-        unidadDosis:         dto.unidadDosis,
-        intervaloDias:       dto.intervaloDias,
-        numeroAplicaciones:  dto.numeroAplicaciones,
-        duracionTotalDias:   dto.duracionTotalDias,
-        metodoAplicacion:    dto.metodoAplicacion ?? null,
-        observaciones:       dto.observaciones ?? null,
+        cultivoId:           dto.cultivoId ?? null,
+        plagaId:             dto.plagaId ?? null,
+        titulo,
+        descripcion,
+        tipo:                dto.tipo ?? 'RECOMENDACION',
       })
       .returning();
 
@@ -41,30 +39,38 @@ export class ComunidadRepository {
     const recomendaciones = await this.db
       .select({
         id:                  schema.recomendacionesComunidad.id,
-        productoId:          schema.recomendacionesComunidad.productoId,
-        productoNombreLibre: schema.recomendacionesComunidad.productoNombreLibre,
-        dosis:               schema.recomendacionesComunidad.dosis,
-        unidadDosis:         schema.recomendacionesComunidad.unidadDosis,
-        intervaloDias:       schema.recomendacionesComunidad.intervaloDias,
-        numeroAplicaciones:  schema.recomendacionesComunidad.numeroAplicaciones,
-        duracionTotalDias:   schema.recomendacionesComunidad.duracionTotalDias,
-        metodoAplicacion:    schema.recomendacionesComunidad.metodoAplicacion,
-        observaciones:       schema.recomendacionesComunidad.observaciones,
-        fechaAporte:         schema.recomendacionesComunidad.fechaAporte,
+        reporteId:           schema.recomendacionesComunidad.reporteId,
+        titulo:              schema.recomendacionesComunidad.titulo,
+        descripcion:         schema.recomendacionesComunidad.descripcion,
+        tipo:                schema.recomendacionesComunidad.tipo,
+        valoracionPromedio:  schema.recomendacionesComunidad.valoracionPromedio,
+        totalValoraciones:   schema.recomendacionesComunidad.totalValoraciones,
+        moderado:            schema.recomendacionesComunidad.moderado,
+        createdAt:           schema.recomendacionesComunidad.createdAt,
         usuario: {
           id:     schema.usuarios.id,
           nombre: schema.usuarios.nombre,
         },
+        cultivo: {
+          id:     schema.cultivos.id,
+          nombre: schema.cultivos.nombre,
+        },
+        plaga: {
+          id:     schema.plagasEnfermedades.id,
+          nombre: schema.plagasEnfermedades.nombre,
+        },
       })
       .from(schema.recomendacionesComunidad)
       .innerJoin(schema.usuarios, eq(schema.recomendacionesComunidad.usuarioId, schema.usuarios.id))
+      .leftJoin(schema.cultivos, eq(schema.recomendacionesComunidad.cultivoId, schema.cultivos.id))
+      .leftJoin(schema.plagasEnfermedades, eq(schema.recomendacionesComunidad.plagaId, schema.plagasEnfermedades.id))
       .where(
         and(
           eq(schema.recomendacionesComunidad.reporteId, reporteId),
           eq(schema.recomendacionesComunidad.activo, true),
         ),
       )
-      .orderBy(desc(schema.recomendacionesComunidad.fechaAporte));
+      .orderBy(desc(schema.recomendacionesComunidad.createdAt));
 
     return recomendaciones;
   }
@@ -85,8 +91,8 @@ export class ComunidadRepository {
       .update(schema.recomendacionesComunidad)
       .set({
         activo:          false,
-        moderadoPor:     moderadorId,
-        fechaModeracion: new Date(),
+        moderado:        true,
+        updatedAt:       new Date(),
       })
       .where(eq(schema.recomendacionesComunidad.id, id))
       .returning();
@@ -99,11 +105,11 @@ export class ComunidadRepository {
   async findValoracionExistente(recomendacionId: number, usuarioId: number) {
     const result = await this.db
       .select()
-      .from(schema.valoracionesRecomendacion)
+      .from(schema.valoraciones)
       .where(
         and(
-          eq(schema.valoracionesRecomendacion.recomendacionId, recomendacionId),
-          eq(schema.valoracionesRecomendacion.usuarioId, usuarioId),
+          eq(schema.valoraciones.recomendacionId, recomendacionId),
+          eq(schema.valoraciones.usuarioId, usuarioId),
         ),
       )
       .limit(1);
@@ -121,16 +127,16 @@ export class ComunidadRepository {
     if (existente) {
       // Actualiza la valoración existente
       const result = await this.db
-        .update(schema.valoracionesRecomendacion)
-        .set({ puntuacion, fechaValoracion: new Date() })
-        .where(eq(schema.valoracionesRecomendacion.id, existente.id))
+        .update(schema.valoraciones)
+        .set({ puntuacion })
+        .where(eq(schema.valoraciones.id, existente.id))
         .returning();
       return result[0];
     }
 
     // Crea nueva valoración
     const result = await this.db
-      .insert(schema.valoracionesRecomendacion)
+      .insert(schema.valoraciones)
       .values({ recomendacionId, usuarioId, puntuacion })
       .returning();
     return result[0];
@@ -139,16 +145,31 @@ export class ComunidadRepository {
   async getPromedioValoracion(recomendacionId: number) {
     const result = await this.db
       .select({
-        promedio: avg(schema.valoracionesRecomendacion.puntuacion),
-        total:    count(schema.valoracionesRecomendacion.id),
+        promedio: avg(schema.valoraciones.puntuacion),
+        total:    count(schema.valoraciones.id),
       })
-      .from(schema.valoracionesRecomendacion)
-      .where(eq(schema.valoracionesRecomendacion.recomendacionId, recomendacionId));
+      .from(schema.valoraciones)
+      .where(eq(schema.valoraciones.recomendacionId, recomendacionId));
 
     return {
       promedio: Number(result[0]?.promedio ?? 0),
       total:    Number(result[0]?.total ?? 0),
     };
+  }
+
+  async actualizarPromedioValoracion(recomendacionId: number) {
+    const promedio = await this.getPromedioValoracion(recomendacionId);
+
+    await this.db
+      .update(schema.recomendacionesComunidad)
+      .set({
+        valoracionPromedio: promedio.promedio,
+        totalValoraciones:  promedio.total,
+        updatedAt:          new Date(),
+      })
+      .where(eq(schema.recomendacionesComunidad.id, recomendacionId));
+
+    return promedio;
   }
 
   // ── Comentarios ────────────────────────────────────────────
@@ -226,5 +247,23 @@ export class ComunidadRepository {
       .returning();
 
     return result[0];
+  }
+
+  private buildTitulo(dto: CreateRecomendacionDto) {
+    const producto = dto.productoNombreLibre || (dto.productoId ? `Producto #${dto.productoId}` : 'Recomendación comunitaria');
+    return `${producto}`.slice(0, 200);
+  }
+
+  private buildDescripcion(dto: CreateRecomendacionDto) {
+    const partes = [
+      dto.observaciones,
+      dto.dosis !== undefined && dto.unidadDosis ? `Dosis: ${dto.dosis} ${dto.unidadDosis}` : undefined,
+      dto.intervaloDias ? `Intervalo: cada ${dto.intervaloDias} día(s)` : undefined,
+      dto.numeroAplicaciones ? `Aplicaciones: ${dto.numeroAplicaciones}` : undefined,
+      dto.duracionTotalDias ? `Duración total: ${dto.duracionTotalDias} día(s)` : undefined,
+      dto.metodoAplicacion ? `Método: ${dto.metodoAplicacion}` : undefined,
+    ].filter(Boolean);
+
+    return partes.join('. ') || 'Recomendación comunitaria sin descripción adicional';
   }
 }

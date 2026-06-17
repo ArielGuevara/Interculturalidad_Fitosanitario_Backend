@@ -159,3 +159,33 @@ h1, h2, h3, h4 {
     color: #000000 !important;
     width: 100% !important; /* Forzar que ocupen todo el ancho */
 }
+
+/* Selects / dropdowns: force readable text over custom theme backgrounds. */
+.p-select,
+.p-dropdown,
+.p-select-overlay,
+.p-dropdown-panel,
+.p-select-list,
+.p-dropdown-items,
+.p-select-option,
+.p-dropdown-item {
+    background: #ffffff !important;
+    color: #000000 !important;
+}
+
+.p-select-label,
+.p-dropdown-label,
+.p-select-option span,
+.p-dropdown-item span,
+.p-select-empty-message,
+.p-dropdown-empty-message {
+    color: #000000 !important;
+}
+
+.p-select-option:hover,
+.p-dropdown-item:hover,
+.p-select-option.p-focus,
+.p-dropdown-item.p-focus {
+    background: var(--slate-100) !important;
+    color: #000000 !important;
+}

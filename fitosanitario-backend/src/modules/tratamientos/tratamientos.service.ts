@@ -50,13 +50,16 @@ export class TratamientosService {
         );
       }
 
-      // Cambia estado del reporte a VALIDADO automáticamente
+      const tratamiento = await this.tratamientosRepo.create(dto, moderadorId);
+
       await this.reportesService.cambiarEstado({
         reporteId:   reporte.id,
         usuarioId:   moderadorId,
         estadoNuevo: 'VALIDADO',
         motivo:      'Tratamiento oficial emitido',
       });
+
+      return tratamiento;
     }
 
     return this.tratamientosRepo.create(dto, moderadorId);

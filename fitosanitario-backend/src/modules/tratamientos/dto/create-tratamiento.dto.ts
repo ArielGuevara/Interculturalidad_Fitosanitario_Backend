@@ -31,6 +31,7 @@ export class CreateTratamientoDto {
 
   // Dosificación
   @IsNumber()
+  @Min(0.01)
   @Type(() => Number)
   dosis: number;
 

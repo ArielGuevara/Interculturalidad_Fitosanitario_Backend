@@ -1,13 +1,36 @@
 import {
   IsInt, IsNumber, IsString, IsOptional,
-  IsNotEmpty, Min, Max, ValidateIf,
+  IsNotEmpty, Min, ValidateIf, IsEnum,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateRecomendacionDto {
   @IsInt()
+  @IsOptional()
   @Type(() => Number)
-  reporteId: number;
+  reporteId?: number;
+
+  @IsInt()
+  @IsOptional()
+  @Type(() => Number)
+  cultivoId?: number;
+
+  @IsInt()
+  @IsOptional()
+  @Type(() => Number)
+  plagaId?: number;
+
+  @IsString()
+  @IsOptional()
+  titulo?: string;
+
+  @IsString()
+  @IsOptional()
+  descripcion?: string;
+
+  @IsEnum(['RECOMENDACION', 'CONSULTA', 'CONOCIMIENTO_ANCESTRAL'])
+  @IsOptional()
+  tipo?: 'RECOMENDACION' | 'CONSULTA' | 'CONOCIMIENTO_ANCESTRAL';
 
   // Regla: debe venir productoId O productoNombreLibre, no ninguno
   @IsInt()
@@ -22,27 +45,31 @@ export class CreateRecomendacionDto {
   productoNombreLibre?: string;
 
   @IsNumber()
+  @IsOptional()
   @Type(() => Number)
-  dosis: number;
+  dosis?: number;
 
   @IsString()
-  @IsNotEmpty()
-  unidadDosis: string;
+  @IsOptional()
+  unidadDosis?: string;
 
   @IsInt()
+  @IsOptional()
   @Min(1)
   @Type(() => Number)
-  intervaloDias: number;
+  intervaloDias?: number;
 
   @IsInt()
+  @IsOptional()
   @Min(1)
   @Type(() => Number)
-  numeroAplicaciones: number;
+  numeroAplicaciones?: number;
 
   @IsInt()
+  @IsOptional()
   @Min(1)
   @Type(() => Number)
-  duracionTotalDias: number;
+  duracionTotalDias?: number;
 
   @IsString()
   @IsOptional()

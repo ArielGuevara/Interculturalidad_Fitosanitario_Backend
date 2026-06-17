@@ -1,0 +1,143 @@
+<p-toast></p-toast>
+<p-confirmDialog></p-confirmDialog>
+
+<div class="page-header flex flex-column md:flex-row justify-content-between align-items-end gap-4">
+    <div>
+        <h2 class="title m-0">Moderación Comunitaria</h2>
+        <p class="subtitle m-0">Revisión de recomendaciones, consultas y conocimiento ancestral.</p>
+    </div>
+    <div class="flex gap-3 align-items-center">
+        <p-select [options]="tipos" optionLabel="label" optionValue="value" [ngModel]="selectedTipo()" (ngModelChange)="onTipoChange($event)" placeholder="Filtrar" styleClass="filter-select"></p-select>
+        <p-button label="Actualizar" icon="pi pi-refresh" styleClass="p-button-success border-round-2xl py-3 px-5 shadow-3" (onClick)="loadRecomendaciones()"></p-button>
+    </div>
+</div>
+
+<div class="table-wrapper">
+    <p-table [value]="recomendaciones()" [loading]="loading()" [rows]="10" [paginator]="true" responsiveLayout="stack" [breakpoint]="'960px'" styleClass="premium-table">
+        <ng-template pTemplate="header">
+            <tr>
+                <th>Contenido</th>
+                <th>Autor</th>
+                <th>Contexto</th>
+                <th>Valoración</th>
+                <th>Estado</th>
+                <th style="width: 280px" class="text-center">Acciones</th>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-rec>
+            <tr>
+                <td>
+                    <div class="font-black text-xl text-slate-900">{{rec.titulo}}</div>
+                    <p class="rec-desc">{{rec.descripcion}}</p>
+                    <p-tag [value]="tipoLabel(rec.tipo)" severity="info"></p-tag>
+                </td>
+                <td>{{rec.usuario?.nombre || 'Anónimo'}}</td>
+                <td>
+                    <div class="context-pill">{{rec.cultivo?.nombre || 'Todos los cultivos'}}</div>
+                    <div class="context-sub">{{rec.plaga?.nombre || 'Sin plaga específica'}}</div>
+                </td>
+                <td>
+                    <div class="rating"><i class="pi pi-star-fill"></i> {{rec.valoracionPromedio | number:'1.1-1'}}</div>
+                    <small>{{rec.totalValoraciones}} valoraciones</small>
+                </td>
+                <td>
+                    <p-tag [value]="rec.moderado ? 'Revisada' : 'Pendiente'" [severity]="rec.moderado ? 'success' : 'warn'"></p-tag>
+                </td>
+                <td>
+                    <div class="flex justify-content-center gap-2 flex-wrap">
+                        <p-button icon="pi pi-check" styleClass="btn-icon" pTooltip="Marcar revisada" (onClick)="aprobar(rec)"></p-button>
+                        <p-button icon="pi pi-comments" styleClass="btn-icon btn-comments" pTooltip="Ver comentarios" (onClick)="verComentarios(rec)"></p-button>
+                        <p-button icon="pi pi-file-edit" styleClass="btn-icon btn-convert" pTooltip="Convertir en tratamiento" (onClick)="usarComoTratamiento(rec)"></p-button>
+                        <p-button icon="pi pi-trash" styleClass="btn-icon btn-delete" pTooltip="Desactivar" (onClick)="eliminar(rec)"></p-button>
+                    </div>
+                </td>
+            </tr>
+            <tr style="height: 1rem; background: transparent !important" class="spacer-row"></tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+            <tr>
+                <td colspan="6" class="text-center p-8 bg-white border-round-3xl">
+                    <div class="flex flex-column align-items-center gap-3">
+                        <i class="pi pi-comments text-5xl text-slate-200"></i>
+                        <span class="text-slate-400 font-bold text-lg">No hay publicaciones comunitarias.</span>
+                    </div>
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>
+
+<p-dialog [(visible)]="treatmentDialog" [modal]="true" [style]="{width: '900px', maxWidth: '96vw'}" styleClass="custom-dialog" [draggable]="false" [resizable]="false" [dismissableMask]="true" header="Convertir recomendación en tratamiento oficial">
+    <ng-container *ngIf="selectedRecomendacion() as rec">
+        <div class="source-card">
+            <strong>{{rec.titulo}}</strong>
+            <p>{{rec.descripcion}}</p>
+            <div class="context-warning" *ngIf="!rec.cultivo?.id || !rec.plaga?.id">
+                <i class="pi pi-info-circle"></i>
+                Esta recomendación no tiene cultivo o plaga completos. Selecciónelos manualmente en el formulario.
+            </div>
+        </div>
+        <app-tratamiento-form
+            [recomendacionOrigenId]="rec.id"
+            [cultivoId]="rec.cultivo?.id"
+            [plagaId]="rec.plaga?.id"
+            submitLabel="Crear tratamiento oficial"
+            (saved)="onTratamientoSaved()"
+            (cancelled)="treatmentDialog.set(false)">
+        </app-tratamiento-form>
+    </ng-container>
+</p-dialog>
+
+<p-dialog [(visible)]="commentsDialog" [modal]="true" [style]="{width: '760px', maxWidth: '96vw'}" styleClass="custom-dialog" [draggable]="false" [resizable]="false" [dismissableMask]="true" header="Moderación de comentarios">
+    <ng-container *ngIf="selectedComentariosRecomendacion() as rec">
+        <div class="source-card comments-source">
+            <span class="source-label">Publicación</span>
+            <strong>{{rec.titulo}}</strong>
+            <p>{{rec.descripcion}}</p>
+        </div>
+
+        <div *ngIf="loadingComentarios(); else commentsContent" class="comments-loading">
+            <i class="pi pi-spin pi-spinner text-3xl text-primary"></i>
+            <span>Cargando comentarios...</span>
+        </div>
+
+        <ng-template #commentsContent>
+            <div class="comments-list" *ngIf="comentarios().length; else noComments">
+                <div class="comment-card" *ngFor="let comentario of comentarios()">
+                    <div class="comment-main">
+                        <div class="comment-avatar">{{(comentario.usuario?.nombre || 'A').charAt(0)}}</div>
+                        <div class="comment-body">
+                            <div class="comment-head">
+                                <strong>{{comentario.usuario?.nombre || 'Anónimo'}}</strong>
+                                <small>{{comentario.fechaComentario | date:'short'}}</small>
+                            </div>
+                            <p>{{comentario.contenido}}</p>
+                        </div>
+                        <p-button icon="pi pi-trash" styleClass="btn-icon btn-delete" pTooltip="Desactivar comentario" (onClick)="eliminarComentario(comentario)"></p-button>
+                    </div>
+
+                    <div class="reply-list" *ngIf="comentario.respuestas?.length">
+                        <div class="reply-card" *ngFor="let respuesta of comentario.respuestas">
+                            <div class="comment-avatar small">{{(respuesta.usuario?.nombre || 'A').charAt(0)}}</div>
+                            <div class="comment-body">
+                                <div class="comment-head">
+                                    <strong>{{respuesta.usuario?.nombre || 'Anónimo'}}</strong>
+                                    <small>{{respuesta.fechaComentario | date:'short'}}</small>
+                                </div>
+                                <p>{{respuesta.contenido}}</p>
+                            </div>
+                            <p-button icon="pi pi-trash" styleClass="btn-icon btn-delete" pTooltip="Desactivar respuesta" (onClick)="eliminarComentario(respuesta)"></p-button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </ng-template>
+
+        <ng-template #noComments>
+            <div class="empty-comments">
+                <i class="pi pi-comment text-5xl text-slate-200"></i>
+                <span>No hay comentarios activos en esta publicación.</span>
+            </div>
+        </ng-template>
+    </ng-container>
+</p-dialog>
