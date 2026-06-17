@@ -36,6 +36,13 @@
       "when": 1781641279637,
       "tag": "0004_special_lady_mastermind",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1781659378537,
+      "tag": "0005_natural_stingray",
+      "breakpoints": true
     }
   ]
 }
