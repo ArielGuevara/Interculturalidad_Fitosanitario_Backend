@@ -1,5 +1,5 @@
 import { apiClient } from '../../http/apiClient';
-import type { Reporte, CreateReporteInput } from '../../../domain/reportes/types';
+import type { Reporte, CreateReporteInput, HistorialEntry } from '../../../domain/reportes/types';
 
 function guessMimeType(uri: string): string {
   const lower = uri.toLowerCase();
@@ -59,4 +59,10 @@ export async function createReporte(input: CreateReporteInput): Promise<Reporte>
   return data;
 }
 
-export const reportesApi = { getReportes, getReporteById, createReporte };
+// GET /reportes/:id/historial
+export async function getHistorial(id: number): Promise<HistorialEntry[]> {
+  const { data } = await apiClient.get<HistorialEntry[]>(`/reportes/${id}/historial`);
+  return data;
+}
+
+export const reportesApi = { getReportes, getReporteById, createReporte, getHistorial };

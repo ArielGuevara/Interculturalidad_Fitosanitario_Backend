@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ScrollView, Text, View, StyleSheet, ActivityIndicator } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../../navigation/RootNavigator';
 import { tratamientosApi } from '../../../infrastructure/data/tratamientos/tratamientosApi';
@@ -55,9 +56,10 @@ export function TratamientoDetailScreen({ route }: Props) {
       <View style={styles.header}>
         <View style={styles.headerRow}>
           <Text style={styles.cultivo}>{tratamiento.cultivo?.nombre || 'N/A'}</Text>
-          <Text style={styles.badge}>
-            {tratamiento.plaga?.tipo === 'ENFERMEDAD' ? '🦠' : '🐛'} {tratamiento.plaga?.nombre}
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <Ionicons name={tratamiento.plaga?.tipo === 'ENFERMEDAD' ? 'fitness-outline' : 'bug'} size={16} color="#bbf7d0" />
+            <Text style={styles.badge}>{tratamiento.plaga?.nombre}</Text>
+          </View>
         </View>
       </View>
 
@@ -88,7 +90,10 @@ export function TratamientoDetailScreen({ route }: Props) {
 
       {/* Seguridad */}
       <View style={[styles.card, styles.warningCard]}>
-        <Text style={[styles.cardTitle, { color: '#dc2626' }]}>⏸️ Seguridad</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+          <Ionicons name="pause-circle-outline" size={16} color="#dc2626" />
+          <Text style={[styles.cardTitle, { color: '#dc2626', marginBottom: 0 }]}>Seguridad</Text>
+        </View>
         <InfoRow label="Días de carencia" value={`${tratamiento.diasCarencia} día(s)`} />
         {tratamiento.periodoReingresoHoras != null && (
           <InfoRow label="Reingreso" value={`${tratamiento.periodoReingresoHoras} hora(s)`} />

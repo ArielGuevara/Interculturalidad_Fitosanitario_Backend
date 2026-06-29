@@ -3,6 +3,7 @@ import {
   Alert, 
   FlatList, 
   Image,
+  Pressable,
   Text, 
   View, 
   StyleSheet, 
@@ -10,17 +11,19 @@ import {
   RefreshControl,
   ActivityIndicator
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import type { Cultivo } from '../../../domain/catalogos/types';
 import { getCultivos } from '../../../infrastructure/data/catalogos/cultivosApi';
 import { getCache, setCache } from '../../../infrastructure/offline/cache';
+import { ImageViewerModal } from '../../../presentation/components/ImageViewerModal';
 
 const CACHE_KEY = 'cultivos.list';
 
 export function CultivosScreen() {
   const [items, setItems] = useState<Cultivo[]>([]);
-  // 'loading' para la primera carga, 'refreshing' para cuando el usuario desliza
   const [loading, setLoading] = useState(true); 
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const loadData = async (isRefreshing = false) => {
     if (isRefreshing) setRefreshing(true);
@@ -50,10 +53,12 @@ export function CultivosScreen() {
     <View style={styles.card}>
       {/* Imagen o icono representativo */}
       {item.imagenUrl ? (
-        <Image source={{ uri: item.imagenUrl }} style={styles.image} resizeMode="cover" />
+        <Pressable onPress={() => setSelectedImage(item.imagenUrl!)}>
+          <Image source={{ uri: item.imagenUrl }} style={styles.image} resizeMode="cover" />
+        </Pressable>
       ) : (
         <View style={styles.iconContainer}>
-          <Text style={styles.iconText}>🌱</Text>
+          <Ionicons name="leaf" size={32} color="#16a34a" />
         </View>
       )}
       
@@ -75,7 +80,7 @@ export function CultivosScreen() {
     if (loading) return null; // Evita parpadeos mientras carga la primera vez
     return (
       <View style={styles.emptyContainer}>
-        <Text style={styles.emptyEmoji}>🍃</Text>
+        <Ionicons name="leaf-outline" size={54} color="#94a3b8" />
         <Text style={styles.emptyTitle}>No hay cultivos</Text>
         <Text style={styles.emptyText}>
           Desliza hacia abajo para actualizar e intentar nuevamente.
@@ -114,6 +119,12 @@ export function CultivosScreen() {
           }
         />
       )}
+
+      <ImageViewerModal
+        visible={selectedImage !== null}
+        imageUrl={selectedImage ?? ''}
+        onClose={() => setSelectedImage(null)}
+      />
     </SafeAreaView>
   );
 }

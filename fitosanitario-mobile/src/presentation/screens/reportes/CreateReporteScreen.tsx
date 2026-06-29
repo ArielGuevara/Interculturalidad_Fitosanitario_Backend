@@ -13,6 +13,7 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import * as Location from 'expo-location';
 import { CameraView, useCameraPermissions } from 'expo-camera';
@@ -22,6 +23,7 @@ import { enqueueReporte } from '../../../infrastructure/offline/pendingReportes'
 import { syncPendingReportes } from '../../../infrastructure/offline/sync';
 import { getCultivos } from '../../../infrastructure/data/catalogos/cultivosApi';
 import type { Cultivo } from '../../../domain/catalogos/types';
+import { ImageViewerModal } from '../../../presentation/components/ImageViewerModal';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -39,16 +41,51 @@ function PhotoPreviewModal({
   onAccept: () => void;
   onRetake: () => void;
 }) {
+  const [zoomPreview, setZoomPreview] = useState(false);
+
+  if (zoomPreview) {
+    return (
+      <Modal visible animationType="fade" statusBarTranslucent>
+        <View style={styles.previewContainer}>
+          <ScrollView
+            contentContainerStyle={styles.zoomContent}
+            maximumZoomScale={4}
+            minimumZoomScale={1}
+            centerContent
+            showsHorizontalScrollIndicator={false}
+            showsVerticalScrollIndicator={false}
+            bouncesZoom
+          >
+            <Pressable onPress={() => setZoomPreview(false)}>
+              <Image source={{ uri }} style={styles.previewImageZoom} resizeMode="contain" />
+            </Pressable>
+          </ScrollView>
+          <Pressable style={styles.zoomCloseBtn} onPress={() => setZoomPreview(false)}>
+            <Ionicons name="close" size={20} color="#fff" />
+          </Pressable>
+        </View>
+      </Modal>
+    );
+  }
+
   return (
     <Modal visible animationType="fade" statusBarTranslucent>
       <View style={styles.previewContainer}>
-        <Image source={{ uri }} style={styles.previewImage} resizeMode="contain" />
+        <Pressable onPress={() => setZoomPreview(true)}>
+          <Image source={{ uri }} style={styles.previewImage} resizeMode="contain" />
+        </Pressable>
+        <View style={styles.previewHint}>
+          <Text style={styles.previewHintText}>Toca la imagen para hacer zoom</Text>
+        </View>
         <View style={styles.previewActions}>
           <Pressable style={[styles.previewBtn, styles.previewBtnSecondary]} onPress={onRetake}>
             <Text style={styles.previewBtnTextSecondary}>  Repetir</Text>
           </Pressable>
           <Pressable style={[styles.previewBtn, styles.previewBtnPrimary]} onPress={onAccept}>
-            <Text style={styles.previewBtnTextPrimary}>✓  Aceptar</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Ionicons name="checkmark" size={20} color="#fff" />
+              <Text style={styles.previewBtnTextPrimary}>Aceptar</Text>
+            </View>
           </Pressable>
         </View>
       </View>
@@ -60,31 +97,35 @@ function PhotoPreviewModal({
 function ImageGallery({
   uris,
   onDelete,
+  onPress,
 }: {
   uris: string[];
   onDelete: (index: number) => void;
+  onPress: (index: number) => void;
 }) {
   if (uris.length === 0) return null;
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.gallery}>
       {uris.map((uri, i) => (
-        <View key={uri} style={styles.galleryItem}>
-          <Image source={{ uri }} style={styles.galleryThumb} />
-          <Pressable
-            style={styles.galleryDelete}
-            onPress={() =>
-              Alert.alert('Eliminar foto', '¿Deseas eliminar esta foto?', [
-                { text: 'Cancelar', style: 'cancel' },
-                { text: 'Eliminar', style: 'destructive', onPress: () => onDelete(i) },
-              ])
-            }
-          >
-            <Text style={styles.galleryDeleteIcon}>✕</Text>
-          </Pressable>
-          <View style={styles.galleryBadge}>
-            <Text style={styles.galleryBadgeText}>{i + 1}</Text>
+        <Pressable key={uri} onPress={() => onPress(i)}>
+          <View style={styles.galleryItem}>
+            <Image source={{ uri }} style={styles.galleryThumb} />
+            <Pressable
+              style={styles.galleryDelete}
+              onPress={() =>
+                Alert.alert('Eliminar foto', '¿Deseas eliminar esta foto?', [
+                  { text: 'Cancelar', style: 'cancel' },
+                  { text: 'Eliminar', style: 'destructive', onPress: () => onDelete(i) },
+                ])
+              }
+            >
+              <Ionicons name="close" size={11} color="#fff" />
+            </Pressable>
+            <View style={styles.galleryBadge}>
+              <Text style={styles.galleryBadgeText}>{i + 1}</Text>
+            </View>
           </View>
-        </View>
+        </Pressable>
       ))}
     </ScrollView>
   );
@@ -158,6 +199,7 @@ export function CreateReporteScreen() {
   const [locationError, setLocationError] = useState(false);
 
   const [imageUris, setImageUris] = useState<string[]>([]);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [audioUri, setAudioUri] = useState<string | null>(null);
 
   const [cameraMode, setCameraMode] = useState(false);
@@ -405,7 +447,7 @@ export function CreateReporteScreen() {
             <View style={styles.cameraShutterInner} />
           </Pressable>
           <Pressable style={styles.cameraCancelBtn} onPress={() => setCameraMode(false)}>
-            <Text style={styles.cameraCancelText}>✕</Text>
+            <Ionicons name="close" size={20} color="#fff" />
           </Pressable>
         </View>
 
@@ -509,7 +551,7 @@ export function CreateReporteScreen() {
           <Text style={styles.counter}>{imageUris.length}/10</Text>
         </View>
 
-        <ImageGallery uris={imageUris} onDelete={deleteImage} />
+        <ImageGallery uris={imageUris} onDelete={deleteImage} onPress={(i) => setSelectedImage(imageUris[i])} />
 
         <Pressable
           style={[styles.btnPrimary, !canTakeMore && styles.btnDisabled]}
@@ -525,7 +567,10 @@ export function CreateReporteScreen() {
       {/* Audio */}
       <View style={styles.card}>
         <View style={styles.cardHeader}>
-          <Text style={styles.label}>🎙  Audio</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Ionicons name="mic-outline" size={16} color="#64748b" />
+            <Text style={styles.label}>Audio</Text>
+          </View>
           {audioUri && !isRecording && (
             <Pressable onPress={deleteAudio} style={styles.deleteAudioBtn}>
               <Text style={styles.deleteAudioText}>Eliminar</Text>
@@ -537,13 +582,19 @@ export function CreateReporteScreen() {
         <RecordingWave isRecording={isRecording} />
 
         {/* Status text */}
-        <Text style={[styles.audioStatus, isRecording && styles.audioStatusRecording]}>
-          {isRecording
-            ? `🔴  Grabando… ${timer}`
-            : audioUri
-            ? '✓  Audio listo'
-            : 'Sin grabación'}
-        </Text>
+        {isRecording ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, marginBottom: 12 }}>
+            <Ionicons name="radio-button-on" size={16} color="#ef4444" />
+            <Text style={[styles.audioStatus, styles.audioStatusRecording, { marginBottom: 0 }]}> Grabando… {timer}</Text>
+          </View>
+        ) : audioUri ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, marginBottom: 12 }}>
+            <Ionicons name="checkmark" size={16} color="#10b981" />
+            <Text style={[styles.audioStatus, { marginBottom: 0 }]}> Audio listo</Text>
+          </View>
+        ) : (
+          <Text style={styles.audioStatus}>Sin grabación</Text>
+        )}
 
         {/* WhatsApp-style record button */}
         <View style={styles.recordBtnWrapper}>
@@ -555,7 +606,7 @@ export function CreateReporteScreen() {
               {isRecording ? (
                 <View style={styles.stopIcon} />
               ) : (
-                <Text style={styles.micIcon}>🎤</Text>
+                <Ionicons name="mic" size={24} color="#64748b" />
               )}
             </Pressable>
           </Animated.View>
@@ -577,6 +628,12 @@ export function CreateReporteScreen() {
       </Pressable>
 
       <View style={{ height: 40 }} />
+
+      <ImageViewerModal
+        visible={selectedImage !== null}
+        imageUrl={selectedImage ?? ''}
+        onClose={() => setSelectedImage(null)}
+      />
     </ScrollView>
   );
 }
@@ -673,7 +730,6 @@ const styles = StyleSheet.create({
     width: 22, height: 22, borderRadius: 11,
     alignItems: 'center', justifyContent: 'center',
   },
-  galleryDeleteIcon: { color: '#fff', fontSize: 11, fontWeight: '700' },
   galleryBadge: {
     position: 'absolute', bottom: 4, left: 4,
     backgroundColor: 'rgba(16,185,129,0.85)',
@@ -698,7 +754,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#ef4444',
     shadowColor: '#ef4444',
   },
-  micIcon: { fontSize: 28 },
   stopIcon: { width: 22, height: 22, borderRadius: 4, backgroundColor: '#fff' },
   recordBtnLabel: { fontSize: 12, color: '#64748b' },
   deleteAudioBtn: { paddingHorizontal: 8, paddingVertical: 2 },
@@ -735,11 +790,24 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.25)',
     alignItems: 'center', justifyContent: 'center',
   },
-  cameraCancelText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 
   // Preview Modal
   previewContainer: { flex: 1, backgroundColor: '#000', alignItems: 'center', justifyContent: 'center' },
   previewImage: { width: SCREEN_WIDTH, height: SCREEN_WIDTH * 1.2 },
+  previewImageZoom: { width: SCREEN_WIDTH, height: SCREEN_WIDTH * 1.5 },
+  zoomContent: { flexGrow: 1, justifyContent: 'center', alignItems: 'center' },
+  zoomCloseBtn: {
+    position: 'absolute', top: 50, right: 20,
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  previewHint: {
+    position: 'absolute', top: 60,
+    paddingHorizontal: 16, paddingVertical: 6,
+    backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 8,
+  },
+  previewHintText: { color: 'rgba(255,255,255,0.7)', fontSize: 12 },
   previewActions: {
     position: 'absolute', bottom: 60, left: 24, right: 24,
     flexDirection: 'row', gap: 12,

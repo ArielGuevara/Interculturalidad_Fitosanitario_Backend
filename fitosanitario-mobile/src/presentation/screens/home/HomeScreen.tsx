@@ -15,6 +15,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useAuthStore } from '../../../infrastructure/auth/authStore';
 import { syncPendingReportes } from '../../../infrastructure/offline/sync';
 import { recomendacionesApi } from '../../../infrastructure/data/recomendaciones/recomendacionesApi';
+import { Ionicons } from '@expo/vector-icons';
 
 const { width: W } = Dimensions.get('window');
 
@@ -26,7 +27,7 @@ interface AnimatedPressableProps {
 }
 
 interface QuickCardProps {
-  emoji: string;
+  iconName: string;
   label: string;
   color: string;
   onPress: () => void;
@@ -91,7 +92,7 @@ export function HomeScreen() {
         <View style={styles.headerContent}>
           <View>
             <Text style={styles.greeting}>
-              Hola{firstName ? `, ${firstName}` : ''} 👋
+              Hola{firstName ? `, ${firstName}` : ''}
             </Text>
           
           </View>
@@ -108,14 +109,13 @@ export function HomeScreen() {
         <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
 
           {/* Primary CTA */}
-          <Text style={styles.sectionLabel}>ACCIÓN PRINCIPAL</Text>
           <AnimatedPressable
             style={styles.ctaCard}
             onPress={() => navigation.navigate('CreateReporte')}
           >
             <View style={styles.ctaShine} />
             <View style={styles.ctaIconWrap}>
-              <Text style={styles.ctaIcon}>📋</Text>
+              <Ionicons name="clipboard-outline" size={24} color="#fff" />
             </View>
             <View style={styles.ctaText}>
               <Text style={styles.ctaTitle}>Crear reporte</Text>
@@ -126,36 +126,43 @@ export function HomeScreen() {
 
           {/* Sync */}
           <AnimatedPressable style={styles.syncCard} onPress={onSync}>
-            <Text style={styles.syncIcon}>☁️</Text>
+            <Ionicons name="cloud-upload-outline" size={18} color="#10b981" style={{ marginRight: 12 }} />
             <Text style={styles.syncText}>Sincronizar pendientes</Text>
             <Text style={styles.syncArrow}>↑</Text>
           </AnimatedPressable>
 
           {/* Quick access */}
-          <Text style={[styles.sectionLabel, { marginTop: 24 }]}>ACCESOS RÁPIDOS</Text>
+          <Text style={styles.sectionLabel}>CATÁLOGOS</Text>
           <View style={styles.quickGrid}>
             <QuickCard
-              emoji="🌱"
+              iconName="leaf"
               label="Cultivos"
               color="#14532d"
               onPress={() => navigation.navigate('Cultivos')}
             />
             <QuickCard
-              emoji="🐛"
+              iconName="bug"
               label="Plagas"
               color="#7f1d1d"
               onPress={() => navigation.navigate('Plagas')}
             />
           </View>
           <QuickCardWide
-            emoji="💊"
+            iconName="medkit"
             label="Productos"
             color="#1e3a5f"
             onPress={() => navigation.navigate('Productos')}
           />
 
           <QuickCardWide
-            emoji="💬"
+            iconName="notifications"
+            label="Alertas"
+            color="#b45309"
+            onPress={() => navigation.navigate('Alertas')}
+          />
+
+          <QuickCardWide
+            iconName="chatbubbles"
             label={`Foro Comunitario (${comunidadCount})`}
             color="#7c3aed"
             onPress={() => navigation.navigate('ForoList')}
@@ -183,7 +190,7 @@ function AnimatedPressable({ style, onPress, children }: AnimatedPressableProps)
 }
 
 // ── Quick card (half width) ───────────────────────────────────────────────────
-function QuickCard({ emoji, label, color, onPress }: QuickCardProps) {
+function QuickCard({ iconName, label, color, onPress }: QuickCardProps) {
   const scale = useRef(new Animated.Value(1)).current;
   return (
     <Pressable
@@ -193,7 +200,7 @@ function QuickCard({ emoji, label, color, onPress }: QuickCardProps) {
       onPressOut={() => Animated.spring(scale, { toValue: 1, tension: 300, friction: 10, useNativeDriver: true }).start()}
     >
       <Animated.View style={[styles.quickCardInner, { backgroundColor: color, transform: [{ scale }] }]}>
-        <Text style={styles.quickEmoji}>{emoji}</Text>
+        <Ionicons name={iconName as any} size={28} color="#fff" />
         <Text style={styles.quickLabel}>{label}</Text>
         <Text style={styles.quickArrow}>→</Text>
       </Animated.View>
@@ -202,7 +209,7 @@ function QuickCard({ emoji, label, color, onPress }: QuickCardProps) {
 }
 
 // ── Quick card (full width) ───────────────────────────────────────────────────
-function QuickCardWide({ emoji, label, color, onPress }: QuickCardProps) {
+function QuickCardWide({ iconName, label, color, onPress }: QuickCardProps) {
   const scale = useRef(new Animated.Value(1)).current;
   return (
     <Pressable
@@ -211,7 +218,7 @@ function QuickCardWide({ emoji, label, color, onPress }: QuickCardProps) {
       onPressOut={() => Animated.spring(scale, { toValue: 1, tension: 300, friction: 10, useNativeDriver: true }).start()}
     >
       <Animated.View style={[styles.quickCardWide, { backgroundColor: color, transform: [{ scale }] }]}>
-        <Text style={styles.quickEmoji}>{emoji}</Text>
+        <Ionicons name={iconName as any} size={28} color="#fff" />
         <Text style={[styles.quickLabel, { fontSize: 15 }]}>{label}</Text>
         <Text style={[styles.quickArrow, { marginLeft: 'auto' }]}>→</Text>
       </Animated.View>
@@ -228,7 +235,7 @@ const styles = StyleSheet.create({
   // Header
   header: {
     backgroundColor: '#0a2412',
-    paddingTop: STATUSBAR_HEIGHT + 16, // Ajuste responsivo para Notch/Status Bar
+    paddingTop: STATUSBAR_HEIGHT + 16,
     paddingHorizontal: 24,
     paddingBottom: 24,
     overflow: 'hidden',
@@ -243,13 +250,6 @@ const styles = StyleSheet.create({
   },
   headerContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
   greeting: { fontSize: 22, fontWeight: '800', color: '#ffffff', letterSpacing: -0.3 },
-  roleBadge: {
-    marginTop: 6, alignSelf: 'flex-start',
-    backgroundColor: 'rgba(134,239,172,0.2)',
-    borderWidth: 1, borderColor: 'rgba(134,239,172,0.35)',
-    borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3,
-  },
-  roleText: { fontSize: 12, color: '#86efac', fontWeight: '600', textTransform: 'capitalize' },
   avatar: {
     width: 48, height: 48, borderRadius: 24,
     backgroundColor: '#15803d',
@@ -258,24 +258,12 @@ const styles = StyleSheet.create({
   },
   avatarText: { color: '#fff', fontWeight: '800', fontSize: 16 },
 
-  // Stats strip
-  statsRow: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.07)',
-    borderRadius: 16, paddingVertical: 12,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
-  },
-  statItem: { flex: 1, alignItems: 'center', gap: 4 },
-  statValue: { fontSize: 20 },
-  statLabel: { fontSize: 11, color: '#86efac', fontWeight: '600' },
-  statDivider: { width: 1, backgroundColor: 'rgba(255,255,255,0.12)' },
-
   // Body
   body: { flex: 1 },
   bodyContent: { padding: 20 },
   sectionLabel: {
-    fontSize: 11, fontWeight: '700', color: '#6b7280',
-    letterSpacing: 1, marginBottom: 10,
+    fontSize: 12, fontWeight: '600', color: '#94a3b8',
+    letterSpacing: 0.5, marginBottom: 8, marginTop: 16,
   },
 
   // CTA card
@@ -297,7 +285,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.15)',
     alignItems: 'center', justifyContent: 'center', marginRight: 14,
   },
-  ctaIcon: { fontSize: 24 },
   ctaText: { flex: 1 },
   ctaTitle: { fontSize: 17, fontWeight: '800', color: '#fff' },
   ctaSub: { fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 2 },
@@ -312,7 +299,6 @@ const styles = StyleSheet.create({
     shadowColor: '#000', shadowOpacity: 0.04,
     shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2,
   },
-  syncIcon: { fontSize: 18, marginRight: 12, color: '#10b981' },
   syncText: { flex: 1, fontSize: 15, fontWeight: '600', color: '#1a4731' },
   syncArrow: { fontSize: 18, color: '#10b981', fontWeight: '700' },
 
@@ -331,7 +317,6 @@ const styles = StyleSheet.create({
     shadowColor: '#000', shadowOpacity: 0.15,
     shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 4,
   },
-  quickEmoji: { fontSize: 28 },
   quickLabel: { fontSize: 14, fontWeight: '700', color: '#fff', marginTop: 8 },
   quickArrow: { fontSize: 16, color: 'rgba(255,255,255,0.5)' },
 });

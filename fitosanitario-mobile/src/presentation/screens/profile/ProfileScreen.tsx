@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useAuthStore } from '../../../infrastructure/auth/authStore';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 
 export function ProfileScreen() {
   const usuario = useAuthStore((s) => s.usuario);
@@ -25,15 +26,15 @@ export function ProfileScreen() {
   const handlePressOut = () => Animated.spring(btnScale, { toValue: 1, useNativeDriver: true }).start();
 
   // Cálculos responsivos
-  const avatarSize = width * 0.25; // El avatar ocupará el 25% del ancho de la pantalla (máximo 120px)
+  const avatarSize = width * 0.25;
   const finalAvatarSize = Math.min(avatarSize, 120); 
-  const dynamicPadding = width * 0.06; // Padding lateral del 6%
+  const dynamicPadding = width * 0.06;
 
   // Componente reutilizable
-  const InfoRow = ({ icon, label, value }: { icon: string; label: string; value: string }) => (
+  const InfoRow = ({ iconName, label, value }: { iconName: string; label: string; value: string }) => (
     <View style={styles.infoRow}>
       <View style={styles.iconBox}>
-        <Text style={styles.iconText}>{icon}</Text>
+        <Ionicons name={iconName as any} size={22} color="#64748b" />
       </View>
       <View style={styles.textContainer}>
         <Text style={styles.labelText}>{label}</Text>
@@ -44,7 +45,6 @@ export function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      {/* Usamos ScrollView para que en pantallas pequeñas no se corte el contenido */}
       <ScrollView 
         contentContainerStyle={[styles.scrollContent, { paddingHorizontal: dynamicPadding }]}
         showsVerticalScrollIndicator={false}
@@ -77,27 +77,27 @@ export function ProfileScreen() {
         {/* Tarjeta de Datos del Usuario */}
         <View style={styles.card}>
           <InfoRow 
-            icon="👤" 
+            iconName="person-outline" 
             label="Nombre completo" 
             value={usuario?.nombre ?? 'No especificado'} 
           />
           <View style={styles.divider} />
           
           <InfoRow 
-            icon="✉️" 
+            iconName="mail-outline" 
             label="Correo electrónico" 
             value={usuario?.email ?? 'correo@ejemplo.com'} 
           />
           <View style={styles.divider} />
           
           <InfoRow 
-            icon="🛡️" 
+            iconName="shield-checkmark-outline" 
             label="Nivel de acceso" 
             value={usuario?.rol ?? 'Estándar'} 
           />
         </View>
 
-        {/* Espaciador flexible: empuja el botón hacia abajo si sobra pantalla */}
+        {/* Espaciador flexible */}
         <View style={styles.spacer} />
 
         {/* Botón de Cerrar Sesión */}
@@ -108,7 +108,7 @@ export function ProfileScreen() {
             onPressOut={handlePressOut}
             style={styles.logoutButton}
           >
-            <Text style={styles.logoutIcon}>🚪</Text>
+            <Ionicons name="log-out-outline" size={20} color="#e11d48" style={{ marginRight: 10 }} />
             <Text style={styles.logoutText}>Cerrar sesión</Text>
           </Pressable>
         </Animated.View>
@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8fafc',
   },
   scrollContent: {
-    flexGrow: 1, // Fundamental: permite que el espaciador (flex: 1) funcione dentro del ScrollView
+    flexGrow: 1,
     paddingTop: 20,
     paddingBottom: 40,
   },
@@ -201,9 +201,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 16,
   },
-  iconText: {
-    fontSize: 20,
-  },
   textContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -227,7 +224,7 @@ const styles = StyleSheet.create({
 
   spacer: {
     flex: 1,
-    minHeight: 40, // Asegura que siempre haya al menos un pequeño margen antes del botón
+    minHeight: 40,
   },
 
   logoutButton: {
@@ -240,10 +237,6 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 20,
     width: '100%',
-  },
-  logoutIcon: {
-    fontSize: 18,
-    marginRight: 10,
   },
   logoutText: {
     color: '#e11d48',

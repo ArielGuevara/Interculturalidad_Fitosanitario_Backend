@@ -91,6 +91,15 @@ export class ReportesController {
     });
   }
 
+  // Sincronización offline — acepta un array de reportes
+  @Post('sync')
+  bulkSync(
+    @CurrentUser() user: { id: number },
+    @Body() reportes: any[],
+  ) {
+    return this.reportesService.bulkSync(user.id, reportes);
+  }
+
   // Cambiar estado — solo MODERADOR (RF-09)
   @Patch(':id/estado')
   @Roles('MODERADOR')

@@ -89,4 +89,25 @@ export class ReportesService {
     await this.findById(reporteId); // valida que existe
     return this.reportesRepository.getHistorial(reporteId);
   }
+
+  async bulkSync(usuarioId: number, reportes: any[]) {
+    const results: any[] = [];
+    for (const r of reportes) {
+      const created = await this.reportesRepository.create({
+        titulo:              r.titulo,
+        descripcion:         r.descripcion,
+        descripcionProblema: r.descripcionProblema,
+        usuarioId,
+        cultivoId:           r.cultivoId,
+        plagaId:             r.plagaId,
+        imagenesUrls:        r.imagenesUrls ?? [],
+        audioUrl:            r.audioUrl ?? null,
+        latitud:             r.latitud,
+        longitud:            r.longitud,
+        sincronizado:        true,
+      });
+      results.push(created);
+    }
+    return { sincronizados: results.length, reportes: results };
+  }
 }

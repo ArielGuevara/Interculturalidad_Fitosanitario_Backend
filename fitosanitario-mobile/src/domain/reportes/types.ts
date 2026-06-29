@@ -27,6 +27,15 @@ export type CreateReporteInput = {
   audioUri?: string;
 };
 
+export type HistorialEntry = {
+  id: number;
+  estadoAnterior: string | null;
+  estadoNuevo: string;
+  motivo: string | null;
+  fechaCambio: string;
+  usuario: { id: number; nombre: string };
+};
+
 export type PendingReporte = {
   id: string;
   payload: CreateReporteInput;

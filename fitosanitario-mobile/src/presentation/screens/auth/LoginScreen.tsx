@@ -13,6 +13,7 @@ import {
   StatusBar,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../../infrastructure/auth/authStore';
 
 const { width: W } = Dimensions.get('window');
@@ -83,7 +84,7 @@ export function LoginScreen() {
           {/* ── Logo y Título ── */}
           <View style={styles.hero}>
             <Animated.View style={[styles.logoCircle, { transform: [{ scale: logoScale }] }]}>
-              <Text style={styles.logoEmoji}>🌿</Text>
+              <Ionicons name="leaf" size={40} color="#fff" />
             </Animated.View>
             <Text style={styles.appName}>Gestión Fitosanitaria</Text>
             <Text style={styles.tagline}>Control inteligente para la salud de tus cultivos</Text>

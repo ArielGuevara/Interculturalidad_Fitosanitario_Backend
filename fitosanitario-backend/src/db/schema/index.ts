@@ -9,6 +9,7 @@ import {
   integer,
   doublePrecision,
   jsonb,
+  date,
 } from 'drizzle-orm/pg-core';
 
 // ── Enums ──────────────────────────────────────────────────
@@ -171,4 +172,69 @@ export const comentariosForo = pgTable('comentarios_foro', {
   moderadoPor:       integer('moderado_por').references(() => usuarios.id),
   fechaModeracion:   timestamp('fecha_moderacion'),
   fechaComentario:   timestamp('fecha_comentario').notNull().defaultNow(),
+});
+
+// ── Tabla: DISPOSITIVOS (Push Tokens) ───────────────────────
+export const dispositivos = pgTable('dispositivos', {
+  id:            serial('id').primaryKey(),
+  usuarioId:     integer('usuario_id').notNull().references(() => usuarios.id, { onDelete: 'cascade' }),
+  token:         varchar('token', { length: 500 }).notNull(),
+  plataforma:    varchar('plataforma', { length: 20 }).notNull(), // 'ios' | 'android'
+  activo:        boolean('activo').notNull().default(true),
+  ultimoUso:     timestamp('ultimo_uso').notNull().defaultNow(),
+  createdAt:     timestamp('created_at').notNull().defaultNow(),
+});
+
+// ── Tabla: ZONAS_ALERTA ─────────────────────────────────────
+export const zonasAlerta = pgTable('zonas_alerta', {
+  id:            serial('id').primaryKey(),
+  nombre:        varchar('nombre', { length: 150 }).notNull(),
+  descripcion:   text('descripcion'),
+  latitudCentro: doublePrecision('latitud_centro').notNull(),
+  longitudCentro: doublePrecision('longitud_centro').notNull(),
+  radioKm:       doublePrecision('radio_km').notNull(),
+  activo:        boolean('activo').notNull().default(true),
+  createdAt:     timestamp('created_at').notNull().defaultNow(),
+  updatedAt:     timestamp('updated_at').notNull().defaultNow(),
+});
+
+// ── Tabla: PARAMETROS_ALERTA ────────────────────────────────
+export const parametrosAlerta = pgTable('parametros_alerta', {
+  id:              serial('id').primaryKey(),
+  nombre:          varchar('nombre', { length: 150 }).notNull(),
+  plagaId:         integer('plaga_id').references(() => plagasEnfermedades.id),
+  cultivoId:       integer('cultivo_id').references(() => cultivos.id),
+  umbralReportes:  integer('umbral_reportes').notNull().default(3),
+  radioKm:         doublePrecision('radio_km').notNull().default(10),
+  ventanaHoras:    integer('ventana_horas').notNull().default(72),
+  activo:          boolean('activo').notNull().default(true),
+  createdAt:       timestamp('created_at').notNull().defaultNow(),
+});
+
+// ── Tabla: ALERTAS ──────────────────────────────────────────
+export const alertas = pgTable('alertas', {
+  id:               serial('id').primaryKey(),
+  zonaId:           integer('zona_id').references(() => zonasAlerta.id),
+  parametroId:      integer('parametro_id').references(() => parametrosAlerta.id),
+  plagaId:          integer('plaga_id').references(() => plagasEnfermedades.id),
+  cultivoId:        integer('cultivo_id').references(() => cultivos.id),
+  titulo:           varchar('titulo', { length: 200 }).notNull(),
+  descripcion:      text('descripcion').notNull(),
+  nivel:            varchar('nivel', { length: 20 }).notNull().default('MEDIO'), // BAJO | MEDIO | ALTO | CRITICO
+  latitud:          doublePrecision('latitud'),
+  longitud:         doublePrecision('longitud'),
+  totalReportes:    integer('total_reportes').notNull().default(0),
+  leida:            boolean('leida').notNull().default(false),
+  createdAt:        timestamp('created_at').notNull().defaultNow(),
+});
+
+// ── Tabla: NOTIFICACIONES ───────────────────────────────────
+export const notificaciones = pgTable('notificaciones', {
+  id:             serial('id').primaryKey(),
+  usuarioId:      integer('usuario_id').notNull().references(() => usuarios.id, { onDelete: 'cascade' }),
+  alertaId:        integer('alerta_id').references(() => alertas.id),
+  titulo:         varchar('titulo', { length: 200 }).notNull(),
+  cuerpo:         text('cuerpo').notNull(),
+  leida:          boolean('leida').notNull().default(false),
+  createdAt:      timestamp('created_at').notNull().defaultNow(),
 });

@@ -4,6 +4,7 @@ import {
   ActivityIndicator, TextInput, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { Ionicons } from '@expo/vector-icons';
 import type { AppStackParamList } from '../../navigation/RootNavigator';
 import { recomendacionesApi } from '../../../infrastructure/data/recomendaciones/recomendacionesApi';
 import type { Recomendacion, Valoracion } from '../../../domain/recomendaciones/types';
@@ -86,10 +87,10 @@ export function RecomendacionDetailScreen({ route }: Props) {
     CONOCIMIENTO_ANCESTRAL: '#7c3aed',
   };
 
-  const tipoIcons: Record<string, string> = {
-    RECOMENDACION: '💡',
-    CONSULTA: '❓',
-    CONOCIMIENTO_ANCESTRAL: '🌿',
+  const tipoIcons: Record<string, any> = {
+    RECOMENDACION: 'bulb-outline',
+    CONSULTA: 'help-circle-outline',
+    CONOCIMIENTO_ANCESTRAL: 'leaf-outline',
   };
 
   return (
@@ -100,7 +101,7 @@ export function RecomendacionDetailScreen({ route }: Props) {
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         {/* Tipo badge */}
         <View style={[styles.tipoBadge, { backgroundColor: (tipoColors[recomendacion.tipo] || '#6b7280') + '20' }]}>
-          <Text style={styles.tipoIcon}>{tipoIcons[recomendacion.tipo] || '💬'}</Text>
+          <Ionicons name={tipoIcons[recomendacion.tipo] || 'chatbubble-outline'} size={14} color="#10b981" />
           <Text style={[styles.tipoText, { color: tipoColors[recomendacion.tipo] || '#6b7280' }]}>
             {recomendacion.tipo === 'CONOCIMIENTO_ANCESTRAL' ? 'CONOCIMIENTO ANCESTRAL' : recomendacion.tipo}
           </Text>
@@ -121,10 +122,10 @@ export function RecomendacionDetailScreen({ route }: Props) {
         {(recomendacion.cultivo || recomendacion.plaga) && (
           <View style={styles.tagsRow}>
             {recomendacion.cultivo && (
-              <Text style={styles.tag}>🌱 {recomendacion.cultivo.nombre}</Text>
+              <Text style={styles.tag}><Ionicons name="leaf" size={12} color="#16a34a" /> {recomendacion.cultivo.nombre}</Text>
             )}
             {recomendacion.plaga && (
-              <Text style={styles.tag}>🐛 {recomendacion.plaga.nombre}</Text>
+              <Text style={styles.tag}><Ionicons name="bug" size={12} color="#dc2626" /> {recomendacion.plaga.nombre}</Text>
             )}
           </View>
         )}
@@ -201,7 +202,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginBottom: 12,
   },
-  tipoIcon: { fontSize: 14 },
   tipoText: { fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },
   title: { fontSize: 22, fontWeight: '800', color: '#1e293b', marginBottom: 8 },
   metaRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },

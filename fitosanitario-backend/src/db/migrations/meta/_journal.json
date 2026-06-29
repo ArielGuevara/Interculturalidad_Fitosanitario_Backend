@@ -57,6 +57,13 @@
       "when": 1781675250000,
       "tag": "0007_ensure_comentarios_foro",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1782740738043,
+      "tag": "0008_powerful_midnight",
+      "breakpoints": true
     }
   ]
 }

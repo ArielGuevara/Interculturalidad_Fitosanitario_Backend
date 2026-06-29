@@ -1,13 +1,12 @@
 ﻿import React from 'react';
 import { Pressable, Text, View, ScrollView, SafeAreaView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-// Si usas lucide-react-native o heroicons, se vería mucho mejor. 
-// Aquí usaré emojis para mantener el código ligero, pero te sugiero iconos vectoriales.
+import { Ionicons } from '@expo/vector-icons';
 
 export function CatalogosScreen() {
   const navigation = useNavigation<any>();
 
-  const CatalogItem = ({ title, description, icon, route, color }: any) => (
+  const CatalogItem = ({ title, description, iconName, route, color }: any) => (
     <Pressable
       onPress={() => navigation.navigate(route)}
       className="mb-4 flex-row items-center rounded-3xl border border-slate-100 bg-white p-5 shadow-sm active:bg-slate-50"
@@ -20,7 +19,7 @@ export function CatalogosScreen() {
       }}
     >
       <View className={`h-14 w-14 items-center justify-center rounded-2xl ${color}`}>
-        <Text className="text-2xl">{icon}</Text>
+        <Ionicons name={iconName} size={28} color="#fff" />
       </View>
       
       <View className="ml-4 flex-1">
@@ -51,7 +50,7 @@ export function CatalogosScreen() {
           <CatalogItem
             title="Cultivos"
             description="Variedades, ciclos y requerimientos"
-            icon="🌽"
+            iconName="leaf"
             route="Cultivos"
             color="bg-amber-100"
           />
@@ -59,7 +58,7 @@ export function CatalogosScreen() {
           <CatalogItem
             title="Plagas y Enfermedades"
             description="Identificación y umbrales de daño"
-            icon="🐛"
+            iconName="bug"
             route="Plagas"
             color="bg-rose-100"
           />
@@ -67,7 +66,7 @@ export function CatalogosScreen() {
           <CatalogItem
             title="Productos"
             description="Fitosanitarios y fichas técnicas"
-            icon="🧪"
+            iconName="flask"
             route="Productos"
             color="bg-emerald-100"
           />

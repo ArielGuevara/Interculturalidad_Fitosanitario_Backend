@@ -4,6 +4,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { Ionicons } from '@expo/vector-icons';
 import type { AppStackParamList } from '../../navigation/RootNavigator';
 import { recomendacionesApi } from '../../../infrastructure/data/recomendaciones/recomendacionesApi';
 import { getCultivos } from '../../../infrastructure/data/catalogos/cultivosApi';
@@ -43,10 +44,10 @@ export function RecomendacionFormScreen({ route, navigation }: Props) {
     loadCatalogs();
   }, []);
 
-  const tipos: { value: TipoRecomendacion; label: string; icon: string }[] = [
-    { value: 'RECOMENDACION', label: 'Recomendación', icon: '💡' },
-    { value: 'CONSULTA', label: 'Consulta', icon: '❓' },
-    { value: 'CONOCIMIENTO_ANCESTRAL', label: 'Conocimiento Ancestral', icon: '🌿' },
+  const tipos: { value: TipoRecomendacion; label: string; iconName: any }[] = [
+    { value: 'RECOMENDACION', label: 'Recomendación', iconName: 'bulb-outline' },
+    { value: 'CONSULTA', label: 'Consulta', iconName: 'help-circle-outline' },
+    { value: 'CONOCIMIENTO_ANCESTRAL', label: 'Conocimiento Ancestral', iconName: 'leaf-outline' },
   ];
 
   const onSubmit = async () => {
@@ -101,7 +102,7 @@ export function RecomendacionFormScreen({ route, navigation }: Props) {
             style={[styles.tipoChip, tipo === t.value && styles.tipoChipActive]}
             onPress={() => setTipo(t.value)}
           >
-            <Text style={styles.tipoIcon}>{t.icon}</Text>
+            <Ionicons name={t.iconName} size={20} color="#10b981" />
             <Text style={[styles.tipoLabel, tipo === t.value && styles.tipoLabelActive]}>
               {t.label}
             </Text>
@@ -235,7 +236,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#d1fae5',
     borderColor: '#059669',
   },
-  tipoIcon: { fontSize: 16 },
   tipoLabel: { fontSize: 11, fontWeight: '600', color: '#64748b' },
   tipoLabelActive: { color: '#059669' },
   chipRow: {

@@ -3,6 +3,7 @@ import {
   Alert, 
   FlatList, 
   Image,
+  Pressable,
   Text, 
   View, 
   StyleSheet, 
@@ -10,9 +11,11 @@ import {
   RefreshControl,
   ActivityIndicator
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import type { Plaga } from '../../../domain/catalogos/types';
 import { getPlagas } from '../../../infrastructure/data/catalogos/plagasApi';
 import { getCache, setCache } from '../../../infrastructure/offline/cache';
+import { ImageViewerModal } from '../../../presentation/components/ImageViewerModal';
 
 const CACHE_KEY = 'plagas.list';
 
@@ -20,6 +23,7 @@ export function PlagasScreen() {
   const [items, setItems] = useState<Plaga[]>([]);
   const [loading, setLoading] = useState(true); 
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const loadData = async (isRefreshing = false) => {
     if (isRefreshing) setRefreshing(true);
@@ -50,10 +54,12 @@ export function PlagasScreen() {
     <View style={styles.card}>
       {/* Imagen o icono */}
       {item.imagenUrl ? (
-        <Image source={{ uri: item.imagenUrl }} style={styles.image} resizeMode="cover" />
+        <Pressable onPress={() => setSelectedImage(item.imagenUrl!)}>
+          <Image source={{ uri: item.imagenUrl }} style={styles.image} resizeMode="cover" />
+        </Pressable>
       ) : (
         <View style={styles.iconContainer}>
-          <Text style={styles.iconText}>🐛</Text>
+          <Ionicons name="bug" size={32} color="#dc2626" />
         </View>
       )}
       
@@ -84,7 +90,7 @@ export function PlagasScreen() {
     if (loading) return null;
     return (
       <View style={styles.emptyContainer}>
-        <Text style={styles.emptyEmoji}>🦠</Text>
+        <Ionicons name="bug-outline" size={54} color="#94a3b8" />
         <Text style={styles.emptyTitle}>No hay plagas registradas</Text>
         <Text style={styles.emptyText}>
           Desliza hacia abajo para actualizar el catálogo.
@@ -125,6 +131,12 @@ export function PlagasScreen() {
           }
         />
       )}
+
+      <ImageViewerModal
+        visible={selectedImage !== null}
+        imageUrl={selectedImage ?? ''}
+        onClose={() => setSelectedImage(null)}
+      />
     </SafeAreaView>
   );
 }

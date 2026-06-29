@@ -3,15 +3,16 @@ import {
   View, Text, FlatList, Pressable, ActivityIndicator, StyleSheet,
   RefreshControl, SafeAreaView,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useAuthStore } from '../../../infrastructure/auth/authStore';
 import { recomendacionesApi } from '../../../infrastructure/data/recomendaciones/recomendacionesApi';
 import type { Recomendacion } from '../../../domain/recomendaciones/types';
 
-const TIPO_ICON: Record<string, string> = {
-  RECOMENDACION: '💡',
-  CONSULTA: '❓',
-  CONOCIMIENTO_ANCESTRAL: '🌿',
+const TIPO_ICON = {
+  RECOMENDACION: 'bulb-outline' as const,
+  CONSULTA: 'help-circle-outline' as const,
+  CONOCIMIENTO_ANCESTRAL: 'leaf-outline' as const,
 };
 
 const TIPO_COLOR: Record<string, string> = {
@@ -62,7 +63,7 @@ export function ForoScreen() {
       onPress={() => navigation.navigate('RecomendacionDetail', { id: item.id })}
     >
       <View style={styles.cardHeader}>
-        <Text style={styles.tipoIcon}>{TIPO_ICON[item.tipo] || '💬'}</Text>
+        <Ionicons name={TIPO_ICON[item.tipo] || 'chatbubble-outline'} size={22} color="#10b981" />
         <View style={[styles.tipoBadge, { backgroundColor: TIPO_COLOR[item.tipo] + '20' }]}>
           <Text style={[styles.tipoText, { color: TIPO_COLOR[item.tipo] }]}>
             {item.tipo === 'CONOCIMIENTO_ANCESTRAL' ? 'ANCESTRAL' : item.tipo}
@@ -76,9 +77,7 @@ export function ForoScreen() {
       <View style={styles.cardFooter}>
         <Text style={styles.author}>{item.usuario?.nombre || 'Anónimo'}</Text>
         <View style={styles.ratingRow}>
-          <Text style={styles.starIcon}>
-            {item.valoracionPromedio > 0 ? '★' : '☆'}
-          </Text>
+          <Ionicons name={item.valoracionPromedio > 0 ? 'star' : 'star-outline'} size={14} color="#f59e0b" />
           <Text style={styles.ratingValue}>
             {item.valoracionPromedio > 0 ? item.valoracionPromedio.toFixed(1) : '0.0'}
           </Text>
@@ -88,7 +87,7 @@ export function ForoScreen() {
 
       {item.cultivo && (
         <View style={styles.tagRow}>
-          <Text style={styles.tag}>🌱 {item.cultivo.nombre}</Text>
+          <Text style={styles.tag}><Ionicons name="leaf" size={12} color="#16a34a" /> {item.cultivo.nombre}</Text>
         </View>
       )}
     </Pressable>
@@ -126,7 +125,7 @@ export function ForoScreen() {
           }
           ListEmptyComponent={
             <View style={styles.empty}>
-              <Text style={styles.emptyIcon}>💬</Text>
+              <Ionicons name="chatbubble-outline" size={54} color="#94a3b8" />
               <Text style={styles.emptyText}>No hay publicaciones aún</Text>
               <Text style={styles.emptySubtext}>Sé el primero en compartir tu conocimiento</Text>
             </View>
@@ -195,7 +194,6 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 8,
   },
-  tipoIcon: { fontSize: 20 },
   tipoBadge: {
     paddingHorizontal: 10,
     paddingVertical: 2,
@@ -221,7 +219,6 @@ const styles = StyleSheet.create({
   },
   author: { fontSize: 12, color: '#94a3b8' },
   ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 2 },
-  starIcon: { fontSize: 14, color: '#f59e0b' },
   ratingValue: { fontSize: 13, fontWeight: '600', color: '#374151' },
   ratingCount: { fontSize: 11, color: '#94a3b8' },
   tagRow: {
@@ -241,7 +238,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 60,
   },
-  emptyIcon: { fontSize: 48, marginBottom: 12 },
   emptyText: { fontSize: 16, fontWeight: '600', color: '#64748b' },
   emptySubtext: { fontSize: 13, color: '#94a3b8', marginTop: 4 },
   fab: {

@@ -1,10 +1,11 @@
-﻿import React, { useEffect } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+﻿import React, { useEffect, useCallback, useRef } from 'react';
+import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { Text, View, Alert } from 'react-native';
 import { useAuthStore } from '../../infrastructure/auth/authStore';
+import { useNotifications } from '../hooks/useNotifications';
 import { LoginScreen } from '../screens/auth/LoginScreen';
 import { RegisterScreen } from '../screens/auth/RegisterScreen';
 import { HomeScreen } from '../screens/home/HomeScreen';
@@ -20,6 +21,8 @@ import { ProfileScreen } from '../screens/profile/ProfileScreen';
 import { ForoScreen } from '../screens/comunidad/ForoScreen';
 import { RecomendacionFormScreen } from '../screens/comunidad/RecomendacionFormScreen';
 import { RecomendacionDetailScreen } from '../screens/comunidad/RecomendacionDetailScreen';
+import { AlertasScreen } from '../screens/alertas/AlertasScreen';
+import { NotificacionesScreen } from '../screens/alertas/NotificacionesScreen';
 
 export type AuthStackParamList = {
   Login: undefined;
@@ -45,11 +48,14 @@ export type AppStackParamList = {
   ForoList: undefined;
   RecomendacionForm: { reporteId?: number; cultivoId?: number; plagaId?: number };
   RecomendacionDetail: { id: number };
+  Alertas: undefined;
+  Notificaciones: undefined;
 };
 
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
 const AppStack = createNativeStackNavigator<AppStackParamList>();
 const Tabs = createBottomTabNavigator<AppTabsParamList>();
+const navigationRef = createNavigationContainerRef<AppStackParamList>();
 
 function AuthNavigator() {
   return (
@@ -109,6 +115,14 @@ function TabsNavigator() {
 }
 
 function AppNavigator() {
+  const handleNotificationTap = useCallback(() => {
+    if (navigationRef.isReady()) {
+      navigationRef.navigate('Alertas');
+    }
+  }, []);
+
+  useNotifications(handleNotificationTap);
+
   return (
     <AppStack.Navigator>
       <AppStack.Screen name="Tabs" component={TabsNavigator} options={{ headerShown: false }} />
@@ -144,6 +158,16 @@ function AppNavigator() {
         name="RecomendacionDetail"
         component={RecomendacionDetailScreen}
         options={{ title: 'Recomendación' }}
+      />
+      <AppStack.Screen
+        name="Alertas"
+        component={AlertasScreen}
+        options={{ title: 'Alertas' }}
+      />
+      <AppStack.Screen
+        name="Notificaciones"
+        component={NotificacionesScreen}
+        options={{ title: 'Notificaciones' }}
       />
     </AppStack.Navigator>
   );
@@ -183,7 +207,7 @@ export function RootNavigator() {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       {status === 'authenticated' && isAgricultor ? (
         <AppNavigator />
       ) : (

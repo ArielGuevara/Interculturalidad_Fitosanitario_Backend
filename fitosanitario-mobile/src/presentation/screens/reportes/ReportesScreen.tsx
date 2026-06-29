@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   Animated
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { Reporte } from '../../../domain/reportes/types';
 import { getReportes } from '../../../infrastructure/data/reportes/reportesApi';
@@ -19,9 +20,25 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 const CACHE_KEY = 'reportes.list';
 
+const ESTADO_COLORS: Record<string, string> = {
+  PENDIENTE: '#f59e0b',
+  COMUNIDAD: '#3b82f6',
+  VALIDADO: '#10b981',
+  RECHAZADO: '#ef4444',
+};
+
+const ESTADO_LABELS: Record<string, string> = {
+  PENDIENTE: 'Pendiente',
+  COMUNIDAD: 'En comunidad',
+  VALIDADO: 'Validado',
+  RECHAZADO: 'Rechazado',
+};
+
 // Componente para animar las tarjetas al presionarlas
 function AnimatedCard({ item, onPress }: { item: Reporte, onPress: () => void }) {
   const scale = useRef(new Animated.Value(1)).current;
+  const estadoColor = ESTADO_COLORS[item.estado] || '#6b7280';
+  const estadoLabel = ESTADO_LABELS[item.estado] || item.estado;
 
   return (
     <Pressable
@@ -30,35 +47,40 @@ function AnimatedCard({ item, onPress }: { item: Reporte, onPress: () => void })
       onPressOut={() => Animated.spring(scale, { toValue: 1, useNativeDriver: true }).start()}
     >
       <Animated.View style={[styles.card, { transform: [{ scale }] }]}>
-        <View style={styles.cardHeader}>
-          <View style={styles.iconContainer}>
-            <Text style={styles.iconText}>📋</Text>
+        <View style={styles.cardTop}>
+          <View style={[styles.estadoBadge, { backgroundColor: estadoColor + '18' }]}>
+            <View style={[styles.estadoDot, { backgroundColor: estadoColor }]} />
+            <Text style={[styles.estadoText, { color: estadoColor }]}>{estadoLabel}</Text>
           </View>
-          <View style={styles.titleContainer}>
-            <Text style={styles.title} numberOfLines={1}>{item.titulo}</Text>
-            {!!item.descripcion ? (
-              <Text style={styles.description} numberOfLines={2}>{item.descripcion}</Text>
-            ) : (
-              <Text style={styles.noDescription}>Sin observaciones</Text>
-            )}
-          </View>
-          <View style={styles.arrowContainer}>
-            <Text style={styles.arrow}>›</Text>
-          </View>
+          <Text style={styles.dateText}>
+            {new Date(item.createdAt).toLocaleDateString()}
+          </Text>
         </View>
 
-        <View style={styles.divider} />
+        <Text style={styles.title} numberOfLines={1}>{item.titulo}</Text>
+        {!!item.descripcion && (
+          <Text style={styles.description} numberOfLines={2}>{item.descripcion}</Text>
+        )}
 
-        {/* Metadatos en formato de "Badges" */}
         <View style={styles.metadataRow}>
-          <View style={styles.badge}>
-            <Text style={styles.badgeIcon}>🌱</Text>
-            <Text style={styles.badgeText}>Ref: {item.cultivoId}</Text>
-          </View>
-          <View style={[styles.badge, { backgroundColor: '#f0f9ff', borderColor: '#bae6fd' }]}>
-            <Text style={styles.badgeIcon}>👤</Text>
-            <Text style={[styles.badgeText, { color: '#0284c7' }]}>Usr: {item.usuarioId}</Text>
-          </View>
+          {item.cultivo && (
+            <View style={styles.chip}>
+              <Ionicons name="leaf" size={12} color="#16a34a" />
+              <Text style={styles.chipText}> {item.cultivo.nombre}</Text>
+            </View>
+          )}
+          {item.plaga && (
+            <View style={[styles.chip, { backgroundColor: '#fef2f2', borderColor: '#fecaca' }]}>
+              <Ionicons name="bug" size={12} color="#dc2626" />
+              <Text style={[styles.chipText, { color: '#dc2626' }]}> {item.plaga.nombre}</Text>
+            </View>
+          )}
+          {item.imagenesUrls && item.imagenesUrls.length > 0 && (
+            <View style={styles.chip}>
+              <Ionicons name="camera" size={12} color="#64748b" />
+              <Text style={styles.chipText}> {item.imagenesUrls.length}</Text>
+            </View>
+          )}
         </View>
       </Animated.View>
     </Pressable>
@@ -98,10 +120,10 @@ export function ReportesScreen() {
     if (loading) return null;
     return (
       <View style={styles.emptyContainer}>
-        <Text style={styles.emptyEmoji}>📝</Text>
-        <Text style={styles.emptyTitle}>Bandeja vacía</Text>
+        <Ionicons name="document-text-outline" size={54} color="#94a3b8" />
+        <Text style={styles.emptyTitle}>Sin reportes</Text>
         <Text style={styles.emptyText}>
-          No has creado ningún reporte aún.{'\n'}Toca el botón "+" para empezar.
+          Toca + para documentar un hallazgo en campo
         </Text>
       </View>
     );
@@ -110,9 +132,9 @@ export function ReportesScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
-        
+        <Text style={styles.headerTitle}>Reportes</Text>
         <Text style={styles.headerSubtitle}>
-          {items.length === 1 ? '1 documento' : `${items.length} documentos`} registrados
+          {items.length === 1 ? '1 reporte' : `${items.length} reportes`}
         </Text>
       </View>
 
@@ -171,7 +193,7 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 24,
     paddingTop: 24,
-    paddingBottom: 16,
+    paddingBottom: 12,
   },
   headerTitle: {
     fontSize: 28,
@@ -186,99 +208,73 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     paddingHorizontal: 20,
-    paddingBottom: 100, // Espacio extra al fondo para que el FAB no tape el último elemento
-    paddingTop: 8,
+    paddingBottom: 100,
+    paddingTop: 4,
   },
   
   // Diseño de la Tarjeta
   card: {
     backgroundColor: '#ffffff',
-    borderRadius: 20,
+    borderRadius: 16,
     padding: 16,
-    marginBottom: 16,
+    marginBottom: 12,
     borderWidth: 1,
     borderColor: '#f1f5f9',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
-    shadowRadius: 10,
+    shadowRadius: 8,
     elevation: 2,
+    gap: 8,
   },
-  cardHeader: {
+  cardTop: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: '#f0fdf4',
+  estadoBadge: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 14,
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
-  iconText: {
-    fontSize: 24,
-  },
-  titleContainer: {
-    flex: 1,
-  },
+  estadoDot: { width: 6, height: 6, borderRadius: 3 },
+  estadoText: { fontSize: 11, fontWeight: '700', letterSpacing: 0.3 },
+  dateText: { fontSize: 12, color: '#94a3b8' },
   title: {
-    fontSize: 17,
-    fontWeight: '800',
+    fontSize: 16,
+    fontWeight: '700',
     color: '#0f172a',
-    marginBottom: 2,
   },
   description: {
     fontSize: 13,
     color: '#64748b',
     lineHeight: 18,
   },
-  noDescription: {
-    fontSize: 13,
-    color: '#94a3b8',
-    fontStyle: 'italic',
-  },
-  arrowContainer: {
-    marginLeft: 10,
-  },
-  arrow: {
-    fontSize: 20,
-    color: '#cbd5e1',
-    fontWeight: 'bold',
-  },
 
-  // Divisor interno de la tarjeta
-  divider: {
-    height: 1,
-    backgroundColor: '#f1f5f9',
-    marginVertical: 12,
-  },
-
-  // Metadatos (Badges)
+  // Metadatos (Chips)
   metadataRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 4,
   },
-  badge: {
+  chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f0fdf4', // Verde muy claro por defecto
+    backgroundColor: '#f0fdf4',
     borderWidth: 1,
     borderColor: '#bbf7d0',
     paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingVertical: 3,
     borderRadius: 8,
   },
-  badgeIcon: {
-    fontSize: 10,
-    marginRight: 4,
-  },
-  badgeText: {
+  chipText: {
     fontSize: 11,
-    fontWeight: '700',
-    color: '#16a34a', // Texto verde
+    fontWeight: '600',
+    color: '#16a34a',
   },
 
   // Estados
@@ -298,11 +294,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 80,
     paddingHorizontal: 32,
-  },
-  emptyEmoji: {
-    fontSize: 54,
-    marginBottom: 16,
-    opacity: 0.8,
+    gap: 16,
   },
   emptyTitle: {
     fontSize: 18,

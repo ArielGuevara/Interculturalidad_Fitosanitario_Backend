@@ -1,0 +1,143 @@
+name: CI
+
+on:
+  push:
+    branches: [dev, test, main]
+  pull_request:
+    branches: [dev, test, main]
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      mobile: ${{ steps.filter.outputs.mobile }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'fitosanitario-backend/**'
+            frontend:
+              - 'fitosanitario-frontend/**'
+            mobile:
+              - 'fitosanitario-mobile/**'
+
+  backend-lint:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: fitosanitario-backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: fitosanitario-backend/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - run: npx eslint .
+
+  backend-test:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: fitosanitario-backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: fitosanitario-backend/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+
+  frontend-lint:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: fitosanitario-frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: fitosanitario-frontend/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - run: npm run lint
+
+  frontend-test:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: fitosanitario-frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: fitosanitario-frontend/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+
+  mobile-lint:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.mobile == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: fitosanitario-mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: fitosanitario-mobile/package-lock.json
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npx eslint .
+
+  mobile-test:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.mobile == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: fitosanitario-mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: fitosanitario-mobile/package-lock.json
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npx jest --passWithNoTests
+
+  # notify-final:
+  #   needs: [backend-lint, backend-test, frontend-lint, frontend-test, mobile-lint, mobile-test]
+  #   if: always()
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Send Telegram notification
+  #       run: echo "Telegram notification placeholder"

@@ -13,6 +13,9 @@ import { StorageModule }       from './modules/storage/storage.module';
 import { TratamientosModule }  from './modules/tratamientos/tratamientos.module';
 import { ComunidadModule } from './modules/comunidad/comunidad.module';
 import { RecomendacionesModule } from './modules/recomendaciones/recomendaciones.module';
+import { AlertasModule } from './modules/alertas/alertas.module';
+import { DispositivosModule } from './modules/dispositivos/dispositivos.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DbModule } from './db/db.module';
@@ -35,6 +38,9 @@ import { DbModule } from './db/db.module';
     RecomendacionesModule,
     StorageModule,
     ComunidadModule,
+    AlertasModule,
+    DispositivosModule,
+    NotificationsModule,
   ],
   controllers: [AppController], 
   providers: [AppService],

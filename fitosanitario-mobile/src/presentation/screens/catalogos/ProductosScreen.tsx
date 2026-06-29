@@ -9,6 +9,7 @@ import {
   RefreshControl,
   ActivityIndicator
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import type { Producto } from '../../../domain/catalogos/types';
 import { getProductos } from '../../../infrastructure/data/catalogos/productosApi';
 import { getCache, setCache } from '../../../infrastructure/offline/cache';
@@ -48,7 +49,7 @@ export function ProductosScreen() {
     <View style={styles.card}>
       {/* Icono con fondo azul pálido para productos */}
       <View style={styles.iconContainer}>
-        <Text style={styles.iconText}>🧪</Text>
+        <Ionicons name="flask" size={32} color="#2563eb" />
       </View>
       
       {/* Información principal */}
@@ -66,13 +67,13 @@ export function ProductosScreen() {
         {/* Detalles Técnicos */}
         {!!item.ingredienteActivo && (
           <Text style={styles.activeIngredient} numberOfLines={2}>
-            🔬 <Text style={styles.activeLabel}>Activo:</Text> {item.ingredienteActivo}
+            <Ionicons name="flask-outline" size={14} color="#64748b" /> <Text style={styles.activeLabel}>Activo:</Text> {item.ingredienteActivo}
           </Text>
         )}
         
         {!!item.unidadBase && (
           <Text style={styles.unitText}>
-            📦 <Text style={styles.unitLabel}>Presentación:</Text> {item.unidadBase}
+            <Ionicons name="cube-outline" size={14} color="#64748b" /> <Text style={styles.unitLabel}>Presentación:</Text> {item.unidadBase}
           </Text>
         )}
       </View>
@@ -83,7 +84,7 @@ export function ProductosScreen() {
     if (loading) return null;
     return (
       <View style={styles.emptyContainer}>
-        <Text style={styles.emptyEmoji}>📦</Text>
+        <Ionicons name="cube-outline" size={54} color="#94a3b8" />
         <Text style={styles.emptyTitle}>No hay productos</Text>
         <Text style={styles.emptyText}>
           Desliza hacia abajo para actualizar el vademécum.
@@ -178,9 +179,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 16,
   },
-  iconText: {
-    fontSize: 28,
-  },
   textContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -251,11 +249,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 60,
     paddingHorizontal: 32,
-  },
-  emptyEmoji: {
-    fontSize: 48,
-    marginBottom: 16,
-    opacity: 0.8,
   },
   emptyTitle: {
     fontSize: 18,
