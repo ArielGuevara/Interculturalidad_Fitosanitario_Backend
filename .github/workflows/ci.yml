@@ -46,7 +46,8 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     steps:
-      - name: Notificar resultado a Telegram
+      - uses: actions/checkout@v4
+      - name: Notificar resultado global a Telegram
         run: |
           B="${{ needs.backend.result }}"
           F="${{ needs.frontend.result }}"
@@ -62,13 +63,13 @@ jobs:
           REPORTE=""
           FAIL=0
           if [ "$B" != "skipped" ]; then
-            if [ "$B" = "success" ]; then REPORTE="${REPORTE}Backend: ✅ "; else REPORTE="${REPORTE}Backend: ❌ "; FAIL=1; fi
+            if [ "$B" = "success" ]; then REPORTE="${REPORTE}Backend: ✅%0A"; else REPORTE="${REPORTE}Backend: ❌%0A"; FAIL=1; fi
           fi
           if [ "$F" != "skipped" ]; then
-            if [ "$F" = "success" ]; then REPORTE="${REPORTE}Frontend: ✅ "; else REPORTE="${REPORTE}Frontend: ❌ "; FAIL=1; fi
+            if [ "$F" = "success" ]; then REPORTE="${REPORTE}Frontend: ✅%0A"; else REPORTE="${REPORTE}Frontend: ❌%0A"; FAIL=1; fi
           fi
           if [ "$M" != "skipped" ]; then
-            if [ "$M" = "success" ]; then REPORTE="${REPORTE}Mobile: ✅ "; else REPORTE="${REPORTE}Mobile: ❌ "; FAIL=1; fi
+            if [ "$M" = "success" ]; then REPORTE="${REPORTE}Mobile: ✅%0A"; else REPORTE="${REPORTE}Mobile: ❌%0A"; FAIL=1; fi
           fi
 
           if [ "$FAIL" = "0" ]; then
@@ -79,4 +80,4 @@ jobs:
 
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
             -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
-            -d text="$STATUS%0A$REPORTE%0ARepo: ${{ github.repository }}%0ABranch: ${{ github.ref_name }}%0AAutor: ${{ github.actor }}%0AUrl: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            -d text="$STATUS%0A${REPORTE}Repo: ${{ github.repository }}%0ABranch: ${{ github.ref_name }}%0AAutor: ${{ github.actor }}%0AUrl: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"

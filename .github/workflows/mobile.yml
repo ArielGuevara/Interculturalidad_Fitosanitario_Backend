@@ -51,17 +51,25 @@ jobs:
 
   notify:
     needs: [typecheck, test, lint]
-    if: failure()
+    if: always()
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Notificar fallo a Telegram
+      - name: Notificar resultado a Telegram
         run: |
-          MENSAJE="❌ Mobile CI FALLÓ%0A"
-          [ "${{ needs.typecheck.result }}" = "failure" ] && MENSAJE="${MENSAJE}  - Typecheck: ❌%0A"
-          [ "${{ needs.test.result }}" = "failure" ] && MENSAJE="${MENSAJE}  - Test: ❌%0A"
-          [ "${{ needs.lint.result }}" = "failure" ] && MENSAJE="${MENSAJE}  - Lint: ❌%0A"
-          MENSAJE="${MENSAJE}Repo: ${{ github.repository }}%0AUrl: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          TC="${{ needs.typecheck.result }}"
+          T="${{ needs.test.result }}"
+          L="${{ needs.lint.result }}"
+          EMOJI_TC=$( [ "$TC" = "success" ] && echo '✅' || echo '❌' )
+          EMOJI_TEST=$( [ "$T" = "success" ] && echo '✅' || echo '❌' )
+          EMOJI_LINT=$( [ "$L" = "success" ] && echo '✅' || echo '❌' )
+
+          if [ "$TC" = "success" ] && [ "$T" = "success" ] && [ "$L" = "success" ]; then
+            TITULO="✅ Mobile CI OK"
+          else
+            TITULO="❌ Mobile CI FALLÓ"
+          fi
+
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
             -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
-            -d text="$MENSAJE"
+            -d text="$TITULO%0A  Typecheck: $EMOJI_TC%0A  Test: $EMOJI_TEST%0A  Lint: $EMOJI_LINT%0ARepo: ${{ github.repository }}%0ABranch: ${{ github.ref_name }}%0AAutor: ${{ github.actor }}%0AUrl: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"

@@ -44,6 +44,7 @@
     "zustand": "^5.0.13"
   },
   "devDependencies": {
+
     "@react-native/jest-preset": "^0.86.0",
     "@testing-library/jest-native": "^5.4.3",
     "@testing-library/react-native": "^14.0.1",
@@ -53,14 +54,18 @@
     "@typescript-eslint/parser": "^8.62.0",
     "babel-preset-expo": "~54.0.10",
     "jest": "^30.4.2",
-    "jest-environment-node": "^30.4.1",
+
     "jest-expo": "^56.0.5",
     "eslint": "^10.6.0",
-    "jest-mock": "^30.4.1",
+
     "react-native-worklets": "^0.10.0",
     "react-test-renderer": "^19.2.7",
     "ts-jest": "^29.4.11",
     "typescript": "~5.9.2"
+  },
+  "overrides": {
+    "jest-environment-node": "30.4.1",
+    "jest-mock": "30.4.1"
   },
   "private": true
 }

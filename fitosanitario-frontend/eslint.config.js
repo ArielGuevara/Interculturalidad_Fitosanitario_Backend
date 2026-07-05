@@ -20,6 +20,7 @@ module.exports = defineConfig([
       '@typescript-eslint/no-empty-object-type': 'off',
       '@typescript-eslint/no-inferrable-types': 'off',
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      '@angular-eslint/no-empty-lifecycle-method': 'off',
       '@angular-eslint/prefer-inject': 'off',
       '@angular-eslint/directive-selector': [
         'error',
