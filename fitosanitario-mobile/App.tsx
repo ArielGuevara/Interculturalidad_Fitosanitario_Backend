@@ -10,6 +10,7 @@ export default function App() {
   useEffect(() => {
     startAutoSync();
     syncOnAppStart();
+    console.log('App initialized');
   }, []);
 
   return (

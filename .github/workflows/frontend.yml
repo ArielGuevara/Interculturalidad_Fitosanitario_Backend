@@ -17,7 +17,14 @@ jobs:
           cache: 'npm'
           cache-dependency-path: fitosanitario-frontend/package-lock.json
       - run: npm ci
-      - run: npm run lint
+      - run: npm run lint 2>&1 | tee /tmp/frontend-lint.log; exit ${PIPESTATUS[0]}
+      - name: Notificar lint
+        if: always()
+        run: |
+          EMOJI=$( [ "${{ job.status }}" = "success" ] && echo '✅' || echo '❌' )
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+            -d text="${EMOJI} Frontend Lint%0ARepo: ${{ github.repository }}%0AAutor: ${{ github.actor }}%0AUrl: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
   test:
     runs-on: ubuntu-latest
@@ -32,7 +39,16 @@ jobs:
           cache: 'npm'
           cache-dependency-path: fitosanitario-frontend/package-lock.json
       - run: npm ci
-      - run: npx ng test --watch=false
+      - run: npx ng test --watch=false 2>&1 | tee /tmp/frontend-test.log; exit ${PIPESTATUS[0]}
+      - name: Notificar test
+        if: always()
+        run: |
+          EMOJI=$( [ "${{ job.status }}" = "success" ] && echo '✅' || echo '❌' )
+          TEST_LINE=$(grep -oP '(Suites|Tests):.*\d+.*(passed|failed)' /tmp/frontend-test.log 2>/dev/null | tail -5 || echo "")
+          [ -z "$TEST_LINE" ] && TEST_LINE="Test completado"
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+            -d text="${EMOJI} Frontend Test%0A  ${TEST_LINE}%0ARepo: ${{ github.repository }}%0AAutor: ${{ github.actor }}%0AUrl: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
   build:
     runs-on: ubuntu-latest
@@ -47,29 +63,11 @@ jobs:
           cache: 'npm'
           cache-dependency-path: fitosanitario-frontend/package-lock.json
       - run: npm ci
-      - run: npm run build --configuration=production
-
-  notify:
-    needs: [lint, test, build]
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Notificar resultado a Telegram
+      - run: npm run build --configuration=production 2>&1 | tee /tmp/frontend-build.log; exit ${PIPESTATUS[0]}
+      - name: Notificar build
+        if: always()
         run: |
-          L="${{ needs.lint.result }}"
-          T="${{ needs.test.result }}"
-          B="${{ needs.build.result }}"
-          EMOJI_LINT=$( [ "$L" = "success" ] && echo '✅' || echo '❌' )
-          EMOJI_TEST=$( [ "$T" = "success" ] && echo '✅' || echo '❌' )
-          EMOJI_BUILD=$( [ "$B" = "success" ] && echo '✅' || echo '❌' )
-
-          if [ "$L" = "success" ] && [ "$T" = "success" ] && [ "$B" = "success" ]; then
-            TITULO="✅ Frontend CI OK"
-          else
-            TITULO="❌ Frontend CI FALLÓ"
-          fi
-
+          EMOJI=$( [ "${{ job.status }}" = "success" ] && echo '✅' || echo '❌' )
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
             -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
-            -d text="$TITULO%0A  Lint: $EMOJI_LINT%0A  Test: $EMOJI_TEST%0A  Build: $EMOJI_BUILD%0ARepo: ${{ github.repository }}%0ABranch: ${{ github.ref_name }}%0AAutor: ${{ github.actor }}%0AUrl: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            -d text="${EMOJI} Frontend Build%0ARepo: ${{ github.repository }}%0AAutor: ${{ github.actor }}%0AUrl: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
