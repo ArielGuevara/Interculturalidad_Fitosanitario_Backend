@@ -27,7 +27,7 @@ const mockDb = {
     }
     return null;
   },
-  getAllAsync: async (sql: string, params?: any[]) => {
+  getAllAsync: async (sql: string, _params?: any[]) => {
     if (sql.includes('SELECT id, payload, createdAt FROM pending_reportes')) {
       const rows = Array.from(pendingStore.entries()).map(([id, data]) => ({
         id,

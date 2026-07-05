@@ -61,23 +61,23 @@ export class CreateTratamientoDto {
   @IsInt()
   @Min(1)
   @Type(() => Number)
-  intervaloDias: number = 1;
+  intervaloDias = 1;
 
   @IsInt()
   @Min(1)
   @Type(() => Number)
-  numeroAplicaciones: number = 1;
+  numeroAplicaciones = 1;
 
   @IsInt()
   @Min(1)
   @Type(() => Number)
-  duracionTotalDias: number = 1;
+  duracionTotalDias = 1;
 
   // Seguridad
   @IsInt()
   @Min(0)
   @Type(() => Number)
-  diasCarencia: number = 0;
+  diasCarencia = 0;
 
   @IsInt()
   @IsOptional()

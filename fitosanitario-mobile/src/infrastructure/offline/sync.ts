@@ -7,7 +7,7 @@ const MAX_RETRIES = 3;
 async function syncWithRetry(
   payload: any,
   token: string,
-  retriesLeft: number = MAX_RETRIES,
+  _retriesLeft: number = MAX_RETRIES,
 ): Promise<boolean> {
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {

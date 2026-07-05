@@ -35,7 +35,7 @@ describe('authGuard', () => {
     authServiceMock.isAuthenticated.mockReturnValue(false);
     routerSpy.createUrlTree.mockReturnValue({} as any);
 
-    const result = TestBed.runInInjectionContext(() =>
+    TestBed.runInInjectionContext(() =>
       authGuard({} as any, {} as any)
     );
 

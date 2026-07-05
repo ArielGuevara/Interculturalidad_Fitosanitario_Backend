@@ -4,7 +4,7 @@ export class CreateCultivoDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(100)
-  nombre: string = '';
+  nombre = '';
 
   @IsString()
   @IsOptional()

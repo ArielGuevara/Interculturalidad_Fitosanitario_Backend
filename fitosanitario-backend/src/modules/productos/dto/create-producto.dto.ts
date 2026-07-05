@@ -10,7 +10,7 @@ export class CreateProductoDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(150)
-  nombreComercial: string = '';
+  nombreComercial = '';
 
   @IsString()
   @IsOptional()

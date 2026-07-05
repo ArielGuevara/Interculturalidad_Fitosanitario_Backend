@@ -1,9 +1,9 @@
-﻿import React, { useEffect, useCallback, useRef } from 'react';
+﻿import React, { useEffect, useCallback } from 'react';
 import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { Text, View, Alert } from 'react-native';
+import { Text, Alert } from 'react-native';
 import { useAuthStore } from '../../infrastructure/auth/authStore';
 import { useNotifications } from '../hooks/useNotifications';
 import { LoginScreen } from '../screens/auth/LoginScreen';

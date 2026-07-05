@@ -1,63 +1,63 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="jest tests" tests="23" failures="0" errors="0" time="15.864">
-  <testsuite name="PerformanceMonitor" errors="0" failures="0" skipped="0" timestamp="2026-07-05T20:20:33" time="7.529" tests="3">
-    <testcase classname="PerformanceMonitor should call next()" name="PerformanceMonitor should call next()" time="0.034">
+<testsuites name="jest tests" tests="23" failures="0" errors="0" time="8.81">
+  <testsuite name="PerformanceMonitor" errors="0" failures="0" skipped="0" timestamp="2026-07-05T20:32:37" time="3.92" tests="3">
+    <testcase classname="PerformanceMonitor should call next()" name="PerformanceMonitor should call next()" time="0.028">
     </testcase>
-    <testcase classname="PerformanceMonitor should measure request duration and log when &gt;500ms" name="PerformanceMonitor should measure request duration and log when &gt;500ms" time="0.009">
+    <testcase classname="PerformanceMonitor should measure request duration and log when &gt;500ms" name="PerformanceMonitor should measure request duration and log when &gt;500ms" time="0.008">
     </testcase>
-    <testcase classname="PerformanceMonitor should log slow requests (&gt;1000ms) with SLOW prefix" name="PerformanceMonitor should log slow requests (&gt;1000ms) with SLOW prefix" time="0.006">
+    <testcase classname="PerformanceMonitor should log slow requests (&gt;1000ms) with SLOW prefix" name="PerformanceMonitor should log slow requests (&gt;1000ms) with SLOW prefix" time="0.005">
     </testcase>
   </testsuite>
-  <testsuite name="PushService" errors="0" failures="0" skipped="0" timestamp="2026-07-05T20:20:33" time="9.417" tests="3">
-    <testcase classname="PushService sendPush should send push to Expo API" name="PushService sendPush should send push to Expo API" time="0.125">
+  <testsuite name="AppController" errors="0" failures="0" skipped="0" timestamp="2026-07-05T20:32:37" time="5.161" tests="1">
+    <testcase classname="AppController health endpoint should return &quot;Hello World!&quot;" name="AppController health endpoint should return &quot;Hello World!&quot;" time="0.077">
+    </testcase>
+  </testsuite>
+  <testsuite name="PushService" errors="0" failures="0" skipped="0" timestamp="2026-07-05T20:32:37" time="5.23" tests="3">
+    <testcase classname="PushService sendPush should send push to Expo API" name="PushService sendPush should send push to Expo API" time="0.09">
     </testcase>
     <testcase classname="PushService sendPush should handle empty token arrays gracefully" name="PushService sendPush should handle empty token arrays gracefully" time="0.018">
     </testcase>
-    <testcase classname="PushService sendToTokens should map tokens and call sendPush" name="PushService sendToTokens should map tokens and call sendPush" time="0.026">
+    <testcase classname="PushService sendToTokens should map tokens and call sendPush" name="PushService sendToTokens should map tokens and call sendPush" time="0.016">
     </testcase>
   </testsuite>
-  <testsuite name="AppController" errors="0" failures="0" skipped="0" timestamp="2026-07-05T20:20:33" time="9.411" tests="1">
-    <testcase classname="AppController health endpoint should return &quot;Hello World!&quot;" name="AppController health endpoint should return &quot;Hello World!&quot;" time="0.09">
+  <testsuite name="DispositivosService" errors="0" failures="0" skipped="0" timestamp="2026-07-05T20:32:37" time="6.131" tests="3">
+    <testcase classname="DispositivosService register should register a new device" name="DispositivosService register should register a new device" time="0.064">
+    </testcase>
+    <testcase classname="DispositivosService findByUser should find devices by user" name="DispositivosService findByUser should find devices by user" time="0.01">
+    </testcase>
+    <testcase classname="DispositivosService unregister should unregister a device by token" name="DispositivosService unregister should unregister a device by token" time="0.01">
     </testcase>
   </testsuite>
-  <testsuite name="DispositivosService" errors="0" failures="0" skipped="0" timestamp="2026-07-05T20:20:33" time="11.255" tests="3">
-    <testcase classname="DispositivosService register should register a new device" name="DispositivosService register should register a new device" time="0.104">
+  <testsuite name="AuthService" errors="0" failures="0" skipped="0" timestamp="2026-07-05T20:32:37" time="6.32" tests="3">
+    <testcase classname="AuthService login should validate user credentials and return JWT on successful login" name="AuthService login should validate user credentials and return JWT on successful login" time="0.055">
     </testcase>
-    <testcase classname="DispositivosService findByUser should find devices by user" name="DispositivosService findByUser should find devices by user" time="0.022">
+    <testcase classname="AuthService login should throw UnauthorizedException when user is not found" name="AuthService login should throw UnauthorizedException when user is not found" time="0.04">
     </testcase>
-    <testcase classname="DispositivosService unregister should unregister a device by token" name="DispositivosService unregister should unregister a device by token" time="0.017">
-    </testcase>
-  </testsuite>
-  <testsuite name="AlertasService" errors="0" failures="0" skipped="0" timestamp="2026-07-05T20:20:33" time="11.507" tests="4">
-    <testcase classname="AlertasService findAllZonas should find all zonas" name="AlertasService findAllZonas should find all zonas" time="0.148">
-    </testcase>
-    <testcase classname="AlertasService findZonaById should throw NotFoundException for non-existent zona" name="AlertasService findZonaById should throw NotFoundException for non-existent zona" time="0.085">
-    </testcase>
-    <testcase classname="AlertasService findZonaById should return zona when found" name="AlertasService findZonaById should return zona when found" time="0.032">
-    </testcase>
-    <testcase classname="AlertasService createParametro should create a parametro" name="AlertasService createParametro should create a parametro" time="0.02">
+    <testcase classname="AuthService login should throw UnauthorizedException when password is invalid" name="AuthService login should throw UnauthorizedException when password is invalid" time="0.015">
     </testcase>
   </testsuite>
-  <testsuite name="AuthService" errors="0" failures="0" skipped="0" timestamp="2026-07-05T20:20:33" time="11.666" tests="3">
-    <testcase classname="AuthService login should validate user credentials and return JWT on successful login" name="AuthService login should validate user credentials and return JWT on successful login" time="0.113">
+  <testsuite name="AlertasService" errors="0" failures="0" skipped="0" timestamp="2026-07-05T20:32:37" time="6.424" tests="4">
+    <testcase classname="AlertasService findAllZonas should find all zonas" name="AlertasService findAllZonas should find all zonas" time="0.062">
     </testcase>
-    <testcase classname="AuthService login should throw UnauthorizedException when user is not found" name="AuthService login should throw UnauthorizedException when user is not found" time="0.102">
+    <testcase classname="AlertasService findZonaById should throw NotFoundException for non-existent zona" name="AlertasService findZonaById should throw NotFoundException for non-existent zona" time="0.054">
     </testcase>
-    <testcase classname="AuthService login should throw UnauthorizedException when password is invalid" name="AuthService login should throw UnauthorizedException when password is invalid" time="0.057">
+    <testcase classname="AlertasService findZonaById should return zona when found" name="AlertasService findZonaById should return zona when found" time="0.012">
+    </testcase>
+    <testcase classname="AlertasService createParametro should create a parametro" name="AlertasService createParametro should create a parametro" time="0.014">
     </testcase>
   </testsuite>
-  <testsuite name="ReportesService" errors="0" failures="0" skipped="0" timestamp="2026-07-05T20:20:33" time="12.574" tests="6">
-    <testcase classname="ReportesService create should create a reporte with images and audio" name="ReportesService create should create a reporte with images and audio" time="0.126">
+  <testsuite name="ReportesService" errors="0" failures="0" skipped="0" timestamp="2026-07-05T20:32:37" time="6.642" tests="6">
+    <testcase classname="ReportesService create should create a reporte with images and audio" name="ReportesService create should create a reporte with images and audio" time="0.054">
     </testcase>
-    <testcase classname="ReportesService create should create a reporte without images or audio" name="ReportesService create should create a reporte without images or audio" time="0.022">
+    <testcase classname="ReportesService create should create a reporte without images or audio" name="ReportesService create should create a reporte without images or audio" time="0.007">
     </testcase>
-    <testcase classname="ReportesService create should throw BadRequestException when more than 10 images" name="ReportesService create should throw BadRequestException when more than 10 images" time="0.093">
+    <testcase classname="ReportesService create should throw BadRequestException when more than 10 images" name="ReportesService create should throw BadRequestException when more than 10 images" time="0.037">
     </testcase>
-    <testcase classname="ReportesService findByUsuario should find reportes by usuario" name="ReportesService findByUsuario should find reportes by usuario" time="0.018">
+    <testcase classname="ReportesService findByUsuario should find reportes by usuario" name="ReportesService findByUsuario should find reportes by usuario" time="0.008">
     </testcase>
-    <testcase classname="ReportesService findById should throw NotFoundException for non-existent reporte" name="ReportesService findById should throw NotFoundException for non-existent reporte" time="0.035">
+    <testcase classname="ReportesService findById should throw NotFoundException for non-existent reporte" name="ReportesService findById should throw NotFoundException for non-existent reporte" time="0.009">
     </testcase>
-    <testcase classname="ReportesService findById should return reporte when found" name="ReportesService findById should return reporte when found" time="0.02">
+    <testcase classname="ReportesService findById should return reporte when found" name="ReportesService findById should return reporte when found" time="0.006">
     </testcase>
   </testsuite>
 </testsuites>

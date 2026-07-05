@@ -1,4 +1,4 @@
-export type ReporteEntity = {
+export interface ReporteEntity {
   id: number;
   titulo: string;
   descripcion: string | null;
@@ -9,4 +9,4 @@ export type ReporteEntity = {
   latitud: number;
   longitud: number;
   createdAt: Date;
-};
+}

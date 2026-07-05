@@ -10,7 +10,7 @@ export class CreatePlagaDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(150)
-  nombre: string = '';
+  nombre = '';
 
   @IsEnum(['PLAGA', 'ENFERMEDAD', 'MALEZA'])
   tipo: 'PLAGA' | 'ENFERMEDAD' | 'MALEZA' = 'ENFERMEDAD';

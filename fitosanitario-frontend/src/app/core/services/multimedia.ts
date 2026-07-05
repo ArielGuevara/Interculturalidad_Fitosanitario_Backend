@@ -46,7 +46,7 @@ export class MultimediaService {
             urlObj.port = publicMinioUrl.port;
         }
         return urlObj.toString();
-    } catch (e) {
+    } catch {
         return url;
     }
   }

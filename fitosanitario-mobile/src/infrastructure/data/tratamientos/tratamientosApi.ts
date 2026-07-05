@@ -1,5 +1,5 @@
 import { apiClient } from '../../http/apiClient';
-import type { Tratamiento, TratamientoConRelaciones } from '../../../domain/tratamientos/types';
+import type { TratamientoConRelaciones } from '../../../domain/tratamientos/types';
 
 export const tratamientosApi = {
   getTratamientos: async (): Promise<TratamientoConRelaciones[]> => {

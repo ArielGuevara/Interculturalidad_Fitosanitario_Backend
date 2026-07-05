@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View, Text, FlatList, Pressable, ActivityIndicator, StyleSheet,
   RefreshControl, SafeAreaView,
@@ -23,7 +23,6 @@ const TIPO_COLOR: Record<string, string> = {
 
 export function ForoScreen() {
   const navigation = useNavigation<any>();
-  const usuario = useAuthStore((s) => s.usuario);
   const [recomendaciones, setRecomendaciones] = useState<Recomendacion[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);

@@ -46,7 +46,7 @@ export class AlertasRepository {
       .from(schema.parametrosAlerta)
       .where(eq(schema.parametrosAlerta.activo, true));
 
-    const brotes: Array<{ parametro: any; reportes: any[] }> = [];
+    const brotes: { parametro: any; reportes: any[] }[] = [];
 
     for (const p of parametros) {
       let condiciones = and(

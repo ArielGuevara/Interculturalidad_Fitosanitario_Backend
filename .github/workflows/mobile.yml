@@ -76,18 +76,21 @@ jobs:
           TS="${{ needs.test.outputs.test_tests }}"
 
           LINEAS=""
-          LINEAS="${LINEAS}$( [ \"$TC\" = \"success\" ] && echo '✅' || echo '❌' ) Typecheck (TypeScript)%0A"
-          LINEAS="${LINEAS}$( [ \"$T\" = \"success\" ] && echo '✅' || echo '❌' ) Pruebas Unitarias (Jest)%0A"
-          [ -n "$S" ] && [ "$S" != "N/A" ] && LINEAS="${LINEAS}     ${S}%0A"
-          [ -n "$TS" ] && [ "$TS" != "N/A" ] && LINEAS="${LINEAS}     ${TS}%0A"
-          LINEAS="${LINEAS}$( [ \"$L\" = \"success\" ] && echo '✅' || echo '❌' ) Análisis Estático (ESLint)%0A"
+          LINEAS="${LINEAS}🔍 Fase 1: Typecheck (TS) → $( [ \"$TC\" = \"success\" ] && echo '✅ SUPERADO' || echo '❌ FALLIDO' )%0A"
+          LINEAS="${LINEAS}🧪 Fase 2: Tests (Jest) → $( [ \"$T\" = \"success\" ] && echo '✅ SUPERADO' || echo '❌ FALLIDO' )%0A"
+          [ -n "$S" ] && [ "$S" != "N/A" ] && LINEAS="${LINEAS}     📊 Suites: ${S}%0A"
+          [ -n "$TS" ] && [ "$TS" != "N/A" ] && LINEAS="${LINEAS}     📊 Tests: ${TS}%0A"
+          LINEAS="${LINEAS}📋 Fase 3: Lint (ESLint) → $( [ \"$L\" = \"success\" ] && echo '✅ SUPERADO' || echo '❌ FALLIDO' )%0A"
 
           if [ "$TC" = "success" ] && [ "$T" = "success" ] && [ "$L" = "success" ]; then
-            TITULO="✅ [UPDATE] Mobile - Todas las fases SUPERADAS"
+            TITULO="✅ Mobile - SUPERADO"
+            ESTADO="🟢"
           else
-            TITULO="❌ [UPDATE] Mobile - Fases FALLIDAS"
+            TITULO="❌ Mobile - FALLIDO"
+            ESTADO="🔴"
           fi
 
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
             -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
-            -d text="${TITULO}%0A${LINEAS}Rama: ${{ github.ref_name }}%0AAutor: ${{ github.actor }}"
+            -d text="📱 *Mobile* | ${ESTADO} ${TITULO}%0A%0A${LINEAS}%0A🔗 ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" \
+            -d parse_mode="Markdown"

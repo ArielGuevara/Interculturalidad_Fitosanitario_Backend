@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DB_CONNECTION } from '../../db/db.module';
 import * as schema from '../../db/schema';
-import { eq, desc, and } from 'drizzle-orm';
+import { eq, desc, and, gte } from 'drizzle-orm';
 import { CreateTratamientoDto } from './dto/create-tratamiento.dto';
 import { UpdateTratamientoDto } from './dto/update-tratamiento.dto';
 
@@ -183,7 +183,10 @@ export class TratamientosRepository {
       .where(
         and(
           eq(schema.tratamientosOficiales.enEnciclopedia, true),
-          gte(schema.tratamientosOficiales.fechaUltimaActualizacion, fechaDesde),
+          gte(
+            schema.tratamientosOficiales.fechaUltimaActualizacion,
+            fechaDesde,
+          ),
         ),
       )
       .orderBy(desc(schema.tratamientosOficiales.fechaUltimaActualizacion));

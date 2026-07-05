@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Alert, ScrollView, Text, View, Pressable, StyleSheet,
+  Alert, ScrollView, Text, View, StyleSheet,
   ActivityIndicator, TextInput, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';

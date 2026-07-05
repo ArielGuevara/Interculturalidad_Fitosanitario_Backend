@@ -1,14 +1,21 @@
-import type { Reporte, CreateReporteInput } from '../../../domain/reportes/types';
+import type { Reporte, CreateReporteInput, HistorialEntry } from '../../../domain/reportes/types';
 import { apiClient } from '../../http/apiClient';
 
 export async function fetchReportes(): Promise<Reporte[]> {
   const res = await apiClient.get<Reporte[]>('/reportes');
   return res.data;
 }
+export const getReportes = fetchReportes;
 
 export async function fetchReporteById(id: number): Promise<Reporte> {
   const res = await apiClient.get<Reporte>(`/reportes/${id}`);
   return res.data;
+}
+export const getReporteById = fetchReporteById;
+
+export async function getHistorial(id: number): Promise<HistorialEntry[]> {
+  const { data } = await apiClient.get<HistorialEntry[]>(`/reportes/${id}/historial`);
+  return data;
 }
 
 function guessMimeType(uri: string, fallback: string) {
@@ -72,3 +79,5 @@ export async function createReporteMultipart(
 
   return (await res.json()) as Reporte;
 }
+
+export const reportesApi = { getReportes, getReporteById, getHistorial, createReporte: createReporteMultipart };

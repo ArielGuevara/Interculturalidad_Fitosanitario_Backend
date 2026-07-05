@@ -44,7 +44,10 @@ export class AlertasController {
 
   @Patch('zonas-alerta/:id')
   @Roles('MODERADOR')
-  updateZona(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateZonaAlertaDto) {
+  updateZona(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateZonaAlertaDto,
+  ) {
     return this.service.updateZona(id, dto);
   }
 
@@ -73,7 +76,10 @@ export class AlertasController {
 
   @Patch('parametros-alerta/:id')
   @Roles('MODERADOR')
-  updateParametro(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateParametroAlertaDto) {
+  updateParametro(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateParametroAlertaDto,
+  ) {
     return this.service.updateParametro(id, dto);
   }
 
