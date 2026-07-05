@@ -22,9 +22,10 @@ jobs:
         if: always()
         run: |
           EMOJI=$( [ "${{ job.status }}" = "success" ] && echo '✅' || echo '❌' )
+          ESTADO=$( [ "${{ job.status }}" = "success" ] && echo 'SUPERADO' || echo 'FALLIDO' )
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
             -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
-            -d text="${EMOJI} Frontend Lint%0ARepo: ${{ github.repository }}%0AAutor: ${{ github.actor }}%0AUrl: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            -d text="${EMOJI} [UPDATE] Estado del Pipeline%0AFase: Análisis Estático Frontend (ESLint)%0AEstado: ${ESTADO}%0ARama: ${{ github.ref_name }}%0AAutor: ${{ github.actor }}"
 
   test:
     runs-on: ubuntu-latest
@@ -44,11 +45,12 @@ jobs:
         if: always()
         run: |
           EMOJI=$( [ "${{ job.status }}" = "success" ] && echo '✅' || echo '❌' )
-          TEST_LINE=$(grep -oP '(Suites|Tests):.*\d+.*(passed|failed)' /tmp/frontend-test.log 2>/dev/null | tail -5 || echo "")
-          [ -z "$TEST_LINE" ] && TEST_LINE="Test completado"
+          ESTADO=$( [ "${{ job.status }}" = "success" ] && echo 'SUPERADO' || echo 'FALLIDO' )
+          SUITE_LINE=$(grep -oP 'Suites:.*\d+.*(passed|failed|total)' /tmp/frontend-test.log 2>/dev/null | head -1 || echo "")
+          TEST_LINE=$(grep -oP 'Tests:.*\d+.*(passed|failed|total)' /tmp/frontend-test.log 2>/dev/null | head -1 || echo "")
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
             -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
-            -d text="${EMOJI} Frontend Test%0A  ${TEST_LINE}%0ARepo: ${{ github.repository }}%0AAutor: ${{ github.actor }}%0AUrl: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            -d text="${EMOJI} [UPDATE] Estado del Pipeline%0AFase: Pruebas Unitarias Frontend (Angular)%0AEstado: ${ESTADO}%0A  ${SUITE_LINE}%0A  ${TEST_LINE}%0ARama: ${{ github.ref_name }}%0AAutor: ${{ github.actor }}"
 
   build:
     runs-on: ubuntu-latest
@@ -68,6 +70,7 @@ jobs:
         if: always()
         run: |
           EMOJI=$( [ "${{ job.status }}" = "success" ] && echo '✅' || echo '❌' )
+          ESTADO=$( [ "${{ job.status }}" = "success" ] && echo 'SUPERADO' || echo 'FALLIDO' )
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
             -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
-            -d text="${EMOJI} Frontend Build%0ARepo: ${{ github.repository }}%0AAutor: ${{ github.actor }}%0AUrl: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            -d text="${EMOJI} [UPDATE] Estado del Pipeline%0AFase: Compilación Frontend (Build)%0AEstado: ${ESTADO}%0ARama: ${{ github.ref_name }}%0AAutor: ${{ github.actor }}"

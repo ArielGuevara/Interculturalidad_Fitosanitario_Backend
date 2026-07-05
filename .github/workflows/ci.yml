@@ -1,4 +1,4 @@
-name: CI
+name: Pipeline Global CI/CD
 
 on:
   push:
@@ -26,6 +26,25 @@ jobs:
             mobile:
               - 'fitosanitario-mobile/**'
 
+  notify-start:
+    needs: detect-changes
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notificar inicio
+        run: |
+          B="${{ needs.detect-changes.outputs.backend }}"
+          F="${{ needs.detect-changes.outputs.frontend }}"
+          M="${{ needs.detect-changes.outputs.mobile }}"
+          MODULOS=""
+          [ "$B" = "true" ] && MODULOS="${MODULOS}· Backend%0A"
+          [ "$F" = "true" ] && MODULOS="${MODULOS}· Frontend%0A"
+          [ "$M" = "true" ] && MODULOS="${MODULOS}· Mobile%0A"
+          [ -z "$MODULOS" ] && MODULOS="(sin cambios detectados)%0A"
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+            -d text="🚀 [INFO] Inicio de Pipeline Global CI/CD%0AProyecto: Fitosanitario (Monorepo)%0ARama: ${{ github.ref_name }}%0AAutor: ${{ github.actor }}%0AMódulos a ejecutar:%0A${MODULOS}Acción: El orquestador ha iniciado la detección de cambios y los flujos correspondientes."
+
   backend:
     needs: detect-changes
     if: needs.detect-changes.outputs.backend == 'true'
@@ -41,13 +60,12 @@ jobs:
     if: needs.detect-changes.outputs.mobile == 'true'
     uses: ./.github/workflows/mobile.yml
 
-  notify-telegram:
+  notify-final:
     needs: [detect-changes, backend, frontend, mobile]
     if: always()
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Notificar resultado global a Telegram
+      - name: Notificar resumen final
         run: |
           B="${{ needs.backend.result }}"
           F="${{ needs.frontend.result }}"
@@ -56,28 +74,28 @@ jobs:
           if [ "$B" = "skipped" ] && [ "$F" = "skipped" ] && [ "$M" = "skipped" ]; then
             curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
               -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
-              -d text="⚠️ CI - Sin cambios detectados%0ARepo: ${{ github.repository }}%0ABranch: ${{ github.ref_name }}%0AAutor: ${{ github.actor }}"
+              -d text="⚠️ [INFO] Pipeline Global - Sin cambios detectados%0ARama: ${{ github.ref_name }}%0AAutor: ${{ github.actor }}"
             exit 0
           fi
 
           REPORTE=""
           FAIL=0
           if [ "$B" != "skipped" ]; then
-            if [ "$B" = "success" ]; then REPORTE="${REPORTE}Backend: ✅%0A"; else REPORTE="${REPORTE}Backend: ❌%0A"; FAIL=1; fi
+            if [ "$B" = "success" ]; then REPORTE="${REPORTE}· Backend: ✅ SUPERADO%0A"; else REPORTE="${REPORTE}· Backend: ❌ FALLIDO%0A"; FAIL=1; fi
           fi
           if [ "$F" != "skipped" ]; then
-            if [ "$F" = "success" ]; then REPORTE="${REPORTE}Frontend: ✅%0A"; else REPORTE="${REPORTE}Frontend: ❌%0A"; FAIL=1; fi
+            if [ "$F" = "success" ]; then REPORTE="${REPORTE}· Frontend: ✅ SUPERADO%0A"; else REPORTE="${REPORTE}· Frontend: ❌ FALLIDO%0A"; FAIL=1; fi
           fi
           if [ "$M" != "skipped" ]; then
-            if [ "$M" = "success" ]; then REPORTE="${REPORTE}Mobile: ✅%0A"; else REPORTE="${REPORTE}Mobile: ❌%0A"; FAIL=1; fi
+            if [ "$M" = "success" ]; then REPORTE="${REPORTE}· Mobile: ✅ SUPERADO%0A"; else REPORTE="${REPORTE}· Mobile: ❌ FALLIDO%0A"; FAIL=1; fi
           fi
 
           if [ "$FAIL" = "0" ]; then
-            STATUS="✅ CI COMPLETADO EXITOSAMENTE"
+            TITULO="🏆 [REPORT] Resumen de Orquestador Global%0AEstado final: EXITOSO%0A%0ARama: ${{ github.ref_name }}%0AAutor: ${{ github.actor }}%0A%0ATodos los flujos invocados superaron sus fases exitosamente."
           else
-            STATUS="❌ CI FALLÓ"
+            TITULO="❌ [REPORT] Resumen de Orquestador Global%0AEstado final: FALLIDO%0A%0ARama: ${{ github.ref_name }}%0AAutor: ${{ github.actor }}%0A%0AAlgunos flujos presentaron errores."
           fi
 
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
             -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
-            -d text="$STATUS%0A${REPORTE}Repo: ${{ github.repository }}%0ABranch: ${{ github.ref_name }}%0AAutor: ${{ github.actor }}%0AUrl: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            -d text="${TITULO}%0A%0A${REPORTE}🔗 Ver Pipeline: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
