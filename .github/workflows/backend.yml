@@ -18,18 +18,13 @@ jobs:
           cache-dependency-path: fitosanitario-backend/package-lock.json
       - run: npm ci
       - run: npm run build
-      - run: npm run lint 2>&1 | tee /tmp/backend-lint.log; exit ${PIPESTATUS[0]}
-      - name: Notificar lint
-        if: always()
-        run: |
-          EMOJI=$( [ "${{ job.status }}" = "success" ] && echo '✅' || echo '❌' )
-          ESTADO=$( [ "${{ job.status }}" = "success" ] && echo 'SUPERADO' || echo 'FALLIDO' )
-          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
-            -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
-            -d text="${EMOJI} [UPDATE] Estado del Pipeline%0AFase: Análisis Estático Backend (ESLint)%0AEstado: ${ESTADO}%0ARama: ${{ github.ref_name }}%0AAutor: ${{ github.actor }}"
+      - run: npm run lint
 
   test:
     runs-on: ubuntu-latest
+    outputs:
+      test_suites: ${{ steps.capture.outputs.test_suites }}
+      test_tests: ${{ steps.capture.outputs.test_tests }}
     defaults:
       run:
         working-directory: fitosanitario-backend
@@ -43,16 +38,11 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm test 2>&1 | tee /tmp/backend-test.log; exit ${PIPESTATUS[0]}
-      - name: Notificar test
+      - id: capture
         if: always()
         run: |
-          EMOJI=$( [ "${{ job.status }}" = "success" ] && echo '✅' || echo '❌' )
-          ESTADO=$( [ "${{ job.status }}" = "success" ] && echo 'SUPERADO' || echo 'FALLIDO' )
-          TEST_LINE=$(grep -oP 'Tests:\s+\d+\s+passed,\s+\d+\s+total' /tmp/backend-test.log 2>/dev/null || echo "")
-          SUITE_LINE=$(grep -oP 'Test Suites:\s+\d+ passed.*\d+ total' /tmp/backend-test.log 2>/dev/null || echo "")
-          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
-            -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
-            -d text="${EMOJI} [UPDATE] Estado del Pipeline%0AFase: Pruebas Unitarias Backend (Jest)%0AEstado: ${ESTADO}%0A  ${SUITE_LINE}%0A  ${TEST_LINE}%0ARama: ${{ github.ref_name }}%0AAutor: ${{ github.actor }}"
+          echo "test_suites=$(grep -oP 'Test Suites: .+' /tmp/backend-test.log 2>/dev/null || echo 'N/A')" >> $GITHUB_OUTPUT
+          echo "test_tests=$(grep -oP 'Tests: .+' /tmp/backend-test.log 2>/dev/null || echo 'N/A')" >> $GITHUB_OUTPUT
 
   build:
     runs-on: ubuntu-latest
@@ -67,12 +57,34 @@ jobs:
           cache: 'npm'
           cache-dependency-path: fitosanitario-backend/package-lock.json
       - run: npm ci
-      - run: npm run build 2>&1 | tee /tmp/backend-build.log; exit ${PIPESTATUS[0]}
-      - name: Notificar build
-        if: always()
+      - run: npm run build
+
+  notify:
+    needs: [lint, test, build]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notificar resultado Backend
         run: |
-          EMOJI=$( [ "${{ job.status }}" = "success" ] && echo '✅' || echo '❌' )
-          ESTADO=$( [ "${{ job.status }}" = "success" ] && echo 'SUPERADO' || echo 'FALLIDO' )
+          L="${{ needs.lint.result }}"
+          T="${{ needs.test.result }}"
+          B="${{ needs.build.result }}"
+          S="${{ needs.test.outputs.test_suites }}"
+          TS="${{ needs.test.outputs.test_tests }}"
+
+          LINEAS=""
+          LINEAS="${LINEAS}$( [ \"$L\" = \"success\" ] && echo '✅' || echo '❌' ) Análisis Estático (ESLint)%0A"
+          LINEAS="${LINEAS}$( [ \"$T\" = \"success\" ] && echo '✅' || echo '❌' ) Pruebas Unitarias (Jest)%0A"
+          [ -n "$S" ] && [ "$S" != "N/A" ] && LINEAS="${LINEAS}     ${S}%0A"
+          [ -n "$TS" ] && [ "$TS" != "N/A" ] && LINEAS="${LINEAS}     ${TS}%0A"
+          LINEAS="${LINEAS}$( [ \"$B\" = \"success\" ] && echo '✅' || echo '❌' ) Compilación (Build)%0A"
+
+          if [ "$L" = "success" ] && [ "$T" = "success" ] && [ "$B" = "success" ]; then
+            TITULO="✅ [UPDATE] Backend - Todas las fases SUPERADAS"
+          else
+            TITULO="❌ [UPDATE] Backend - Fases FALLIDAS"
+          fi
+
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
             -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
-            -d text="${EMOJI} [UPDATE] Estado del Pipeline%0AFase: Compilación Backend (Build)%0AEstado: ${ESTADO}%0ARama: ${{ github.ref_name }}%0AAutor: ${{ github.actor }}"
+            -d text="${TITULO}%0A${LINEAS}Rama: ${{ github.ref_name }}%0AAutor: ${{ github.actor }}"
