@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useRef, useState, useCallback } from 'react';
+﻿import React, { useEffect, useRef, useState } from 'react';
 import { 
   Alert, 
   Animated, 
@@ -16,6 +16,8 @@ import { useAuthStore } from '../../../infrastructure/auth/authStore';
 import { syncPendingReportes } from '../../../infrastructure/offline/sync';
 import { recomendacionesApi } from '../../../infrastructure/data/recomendaciones/recomendacionesApi';
 import { Ionicons } from '@expo/vector-icons';
+import { useAccessibility } from '../../../shared/contexts/AccessibilityContext';
+import { IconCard, AccessibleButton } from '../../../shared/components/AccessibleButton';
 
 const { width: W } = Dimensions.get('window');
 
@@ -36,10 +38,12 @@ interface QuickCardProps {
 export function HomeScreen() {
   const navigation = useNavigation<any>();
   const usuario = useAuthStore((s) => s.usuario);
+  const { easyMode, speak } = useAccessibility();
   const [comunidadCount, setComunidadCount] = useState(0);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
+  const welcomeSpoken = useRef(false);
 
   useEffect(() => {
     const loadCount = async () => {
@@ -58,11 +62,22 @@ export function HomeScreen() {
     ]).start();
   }, []);
 
+  // Saludo por voz en modo fácil
+  useEffect(() => {
+    if (easyMode && !welcomeSpoken.current) {
+      welcomeSpoken.current = true;
+      const timer = setTimeout(() => {
+        speak(`Bienvenido ${firstName || 'agricultor'}. Toque el botón verde para crear un reporte`);
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [easyMode]);
+
   const onSync = async () => {
     try {
       const result = await syncPendingReportes();
       Alert.alert('Sincronización', `Enviados: ${result.synced}\nFallidos: ${result.failed}`);
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Hubo un problema al sincronizar los datos.');
     }
   };
@@ -78,6 +93,92 @@ export function HomeScreen() {
 
   const initials = getInitials(usuario?.nombre);
   const firstName = usuario?.nombre ? usuario.nombre.trim().split(/\s+/)[0] : '';
+
+  if (easyMode) {
+    return (
+      <View style={styles.root}>
+        <StatusBar barStyle="light-content" backgroundColor="#0a2412" translucent={true} />
+        <View style={styles.header}>
+          <View style={styles.blobA} />
+          <View style={styles.blobB} />
+          <View style={styles.headerContent}>
+            <View>
+              <Text style={[styles.greeting, { fontSize: 26 }]}>
+                Hola{firstName ? `, ${firstName}` : ''}
+              </Text>
+              <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13, marginTop: 4 }}>
+                Toque un botón para escuchar
+              </Text>
+            </View>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{initials}</Text>
+            </View>
+          </View>
+        </View>
+
+        <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent} showsVerticalScrollIndicator={false}>
+          <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
+            <AccessibleButton
+              icon="clipboard-outline"
+              label="Nuevo reporte"
+              onPress={() => navigation.navigate('CreateReporte')}
+              color="#15803d"
+              size="xl"
+              style={{ marginBottom: 12 }}
+            />
+
+            <AccessibleButton
+              icon="cloud-upload-outline"
+              label="Subir pendientes"
+              onPress={onSync}
+              color="#059669"
+              style={{ marginBottom: 16 }}
+            />
+
+            <Text style={styles.sectionLabel}>ACCESO RÁPIDO</Text>
+            <View style={styles.quickGrid}>
+              <IconCard
+                icon="leaf"
+                label="Cultivos"
+                color="#14532d"
+                onPress={() => navigation.navigate('Cultivos')}
+              />
+              <IconCard
+                icon="bug"
+                label="Plagas"
+                color="#7f1d1d"
+                onPress={() => navigation.navigate('Plagas')}
+              />
+            </View>
+            <View style={{ marginTop: 12 }}>
+              <AccessibleButton
+                icon="medkit"
+                label="Productos"
+                onPress={() => navigation.navigate('Productos')}
+                color="#1e3a5f"
+                style={{ marginBottom: 12 }}
+              />
+              <AccessibleButton
+                icon="notifications"
+                label="Alertas"
+                onPress={() => navigation.navigate('Alertas')}
+                color="#b45309"
+                style={{ marginBottom: 12 }}
+              />
+              <AccessibleButton
+                icon="chatbubbles"
+                label={`Foro (${comunidadCount})`}
+                onPress={() => navigation.navigate('ForoList')}
+                color="#7c3aed"
+              />
+            </View>
+
+            <View style={{ height: 32 }} />
+          </Animated.View>
+        </ScrollView>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.root}>

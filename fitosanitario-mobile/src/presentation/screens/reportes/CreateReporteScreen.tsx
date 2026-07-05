@@ -24,6 +24,8 @@ import { syncPendingReportes } from '../../../infrastructure/offline/sync';
 import { getCultivos } from '../../../infrastructure/data/catalogos/cultivosApi';
 import type { Cultivo } from '../../../domain/catalogos/types';
 import { ImageViewerModal } from '../../../presentation/components/ImageViewerModal';
+import { useAccessibility } from '../../../shared/contexts/AccessibilityContext';
+import { AccessibleButton } from '../../../shared/components/AccessibleButton';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -187,6 +189,9 @@ function useRecordingTimer(active: boolean) {
 
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 export function CreateReporteScreen() {
+  const { easyMode, speak, haptic } = useAccessibility();
+  const [wizardStep, setWizardStep] = useState(1);
+
   const [titulo, setTitulo] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [cultivoId, setCultivoId] = useState<number>(0);
@@ -390,18 +395,24 @@ export function CreateReporteScreen() {
   };
 
   const saveOfflineAndSync = async () => {
-    if (!titulo.trim()) { Alert.alert('Falta información', 'El título es obligatorio.'); return; }
+    if (!titulo.trim()) {
+      if (easyMode) { speak('Escriba un título para el reporte'); }
+      Alert.alert('Falta información', 'El título es obligatorio.');
+      return;
+    }
     if (!cultivoId || cultivoId === 0) {
+      if (easyMode) { speak('Seleccione un cultivo'); }
       Alert.alert('Falta información', 'Selecciona un cultivo.');
       return;
     }
     if (!locationReady || latitud === null || longitud === null) {
-      Alert.alert('Falta información', 'La ubicación no está disponible. Espera a que se obtenga o actualízala.');
+      if (easyMode) { speak('Espere a que se obtenga la ubicación'); }
+      Alert.alert('Falta información', 'La ubicación no está disponible. Espera a que se obtenga o actualícela.');
       return;
     }
     setIsSaving(true);
     try {
-      const pending = await enqueueReporte({
+      await enqueueReporte({
         titulo: titulo.trim(),
         descripcion: descripcion.trim() || undefined,
         cultivoId,
@@ -412,11 +423,13 @@ export function CreateReporteScreen() {
       });
       try {
         const result = await syncPendingReportes();
+        if (easyMode) { speak('Reporte enviado correctamente'); }
         Alert.alert(
           '✓ Reporte enviado',
           `Guardado correctamente.\nEnviados: ${result.synced}  |  Fallidos: ${result.failed}`
         );
       } catch {
+        if (easyMode) { speak('Reporte guardado sin conexión'); }
         Alert.alert('Guardado offline', `El reporte se sincronizará cuando haya conexión.`);
       }
       setTitulo('');
@@ -424,6 +437,7 @@ export function CreateReporteScreen() {
       setCultivoId(0);
       setImageUris([]);
       setAudioUri(null);
+      setWizardStep(1);
       getLocation();
     } finally {
       setIsSaving(false);
@@ -459,6 +473,229 @@ export function CreateReporteScreen() {
             onRetake={retakePhoto}
           />
         )}
+      </View>
+    );
+  }
+
+  // ── Wizard Mode (Easy) ──────────────────────────────────────────────────
+  if (easyMode) {
+    const cultivoActual = cultivos.find((c) => c.id === cultivoId);
+
+    return (
+      <View style={{ flex: 1, backgroundColor: '#f1f5f9' }}>
+        {/* Step indicator */}
+        <View style={wizardStyles.stepBar}>
+          {[1, 2, 3].map((s) => (
+            <View key={s} style={[wizardStyles.stepDot, wizardStep >= s && wizardStyles.stepDotActive]}>
+              <Text style={[wizardStyles.stepNum, wizardStep >= s && wizardStyles.stepNumActive]}>
+                {s === 1 ? '1' : s === 2 ? '2' : '3'}
+              </Text>
+            </View>
+          ))}
+          <View style={wizardStyles.stepLine} />
+        </View>
+
+        {wizardStep === 1 && (
+          <ScrollView contentContainerStyle={{ padding: 16 }}>
+            <View style={{ alignItems: 'center', marginBottom: 20 }}>
+              <Ionicons name="leaf-outline" size={48} color="#15803d" />
+              <Text style={{ fontSize: 22, fontWeight: '800', color: '#0f172a', marginTop: 8 }}>Paso 1</Text>
+              <Text style={{ fontSize: 15, color: '#64748b', marginTop: 4 }}>¿Qué cultivo tiene el problema?</Text>
+            </View>
+            {cultivosLoading ? (
+              <ActivityIndicator size="large" color="#10b981" />
+            ) : (
+              <View style={{ gap: 12 }}>
+                {cultivos.map((c) => (
+                  <Pressable
+                    key={c.id}
+                    onPress={() => { haptic(); setCultivoId(c.id); }}
+                    style={[
+                      wizardStyles.cultivoCard,
+                      cultivoId === c.id && wizardStyles.cultivoCardSelected,
+                    ]}
+                  >
+                    <Ionicons
+                      name="leaf"
+                      size={32}
+                      color={cultivoId === c.id ? '#fff' : '#15803d'}
+                    />
+                    <Text style={[
+                      wizardStyles.cultivoLabel,
+                      cultivoId === c.id && { color: '#fff' },
+                    ]}>
+                      {c.nombre}
+                    </Text>
+                    {cultivoId === c.id && (
+                      <Ionicons name="checkmark-circle" size={24} color="#fff" style={{ marginLeft: 'auto' }} />
+                    )}
+                  </Pressable>
+                ))}
+              </View>
+            )}
+            <AccessibleButton
+              icon="arrow-forward"
+              label="Siguiente"
+              onPress={() => {
+                if (!cultivoId || cultivoId === 0) {
+                  speak('Seleccione un cultivo primero');
+                  return;
+                }
+                speak('Paso 2, tome fotos del problema');
+                setWizardStep(2);
+              }}
+              color="#15803d"
+              style={{ marginTop: 24 }}
+            />
+          </ScrollView>
+        )}
+
+        {wizardStep === 2 && (
+          <ScrollView contentContainerStyle={{ padding: 16 }}>
+            <View style={{ alignItems: 'center', marginBottom: 20 }}>
+              <Ionicons name="camera-outline" size={48} color="#15803d" />
+              <Text style={{ fontSize: 22, fontWeight: '800', color: '#0f172a', marginTop: 8 }}>Paso 2</Text>
+              <Text style={{ fontSize: 15, color: '#64748b', marginTop: 4 }}>Tome fotos del problema</Text>
+            </View>
+
+            {/* Location status */}
+            <View style={[wizardStyles.card, { marginBottom: 16 }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Ionicons
+                  name={locationReady ? 'checkmark-circle' : 'time-outline'}
+                  size={22}
+                  color={locationReady ? '#10b981' : '#f59e0b'}
+                />
+                <Text style={{ fontWeight: '600', color: '#334155', flex: 1 }}>
+                  {locationReady ? 'Ubicación lista' : 'Obteniendo ubicación...'}
+                </Text>
+                <Pressable onPress={getLocation} style={{ padding: 8 }}>
+                  <Ionicons name="refresh-outline" size={20} color="#10b981" />
+                </Pressable>
+              </View>
+            </View>
+
+            {/* Title input */}
+            <View style={[wizardStyles.card, { marginBottom: 16 }]}>
+              <Text style={{ fontWeight: '600', color: '#334155', marginBottom: 8 }}>  Título del reporte</Text>
+              <TextInput
+                style={wizardStyles.input}
+                value={titulo}
+                onChangeText={setTitulo}
+                placeholder="Ej. Mancha en hojas de maíz"
+                placeholderTextColor="#94a3b8"
+              />
+            </View>
+
+            {/* Photos */}
+            <ImageGallery uris={imageUris} onDelete={deleteImage} onPress={(i) => setSelectedImage(imageUris[i])} />
+            <AccessibleButton
+              icon="camera"
+              label={canTakeMore ? 'Tomar foto' : 'Límite alcanzado'}
+              onPress={openCamera}
+              color="#059669"
+              disabled={!canTakeMore}
+              style={{ marginBottom: 16 }}
+            />
+
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <AccessibleButton
+                icon="arrow-back"
+                label="Atrás"
+                onPress={() => { speak('Paso 1, seleccione cultivo'); setWizardStep(1); }}
+                color="#64748b"
+                style={{ flex: 1 }}
+              />
+              <AccessibleButton
+                icon="arrow-forward"
+                label="Siguiente"
+                onPress={() => { speak('Paso 3, grabe audio y finalice'); setWizardStep(3); }}
+                color="#15803d"
+                style={{ flex: 1 }}
+              />
+            </View>
+          </ScrollView>
+        )}
+
+        {wizardStep === 3 && (
+          <ScrollView contentContainerStyle={{ padding: 16 }}>
+            <View style={{ alignItems: 'center', marginBottom: 20 }}>
+              <Ionicons name="mic-outline" size={48} color="#15803d" />
+              <Text style={{ fontSize: 22, fontWeight: '800', color: '#0f172a', marginTop: 8 }}>Paso 3</Text>
+              <Text style={{ fontSize: 15, color: '#64748b', marginTop: 4 }}>Audio y finalizar</Text>
+            </View>
+
+            {/* Audio */}
+            <View style={wizardStyles.card}>
+              <RecordingWave isRecording={isRecording} />
+              {isRecording ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, marginBottom: 12 }}>
+                  <Ionicons name="radio-button-on" size={16} color="#ef4444" />
+                  <Text style={{ color: '#ef4444', fontWeight: '600' }}>Grabando... {timer}</Text>
+                </View>
+              ) : audioUri ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, marginBottom: 12 }}>
+                  <Ionicons name="checkmark" size={16} color="#10b981" />
+                  <Text style={{ color: '#10b981', fontWeight: '600' }}>Audio listo</Text>
+                </View>
+              ) : null}
+              <AccessibleButton
+                icon={isRecording ? 'stop' : 'mic'}
+                label={isRecording ? 'Detener' : audioUri ? 'Volver a grabar' : 'Grabar audio'}
+                onPress={isRecording ? stopRecording : startRecording}
+                color={isRecording ? '#ef4444' : '#10b981'}
+              />
+              {audioUri && (
+                <Pressable onPress={deleteAudio} style={{ alignItems: 'center', marginTop: 8 }}>
+                  <Text style={{ color: '#ef4444', fontWeight: '600' }}>Eliminar audio</Text>
+                </Pressable>
+              )}
+            </View>
+
+            {/* Summary */}
+            <View style={[wizardStyles.card, { marginTop: 16 }]}>
+              <Text style={{ fontWeight: '700', color: '#0f172a', marginBottom: 8 }}>Resumen</Text>
+              <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+                <Ionicons name="leaf" size={16} color="#10b981" />
+                <Text style={{ color: '#475569' }}>{cultivoActual?.nombre || 'No seleccionado'}</Text>
+              </View>
+              <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center', marginTop: 4 }}>
+                <Ionicons name="camera" size={16} color="#10b981" />
+                <Text style={{ color: '#475569' }}>{imageUris.length} foto(s)</Text>
+              </View>
+              {audioUri && (
+                <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center', marginTop: 4 }}>
+                  <Ionicons name="mic" size={16} color="#10b981" />
+                  <Text style={{ color: '#475569' }}>Audio grabado</Text>
+                </View>
+              )}
+            </View>
+
+            <View style={{ flexDirection: 'row', gap: 12, marginTop: 20 }}>
+              <AccessibleButton
+                icon="arrow-back"
+                label="Atrás"
+                onPress={() => { speak('Paso 2, tome fotos'); setWizardStep(2); }}
+                color="#64748b"
+                style={{ flex: 1 }}
+              />
+              <AccessibleButton
+                icon="checkmark"
+                label={isSaving ? 'Guardando...' : 'Guardar'}
+                onPress={saveOfflineAndSync}
+                color="#15803d"
+                style={{ flex: 1 }}
+                disabled={isSaving}
+              />
+            </View>
+          </ScrollView>
+        )}
+
+        <ImageViewerModal
+          visible={selectedImage !== null}
+          imageUrl={selectedImage ?? ''}
+          onClose={() => setSelectedImage(null)}
+        />
       </View>
     );
   }
@@ -817,4 +1054,91 @@ const styles = StyleSheet.create({
   previewBtnSecondary: { backgroundColor: 'rgba(255,255,255,0.15)', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.4)' },
   previewBtnTextPrimary: { color: '#fff', fontWeight: '700', fontSize: 16 },
   previewBtnTextSecondary: { color: '#fff', fontWeight: '600', fontSize: 16 },
+});
+
+const wizardStyles = StyleSheet.create({
+  stepBar: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 20,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
+    position: 'relative',
+  },
+  stepDot: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#e2e8f0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1,
+  },
+  stepDotActive: {
+    backgroundColor: '#15803d',
+  },
+  stepNum: {
+    fontWeight: '800',
+    fontSize: 15,
+    color: '#94a3b8',
+  },
+  stepNumActive: {
+    color: '#fff',
+  },
+  stepLine: {
+    position: 'absolute',
+    top: 37,
+    left: '20%',
+    right: '20%',
+    height: 3,
+    backgroundColor: '#e2e8f0',
+    borderRadius: 2,
+  },
+  cultivoCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    backgroundColor: '#fff',
+    borderRadius: 18,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+    borderWidth: 2,
+    borderColor: '#e2e8f0',
+  },
+  cultivoCardSelected: {
+    backgroundColor: '#15803d',
+    borderColor: '#15803d',
+  },
+  cultivoLabel: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#0f172a',
+  },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  input: {
+    borderWidth: 1.5,
+    borderColor: '#e2e8f0',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 11,
+    fontSize: 15,
+    color: '#0f172a',
+    backgroundColor: '#f8fafc',
+  },
 });

@@ -7,15 +7,19 @@ import {
   StyleSheet, 
   Animated, 
   ScrollView, 
-  useWindowDimensions 
+  useWindowDimensions,
+  Switch,
 } from 'react-native';
 import { useAuthStore } from '../../../infrastructure/auth/authStore';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { useAccessibilityStore } from '../../../shared/stores/accessibilityStore';
 
 export function ProfileScreen() {
   const usuario = useAuthStore((s) => s.usuario);
   const logout = useAuthStore((s) => s.logout);
+  const easyMode = useAccessibilityStore((s) => s.easyMode);
+  const toggleEasyMode = useAccessibilityStore((s) => s.toggleEasyMode);
   
   // Hook de React Native para obtener medidas reales del dispositivo
   const { width } = useWindowDimensions();
@@ -95,6 +99,27 @@ export function ProfileScreen() {
             label="Nivel de acceso" 
             value={usuario?.rol ?? 'Estándar'} 
           />
+        </View>
+
+        {/* Tarjeta de accesibilidad */}
+        <View style={[styles.card, { marginTop: 16 }]}>
+          <View style={styles.accessRow}>
+            <View style={styles.iconBox}>
+              <Ionicons name="accessibility-outline" size={22} color="#64748b" />
+            </View>
+            <View style={styles.textContainer}>
+              <Text style={styles.labelText}>Modo fácil</Text>
+              <Text style={styles.accessDesc}>
+                Botones grandes, guía por voz e instrucciones paso a paso
+              </Text>
+            </View>
+            <Switch
+              value={easyMode}
+              onValueChange={toggleEasyMode}
+              trackColor={{ false: '#e2e8f0', true: '#a7f3d0' }}
+              thumbColor={easyMode ? '#10b981' : '#94a3b8'}
+            />
+          </View>
         </View>
 
         {/* Espaciador flexible */}
@@ -242,5 +267,16 @@ const styles = StyleSheet.create({
     color: '#e11d48',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+
+  accessRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  accessDesc: {
+    fontSize: 11,
+    color: '#94a3b8',
+    marginTop: 1,
   },
 });

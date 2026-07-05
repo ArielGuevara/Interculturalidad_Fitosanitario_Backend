@@ -235,7 +235,7 @@ export function ReporteDetailScreen({ route }: Props) {
             <Ionicons name="list-outline" size={18} color="#0f172a" />
             <Text style={styles.historialTitle}>Historial del reporte</Text>
           </View>
-          {historial.map((h, i) => {
+          {historial.map((h, _i) => {
             const color = ESTADO_COLORS[h.estadoNuevo] || '#6b7280';
             const label = ESTADO_LABELS[h.estadoNuevo] || h.estadoNuevo;
             return (
