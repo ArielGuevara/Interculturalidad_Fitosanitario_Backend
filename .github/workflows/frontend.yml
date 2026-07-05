@@ -3,18 +3,17 @@ name: Frontend CI
 on:
   workflow_call:
 
-defaults:
-  run:
-    working-directory: fitosanitario-frontend
-
 jobs:
   lint:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: fitosanitario-frontend
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
           cache-dependency-path: fitosanitario-frontend/package-lock.json
       - run: npm ci
@@ -22,11 +21,14 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: fitosanitario-frontend
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
           cache-dependency-path: fitosanitario-frontend/package-lock.json
       - run: npm ci
@@ -34,11 +36,14 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: fitosanitario-frontend
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
           cache-dependency-path: fitosanitario-frontend/package-lock.json
       - run: npm ci
@@ -49,6 +54,7 @@ jobs:
     if: failure()
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - name: Notificar fallo a Telegram
         run: |
           MENSAJE="❌ Frontend CI FALLÓ%0A"

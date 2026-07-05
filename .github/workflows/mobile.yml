@@ -3,18 +3,17 @@ name: Mobile CI
 on:
   workflow_call:
 
-defaults:
-  run:
-    working-directory: fitosanitario-mobile
-
 jobs:
   typecheck:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: fitosanitario-mobile
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
           cache-dependency-path: fitosanitario-mobile/package-lock.json
       - run: npm ci --legacy-peer-deps
@@ -22,11 +21,14 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: fitosanitario-mobile
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
           cache-dependency-path: fitosanitario-mobile/package-lock.json
       - run: npm ci --legacy-peer-deps
@@ -34,21 +36,25 @@ jobs:
 
   lint:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: fitosanitario-mobile
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
           cache-dependency-path: fitosanitario-mobile/package-lock.json
       - run: npm ci --legacy-peer-deps
-      - run: npx eslint .
+      - run: npm run lint
 
   notify:
     needs: [typecheck, test, lint]
     if: failure()
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - name: Notificar fallo a Telegram
         run: |
           MENSAJE="❌ Mobile CI FALLÓ%0A"
