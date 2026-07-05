@@ -1,13 +1,13 @@
 import { createReporteMultipart } from '../data/reportes/reportesApi';
 import { deletePendingReporte, listPendingReportes } from './pendingReportes';
 import { getAccessToken } from '../auth/authStore';
+import { apiClient } from '../http/apiClient';
 
 const MAX_RETRIES = 3;
 
 async function syncWithRetry(
   payload: any,
   token: string,
-  _retriesLeft: number = MAX_RETRIES,
 ): Promise<boolean> {
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
@@ -18,12 +18,42 @@ async function syncWithRetry(
       console.warn(`[SYNC] Intento ${attempt}/${MAX_RETRIES} fallido: ${msg}`);
 
       if (attempt < MAX_RETRIES) {
-        // Espera exponencial: 1s, 2s, 4s
         await new Promise((r) => setTimeout(r, 1000 * Math.pow(2, attempt - 1)));
       }
     }
   }
   return false;
+}
+
+async function syncBulk(
+  pending: { id: string; payload: any }[],
+  token: string,
+): Promise<Set<string>> {
+  const syncedIds = new Set<string>();
+  try {
+    const reportes = pending.map((item) => ({
+      localId: item.id,
+      titulo: item.payload.titulo,
+      descripcion: item.payload.descripcion,
+      cultivoId: item.payload.cultivoId,
+      latitud: item.payload.latitud,
+      longitud: item.payload.longitud,
+    }));
+
+    const { data } = await apiClient.post<{ sincronizados: number; mapping: { localId: string; realId: number }[] }>(
+      '/reportes/sync',
+      { reportes },
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+
+    for (const m of data.mapping) {
+      syncedIds.add(m.localId);
+    }
+    console.log(`[SYNC] Bulk sync: ${data.sincronizados} reportes sincronizados`);
+  } catch (e: any) {
+    console.warn('[SYNC] Bulk sync falló, usando sincronización individual:', e?.message);
+  }
+  return syncedIds;
 }
 
 export async function syncPendingReportes(): Promise<{ synced: number; failed: number }> {
@@ -44,7 +74,16 @@ export async function syncPendingReportes(): Promise<{ synced: number; failed: n
 
   console.log(`[SYNC] Sincronizando ${pending.length} reporte(s)...`);
 
-  for (const item of pending) {
+  // Step 1: Try bulk sync for faster processing
+  const syncedIds = await syncBulk(pending, token);
+  for (const id of syncedIds) {
+    await deletePendingReporte(id);
+    synced++;
+  }
+
+  // Step 2: Remaining items - try individual multipart upload
+  const remaining = pending.filter((p) => !syncedIds.has(p.id));
+  for (const item of remaining) {
     const ok = await syncWithRetry(item.payload, token);
     if (ok) {
       await deletePendingReporte(item.id);

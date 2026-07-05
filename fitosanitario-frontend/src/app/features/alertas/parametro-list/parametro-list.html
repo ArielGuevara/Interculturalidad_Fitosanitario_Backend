@@ -1,0 +1,97 @@
+<p-toast></p-toast>
+<p-confirmDialog></p-confirmDialog>
+
+<div class="page-header flex flex-column md:flex-row justify-content-between align-items-end gap-4">
+  <div>
+    <h2 class="title m-0">Parámetros de Alerta</h2>
+    <p class="subtitle m-0">Configuración de reglas para detección automática de brotes.</p>
+  </div>
+  <p-button label="Nuevo Parámetro" icon="pi pi-plus" (onClick)="openNew()" styleClass="p-button-success border-round-2xl py-3 px-5 shadow-3"></p-button>
+</div>
+
+<div class="table-wrapper">
+  <p-table [value]="parametros()" [loading]="loading()" [rows]="10" [paginator]="true" responsiveLayout="stack" [breakpoint]="'960px'" styleClass="premium-table">
+    <ng-template pTemplate="header">
+      <tr>
+        <th>Nombre</th>
+        <th>Plaga</th>
+        <th>Cultivo</th>
+        <th>Umbral</th>
+        <th>Radio</th>
+        <th>Ventana</th>
+        <th>Estado</th>
+        <th style="width: 120px" class="text-center">Acciones</th>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-p>
+      <tr>
+        <td><span class="font-bold text-slate-900">{{p.nombre}}</span></td>
+        <td><span class="text-sm">{{p.plagaId ? ('#'+p.plagaId) : 'Todas'}}</span></td>
+        <td><span class="text-sm">{{p.cultivoId ? ('#'+p.cultivoId) : 'Todos'}}</span></td>
+        <td><span class="font-bold">{{p.umbralReportes}} reps.</span></td>
+        <td><span>{{p.radioKm}} km</span></td>
+        <td><span>{{p.ventanaHoras}} h</span></td>
+        <td><p-tag [value]="p.activo ? 'Activo' : 'Inactivo'" [severity]="p.activo ? 'success' : 'danger'"></p-tag></td>
+        <td>
+          <div class="flex justify-content-center gap-2">
+            <p-button icon="pi pi-pencil" styleClass="btn-icon" (onClick)="editParametro(p)"></p-button>
+            <p-button icon="pi pi-trash" styleClass="btn-icon btn-delete" (onClick)="deleteParametro(p)"></p-button>
+          </div>
+        </td>
+      </tr>
+      <tr style="height: 1rem; background: transparent !important" class="spacer-row"></tr>
+    </ng-template>
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="8" class="text-center p-8 bg-white border-round-3xl">
+          <div class="flex flex-column align-items-center gap-3">
+            <i class="pi pi-cog text-5xl text-slate-200"></i>
+            <span class="text-slate-400 font-bold text-lg">No hay parámetros configurados.</span>
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</div>
+
+<p-dialog [(visible)]="displayDialog" [modal]="true" [style]="{width: '550px', maxWidth: '95vw'}" styleClass="p-fluid" [draggable]="false" [resizable]="false" [showHeader]="false" [dismissableMask]="true">
+  <div class="flex flex-column align-items-center text-center p-4 w-full">
+    <h2 class="font-black text-2xl text-900 m-0 w-full">{{isEditMode() ? 'Editar Parámetro' : 'Nuevo Parámetro'}}</h2>
+  </div>
+  <div class="flex flex-column gap-4 px-3 w-full">
+    <div class="field w-full">
+      <label class="font-bold text-sm">Nombre *</label>
+      <input type="text" pInputText [(ngModel)]="selectedParametro.nombre" placeholder="Ej: Roya del Maíz" class="w-full" />
+    </div>
+    <div class="flex gap-3">
+      <div class="field flex-1">
+        <label class="font-bold text-sm">Plaga (opcional)</label>
+        <p-select [options]="plagas()" optionLabel="nombre" optionValue="id" [(ngModel)]="selectedParametro.plagaId" placeholder="Todas" class="w-full" clearIcon="pi pi-times"></p-select>
+      </div>
+      <div class="field flex-1">
+        <label class="font-bold text-sm">Cultivo (opcional)</label>
+        <p-select [options]="cultivos()" optionLabel="nombre" optionValue="id" [(ngModel)]="selectedParametro.cultivoId" placeholder="Todos" class="w-full" clearIcon="pi pi-times"></p-select>
+      </div>
+    </div>
+    <div class="flex gap-3">
+      <div class="field flex-1">
+        <label class="font-bold text-sm">Umbral Reportes</label>
+        <p-inputNumber [(ngModel)]="selectedParametro.umbralReportes" [min]="1" class="w-full"></p-inputNumber>
+      </div>
+      <div class="field flex-1">
+        <label class="font-bold text-sm">Radio (km)</label>
+        <p-inputNumber [(ngModel)]="selectedParametro.radioKm" [min]="1" class="w-full"></p-inputNumber>
+      </div>
+    </div>
+    <div class="field w-full">
+      <label class="font-bold text-sm">Ventana de tiempo (horas)</label>
+      <p-inputNumber [(ngModel)]="selectedParametro.ventanaHoras" [min]="1" class="w-full"></p-inputNumber>
+    </div>
+  </div>
+  <ng-template pTemplate="footer">
+    <div class="flex justify-content-center gap-3 w-full px-2">
+      <p-button label="Cancelar" styleClass="p-button-text" (onClick)="displayDialog.set(false)"></p-button>
+      <p-button label="Guardar" icon="pi pi-check" styleClass="p-button-success" (onClick)="saveParametro()"></p-button>
+    </div>
+  </ng-template>
+</p-dialog>

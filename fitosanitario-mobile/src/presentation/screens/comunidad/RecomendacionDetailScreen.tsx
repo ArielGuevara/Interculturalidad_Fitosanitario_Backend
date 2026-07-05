@@ -1,55 +1,119 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   Alert, ScrollView, Text, View, StyleSheet,
   ActivityIndicator, TextInput, KeyboardAvoidingView, Platform,
+  Pressable,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import type { AppStackParamList } from '../../navigation/RootNavigator';
 import { recomendacionesApi } from '../../../infrastructure/data/recomendaciones/recomendacionesApi';
-import type { Recomendacion, Valoracion } from '../../../domain/recomendaciones/types';
+import type { Recomendacion, Valoracion, ComentarioForo } from '../../../domain/recomendaciones/types';
 import { StarRating } from '../../../shared/components/StarRating';
 import { useAuthStore } from '../../../infrastructure/auth/authStore';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'RecomendacionDetail'>;
+
+function ComentarioItem({
+  comentario,
+  onReply,
+  nivel = 0,
+}: {
+  comentario: ComentarioForo;
+  onReply: (id: number, username: string) => void;
+  nivel?: number;
+}) {
+  const hasRespuestas = comentario.respuestas && comentario.respuestas.length > 0;
+
+  return (
+    <View style={[styles.comentarioItem, { marginLeft: nivel * 20 }]}>
+      <View style={styles.comentarioHeader}>
+        <View style={styles.comentarioAvatar}>
+          <Ionicons name="person-circle-outline" size={24} color="#10b981" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.comentarioAuthor}>{comentario.usuario.nombre}</Text>
+          <Text style={styles.comentarioDate}>
+            {new Date(comentario.fechaComentario).toLocaleDateString()}
+          </Text>
+        </View>
+      </View>
+      <Text style={styles.comentarioContenido}>{comentario.contenido}</Text>
+      <Pressable
+        onPress={() => onReply(comentario.id, comentario.usuario.nombre)}
+        style={styles.replyBtn}
+      >
+        <Ionicons name="return-down-back" size={14} color="#059669" />
+        <Text style={styles.replyBtnText}>Responder</Text>
+      </Pressable>
+      {hasRespuestas &&
+        comentario.respuestas!.map((r) => (
+          <ComentarioItem key={r.id} comentario={r} onReply={onReply} nivel={nivel + 1} />
+        ))}
+    </View>
+  );
+}
 
 export function RecomendacionDetailScreen({ route }: Props) {
   const { id } = route.params;
   const usuario = useAuthStore((s) => s.usuario);
   const [recomendacion, setRecomendacion] = useState<Recomendacion | null>(null);
   const [valoraciones, setValoraciones] = useState<Valoracion[]>([]);
+  const [comentarios, setComentarios] = useState<ComentarioForo[]>([]);
   const [loading, setLoading] = useState(true);
   const [miValoracion, setMiValoracion] = useState(0);
-  const [comentario, setComentario] = useState('');
+  const [comentarioVal, setComentarioVal] = useState('');
   const [enviandoVal, setEnviandoVal] = useState(false);
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const [rec, vals] = await Promise.all([
-          recomendacionesApi.getById(id),
-          recomendacionesApi.getValoraciones(id),
-        ]);
-        setRecomendacion(rec);
-        setValoraciones(vals);
+  // Comentarios state
+  const [nuevoComentario, setNuevoComentario] = useState('');
+  const [enviandoComentario, setEnviandoComentario] = useState(false);
+  const [replyTo, setReplyTo] = useState<{ id: number; username: string } | null>(null);
 
-        // Check if user already rated
-        const miVal = vals.find((v: Valoracion) => v.usuario.id === usuario?.id);
-        if (miVal) setMiValoracion(miVal.puntuacion);
-      } catch (e) {
-        console.error('Error cargando recomendación:', e);
-      } finally {
-        setLoading(false);
+  const loadData = useCallback(async () => {
+    try {
+      const [rec, vals, comentariosData] = await Promise.all([
+        recomendacionesApi.getById(id),
+        recomendacionesApi.getValoraciones(id),
+        recomendacionesApi.getComentarios(id),
+      ]);
+      setRecomendacion(rec);
+      setValoraciones(vals);
+
+      // Build tree: raíces + respuestas anidadas
+      const map = new Map<number, ComentarioForo>();
+      const roots: ComentarioForo[] = [];
+      for (const c of comentariosData) {
+        map.set(c.id, { ...c, respuestas: [] });
       }
-    };
-    load();
+      for (const c of comentariosData) {
+        const node = map.get(c.id)!;
+        if (c.comentarioPadreId && map.has(c.comentarioPadreId)) {
+          map.get(c.comentarioPadreId)!.respuestas!.push(node);
+        } else {
+          roots.push(node);
+        }
+      }
+      setComentarios(roots);
+
+      const miVal = vals.find((v: Valoracion) => v.usuario.id === usuario?.id);
+      if (miVal) setMiValoracion(miVal.puntuacion);
+    } catch (e) {
+      console.error('Error cargando recomendación:', e);
+    } finally {
+      setLoading(false);
+    }
   }, [id, usuario?.id]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const handleValorar = async (puntuacion: number) => {
     if (enviandoVal || miValoracion > 0) return;
     try {
       setEnviandoVal(true);
-      await recomendacionesApi.valorar(id, puntuacion, comentario || undefined);
+      await recomendacionesApi.valorar(id, puntuacion, comentarioVal || undefined);
       const [rec, vals] = await Promise.all([
         recomendacionesApi.getById(id),
         recomendacionesApi.getValoraciones(id),
@@ -63,6 +127,35 @@ export function RecomendacionDetailScreen({ route }: Props) {
     } finally {
       setEnviandoVal(false);
     }
+  };
+
+  const handleEnviarComentario = async () => {
+    if (!nuevoComentario.trim() || enviandoComentario) return;
+    try {
+      setEnviandoComentario(true);
+      await recomendacionesApi.createComentario(
+        id,
+        nuevoComentario.trim(),
+        replyTo?.id || undefined,
+      );
+      setNuevoComentario('');
+      setReplyTo(null);
+      await loadData();
+    } catch (e: any) {
+      Alert.alert('Error', e?.message || 'No se pudo enviar el comentario');
+    } finally {
+      setEnviandoComentario(false);
+    }
+  };
+
+  const iniciarReply = (comentarioId: number, username: string) => {
+    setReplyTo({ id: comentarioId, username });
+    setNuevoComentario(`@${username} `);
+  };
+
+  const cancelarReply = () => {
+    setReplyTo(null);
+    setNuevoComentario('');
   };
 
   if (loading) {
@@ -152,8 +245,8 @@ export function RecomendacionDetailScreen({ route }: Props) {
               style={styles.commentInput}
               placeholder="Agrega un comentario (opcional)..."
               placeholderTextColor="#94a3b8"
-              value={comentario}
-              onChangeText={setComentario}
+              value={comentarioVal}
+              onChangeText={setComentarioVal}
             />
           </View>
         ) : (
@@ -183,6 +276,55 @@ export function RecomendacionDetailScreen({ route }: Props) {
             ))}
           </View>
         )}
+
+        {/* Foro: Hilo de comentarios */}
+        <View style={styles.comentariosSection}>
+          <Text style={styles.sectionTitle}>
+            Comentarios ({comentarios.length})
+          </Text>
+
+          {replyTo && (
+            <View style={styles.replyIndicator}>
+              <Ionicons name="arrow-undo" size={16} color="#059669" />
+              <Text style={styles.replyIndicatorText}>
+                Respondiendo a {replyTo.username}
+              </Text>
+              <Pressable onPress={cancelarReply}>
+                <Ionicons name="close-circle" size={20} color="#94a3b8" />
+              </Pressable>
+            </View>
+          )}
+
+          <View style={styles.nuevoComentarioRow}>
+            <TextInput
+              style={styles.nuevoComentarioInput}
+              placeholder={replyTo ? 'Escribe tu respuesta...' : 'Añade un comentario...'}
+              placeholderTextColor="#94a3b8"
+              value={nuevoComentario}
+              onChangeText={setNuevoComentario}
+              multiline
+            />
+            <Pressable
+              style={[styles.enviarBtn, !nuevoComentario.trim() && styles.enviarBtnDisabled]}
+              onPress={handleEnviarComentario}
+              disabled={!nuevoComentario.trim() || enviandoComentario}
+            >
+              {enviandoComentario ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Ionicons name="send" size={18} color="#fff" />
+              )}
+            </Pressable>
+          </View>
+
+          {comentarios.length > 0 ? (
+            comentarios.map((c) => (
+              <ComentarioItem key={c.id} comentario={c} onReply={iniciarReply} />
+            ))
+          ) : (
+            <Text style={styles.sinComentarios}>No hay comentarios aún. ¡Sé el primero!</Text>
+          )}
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -282,4 +424,76 @@ const styles = StyleSheet.create({
   valoracionAuthor: { fontSize: 13, fontWeight: '600', color: '#374151' },
   valoracionComment: { fontSize: 13, color: '#64748b', marginBottom: 4 },
   valoracionDate: { fontSize: 11, color: '#94a3b8' },
+
+  // ── Comentarios ──
+  comentariosSection: {
+    marginTop: 24,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#e2e8f0',
+  },
+  replyIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#d1fae5',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    marginBottom: 8,
+  },
+  replyIndicatorText: { fontSize: 13, color: '#059669', flex: 1 },
+  nuevoComentarioRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 8,
+    marginBottom: 16,
+  },
+  nuevoComentarioInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    borderRadius: 12,
+    padding: 12,
+    fontSize: 14,
+    color: '#1e293b',
+    backgroundColor: '#fff',
+    minHeight: 44,
+    maxHeight: 100,
+    textAlignVertical: 'top',
+  },
+  enviarBtn: {
+    backgroundColor: '#059669',
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  enviarBtnDisabled: { opacity: 0.5 },
+  sinComentarios: { fontSize: 13, color: '#94a3b8', textAlign: 'center', paddingVertical: 20 },
+  comentarioItem: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
+  },
+  comentarioHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 6,
+  },
+  comentarioAvatar: { marginRight: 4 },
+  comentarioAuthor: { fontSize: 13, fontWeight: '600', color: '#374151' },
+  comentarioDate: { fontSize: 11, color: '#94a3b8' },
+  comentarioContenido: { fontSize: 14, color: '#334155', lineHeight: 20, marginBottom: 6 },
+  replyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  replyBtnText: { fontSize: 12, color: '#059669', fontWeight: '600' },
 });

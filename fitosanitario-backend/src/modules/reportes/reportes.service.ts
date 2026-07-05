@@ -90,8 +90,8 @@ export class ReportesService {
     return this.reportesRepository.getHistorial(reporteId);
   }
 
-  async bulkSync(usuarioId: number, reportes: any[]) {
-    const results: any[] = [];
+  async bulkSync(usuarioId: number, reportes: { localId: string; titulo: string; descripcion?: string; descripcionProblema?: string; cultivoId: number; plagaId?: number; latitud: number; longitud: number; imagenesUrls?: string[]; audioUrl?: string }[]) {
+    const mapping: { localId: string; realId: number }[] = [];
     for (const r of reportes) {
       const created = await this.reportesRepository.create({
         titulo: r.titulo,
@@ -106,8 +106,8 @@ export class ReportesService {
         longitud: r.longitud,
         sincronizado: true,
       });
-      results.push(created);
+      mapping.push({ localId: r.localId, realId: created.id });
     }
-    return { sincronizados: results.length, reportes: results };
+    return { sincronizados: mapping.length, mapping };
   }
 }

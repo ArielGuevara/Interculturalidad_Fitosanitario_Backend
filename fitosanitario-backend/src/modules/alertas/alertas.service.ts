@@ -78,12 +78,13 @@ export class AlertasService {
   }
 
   // ── Detección ──
-  async ejecutarDeteccion() {
-    const brotes = await this.repo.detectarBrotes(72);
+  async ejecutarDeteccion(ventanaHoras?: number) {
+    const horas = ventanaHoras ?? 72;
+    const brotes = await this.repo.detectarBrotes(horas);
     const creadas: any[] = [];
 
     for (const brote of brotes) {
-      const { parametro, reportes } = brote;
+      const { parametro, reportes, zonaId } = brote;
       const nivel =
         reportes.length >= 10
           ? 'CRITICO'
@@ -94,6 +95,7 @@ export class AlertasService {
       const cultivoId = parametro.cultivoId;
 
       const alerta = await this.repo.create({
+        zonaId,
         parametroId: parametro.id,
         plagaId,
         cultivoId,

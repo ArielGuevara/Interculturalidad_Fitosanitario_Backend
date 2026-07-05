@@ -1,5 +1,5 @@
 import { apiClient } from '../../http/apiClient';
-import type { Recomendacion, CreateRecomendacionInput, Valoracion } from '../../../domain/recomendaciones/types';
+import type { Recomendacion, CreateRecomendacionInput, Valoracion, ComentarioForo } from '../../../domain/recomendaciones/types';
 
 export const recomendacionesApi = {
   getAll: async (filtros?: { tipo?: string; cultivoId?: number; plagaId?: number }): Promise<Recomendacion[]> => {
@@ -35,6 +35,19 @@ export const recomendacionesApi = {
 
   getValoraciones: async (recomendacionId: number): Promise<Valoracion[]> => {
     const { data } = await apiClient.get<Valoracion[]>(`/recomendaciones/${recomendacionId}/valoraciones`);
+    return data;
+  },
+
+  getComentarios: async (recomendacionId: number): Promise<ComentarioForo[]> => {
+    const { data } = await apiClient.get<ComentarioForo[]>(`/recomendaciones/${recomendacionId}/comentarios`);
+    return data;
+  },
+
+  createComentario: async (recomendacionId: number, contenido: string, comentarioPadreId?: number): Promise<ComentarioForo> => {
+    const { data } = await apiClient.post<ComentarioForo>(`/recomendaciones/${recomendacionId}/comentarios`, {
+      contenido,
+      comentarioPadreId: comentarioPadreId || undefined,
+    });
     return data;
   },
 };

@@ -21,6 +21,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { MulterExceptionFilter } from '../../common/filters/multer-exception.filter';
 import { CreateReporteDto } from './dto/create-reporte.dto';
 import { CambiarEstadoDto } from './dto/cambiar-estado.dto';
+import { BulkSyncInputDto } from './dto/bulk-sync-reporte.dto';
 import { ReportesService } from './reportes.service';
 
 @Controller('reportes')
@@ -96,10 +97,10 @@ export class ReportesController {
     });
   }
 
-  // Sincronización offline — acepta un array de reportes
+  // Sincronización offline — acepta un array de reportes con localId → devuelve mapping
   @Post('sync')
-  bulkSync(@CurrentUser() user: { id: number }, @Body() reportes: any[]) {
-    return this.reportesService.bulkSync(user.id, reportes);
+  bulkSync(@CurrentUser() user: { id: number }, @Body() dto: BulkSyncInputDto) {
+    return this.reportesService.bulkSync(user.id, dto.reportes);
   }
 
   // Cambiar estado — solo MODERADOR (RF-09)

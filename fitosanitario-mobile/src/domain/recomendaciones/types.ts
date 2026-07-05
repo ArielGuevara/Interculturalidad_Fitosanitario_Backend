@@ -43,3 +43,16 @@ export type Valoracion = {
     nombre: string;
   };
 };
+
+export type ComentarioForo = {
+  id: number;
+  contenido: string;
+  usuario: {
+    id: number;
+    nombre: string;
+  };
+  comentarioPadreId: number | null;
+  respuestas?: ComentarioForo[];
+  activo: boolean;
+  fechaComentario: string;
+};

@@ -1,10 +1,10 @@
 <header class="dashboard-header">
     <h2 class="dashboard-title">Resumen de Actividad</h2>
-    <p class="dashboard-subtitle">Control administrativo del ecosistema vegetal.</p>
+    <p class="dashboard-subtitle">Panel de control integral del sistema fitosanitario.</p>
 </header>
 
 <div class="stats-grid">
-    <div class="new-stat-card" *ngFor="let stat of stats()">
+    <div class="new-stat-card cursor-pointer" *ngFor="let stat of stats()" (click)="navigateTo(stat.route)">
         <span class="card-label">{{stat.label}}</span>
         <div class="flex justify-content-between align-items-end">
             <div class="card-value">{{stat.value}}</div>
@@ -20,32 +20,62 @@
 
 <div class="main-grid">
     <div class="white-section">
-        <h3 class="font-black text-3xl mb-5 uppercase tracking-tighter" style="color: #000000 !important;">Actividad del Sistema</h3>
-        <div class="flex flex-column gap-5">
+        <h3 class="font-black text-2xl mb-4">Estado de Reportes</h3>
+        <div style="height: 220px;">
+            <canvas id="reportes-chart"></canvas>
+        </div>
+        <div class="flex gap-4 mt-4 justify-content-center text-sm font-bold">
+            <span class="flex align-items-center gap-1"><span class="w-3 h-3 border-circle bg-yellow-500 inline-block"></span> Pendientes: {{reportesStats().pendientes}}</span>
+            <span class="flex align-items-center gap-1"><span class="w-3 h-3 border-circle bg-green-500 inline-block"></span> Validados: {{reportesStats().validados}}</span>
+            <span class="flex align-items-center gap-1"><span class="w-3 h-3 border-circle bg-red-500 inline-block"></span> Rechazados: {{reportesStats().rechazados}}</span>
+        </div>
+    </div>
+
+    <div class="white-section" *ngIf="plagasChartData().length > 0">
+        <h3 class="font-black text-2xl mb-4">Plagas Más Reportadas</h3>
+        <div style="height: 250px;">
+            <canvas id="plagas-chart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="main-grid mt-5">
+    <div class="white-section">
+        <h3 class="font-black text-2xl mb-5">Actividad del Sistema</h3>
+        <div class="flex flex-column gap-4">
             <div class="flex align-items-center p-3 border-round-2xl hover:bg-slate-50 transition-all border-1" style="border-color: #e2e8f0;">
                 <div class="w-4rem h-4rem bg-green-100 border-round-xl flex align-items-center justify-content-center mr-4 shadow-sm">
-                    <i class="pi pi-check-circle text-2xl" style="color: #000000 !important;"></i>
+                    <i class="pi pi-check-circle text-2xl" style="color: #000000;"></i>
                 </div>
                 <div class="flex flex-column">
-                    <span class="font-black text-xl" style="color: #000000 !important;">Catálogo de Cultivos Actualizado</span>
-                    <span class="font-bold text-base" style="color: #000000 !important;">Información sincronizada y lista para usar.</span>
+                    <span class="font-black text-lg">Catálogos Actualizados</span>
+                    <span class="font-bold text-sm text-slate-500">Cultivos, plagas y productos sincronizados.</span>
                 </div>
             </div>
             <div class="flex align-items-center p-3 border-round-2xl hover:bg-slate-50 transition-all border-1" style="border-color: #e2e8f0;">
                 <div class="w-4rem h-4rem bg-blue-100 border-round-xl flex align-items-center justify-content-center mr-4 shadow-sm">
-                    <i class="pi pi-shield text-2xl" style="color: #000000 !important;"></i>
+                    <i class="pi pi-shield text-2xl" style="color: #000000;"></i>
                 </div>
                 <div class="flex flex-column">
-                    <span class="font-black text-xl" style="color: #000000 !important;">Conexión Segura y Protegida</span>
-                    <span class="font-bold text-base" style="color: #000000 !important;">Sus datos están respaldados y seguros.</span>
+                    <span class="font-black text-lg">Reportes en Seguimiento</span>
+                    <span class="font-bold text-sm text-slate-500">{{reportesStats().total}} reportes procesados, {{reportesStats().pendientes}} pendientes de revisión.</span>
+                </div>
+            </div>
+            <div class="flex align-items-center p-3 border-round-2xl hover:bg-slate-50 transition-all border-1" style="border-color: #e2e8f0;">
+                <div class="w-4rem h-4rem bg-purple-100 border-round-xl flex align-items-center justify-content-center mr-4 shadow-sm">
+                    <i class="pi pi-bell text-2xl" style="color: #000000;"></i>
+                </div>
+                <div class="flex flex-column">
+                    <span class="font-black text-lg">Alertas Activas</span>
+                    <span class="font-bold text-sm text-slate-500">Monitoreo automático cada hora. Zonas y parámetros configurados.</span>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="dark-section">
-        <h3 class="font-black text-3xl mb-2 text-white">Acciones Rápidas</h3>
-        <p class="text-slate-400 mb-6 font-medium">Gestión directa de catálogos técnicos.</p>
+        <h3 class="font-black text-2xl mb-2 text-white">Acciones Rápidas</h3>
+        <p class="text-slate-400 mb-5 font-medium">Gestión directa de módulos críticos.</p>
         
         <div class="flex flex-column gap-3 relative z-2">
             <p-button label="Nuevo Cultivo" 
@@ -53,10 +83,20 @@
                       styleClass="action-btn btn-emerald"
                       (onClick)="navigateTo('/cultivos')"></p-button>
             
-            <p-button label="Reportar Amenaza" 
-                      icon="pi pi-shield" 
+            <p-button label="Revisar Reportes" 
+                      icon="pi pi-inbox" 
+                      styleClass="action-btn btn-emerald"
+                      (onClick)="navigateTo('/reportes')"></p-button>
+
+            <p-button label="Alertas y Zonas" 
+                      icon="pi pi-map-marker" 
+                      styleClass="action-btn btn-emerald"
+                      (onClick)="navigateTo('/zonas-alerta')"></p-button>
+            
+            <p-button label="Foro - Moderar" 
+                      icon="pi pi-comments" 
                       styleClass="action-btn p-button-outlined p-button-plain border-white-alpha-20 text-white"
-                      (onClick)="navigateTo('/plagas')"></p-button>
+                      (onClick)="navigateTo('/comunidad')"></p-button>
         </div>
         
         <div class="absolute" style="width: 250px; height: 250px; background: radial-gradient(circle, rgba(16, 185, 129, 0.15) 0%, transparent 70%); bottom: -80px; right: -80px; border-radius: 50%; filter: blur(40px)"></div>

@@ -16,6 +16,8 @@ export const routes: Routes = [
       { path: 'reportes/:id', loadComponent: () => import('./features/reportes/reporte-detail/reporte-detail').then(m => m.ReporteDetail) },
       { path: 'tratamientos', loadComponent: () => import('./features/tratamientos/tratamiento-list/tratamiento-list').then(m => m.TratamientoList) },
       { path: 'comunidad', loadComponent: () => import('./features/comunidad/comunidad-moderacion/comunidad-moderacion').then(m => m.ComunidadModeracion) },
+      { path: 'zonas-alerta', loadComponent: () => import('./features/alertas/zona-list/zona-list').then(m => m.ZonaList) },
+      { path: 'parametros-alerta', loadComponent: () => import('./features/alertas/parametro-list/parametro-list').then(m => m.ParametroList) },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]
   },

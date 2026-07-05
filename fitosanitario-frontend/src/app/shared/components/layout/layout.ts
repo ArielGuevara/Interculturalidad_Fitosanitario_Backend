@@ -25,6 +25,8 @@ export class Layout implements OnInit {
     { label: 'Reportes', icon: 'pi pi-inbox', route: '/reportes' },
     { label: 'Tratamientos', icon: 'pi pi-file-check', route: '/tratamientos' },
     { label: 'Comunidad', icon: 'pi pi-comments', route: '/comunidad' },
+    { label: 'Zonas Alerta', icon: 'pi pi-map-marker', route: '/zonas-alerta' },
+    { label: 'Params. Alerta', icon: 'pi pi-cog', route: '/parametros-alerta' },
   ];
 
   ngOnInit() {}
