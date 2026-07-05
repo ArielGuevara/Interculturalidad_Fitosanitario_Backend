@@ -72,12 +72,13 @@ export class ParametroList implements OnInit {
   }
 
   deleteParametro(p: ParametroAlerta) {
+    if (!p.id) return;
     this.confirmationService.confirm({
       message: `¿Eliminar el parámetro ${p.nombre}?`,
       header: 'Confirmar',
       icon: 'pi pi-exclamation-triangle',
       accept: () => {
-        this.alertasService.deleteParametro(p.id).subscribe({
+        this.alertasService.deleteParametro(p.id!).subscribe({
           next: () => { this.messageService.add({ severity: 'success', summary: 'Eliminado', detail: 'Parámetro eliminado' }); this.loadParametros(); },
           error: () => { this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo eliminar' }); },
         });
@@ -99,7 +100,7 @@ export class ParametroList implements OnInit {
       ventanaHoras: this.selectedParametro.ventanaHoras || 72,
     };
     const request = this.isEditMode()
-      ? this.alertasService.updateParametro(this.selectedParametro.id, dto)
+      ? this.alertasService.updateParametro(this.selectedParametro.id!, dto)
       : this.alertasService.createParametro(dto);
     request.subscribe({
       next: () => {

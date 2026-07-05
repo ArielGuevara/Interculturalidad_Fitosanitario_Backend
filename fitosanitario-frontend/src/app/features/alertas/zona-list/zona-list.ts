@@ -5,7 +5,6 @@ import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { InputNumberModule } from 'primeng/inputnumber';
-import { InputTextareaModule } from 'primeng/inputtextarea';
 import { DialogModule } from 'primeng/dialog';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -21,7 +20,7 @@ declare const L: any;
   standalone: true,
   imports: [
     CommonModule, FormsModule, TableModule, ButtonModule,
-    InputTextModule, InputNumberModule, InputTextareaModule,
+    InputTextModule, InputNumberModule,
     DialogModule, ToastModule, ConfirmDialogModule, TagModule,
   ],
   providers: [MessageService, ConfirmationService],
@@ -67,12 +66,13 @@ export class ZonaList implements OnInit {
   }
 
   deleteZona(zona: ZonaAlerta) {
+    if (!zona.id) return;
     this.confirmationService.confirm({
       message: `¿Eliminar la zona ${zona.nombre}?`,
       header: 'Confirmar',
       icon: 'pi pi-exclamation-triangle',
       accept: () => {
-        this.alertasService.deleteZona(zona.id).subscribe({
+        this.alertasService.deleteZona(zona.id!).subscribe({
           next: () => { this.messageService.add({ severity: 'success', summary: 'Eliminada', detail: 'Zona eliminada' }); this.loadZonas(); },
           error: () => { this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo eliminar' }); },
         });
@@ -93,7 +93,7 @@ export class ZonaList implements OnInit {
       radioKm: this.selectedZona.radioKm,
     };
     const request = this.isEditMode()
-      ? this.alertasService.updateZona(this.selectedZona.id, dto)
+      ? this.alertasService.updateZona(this.selectedZona.id!, dto)
       : this.alertasService.createZona(dto);
     request.subscribe({
       next: () => {

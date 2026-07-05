@@ -5,6 +5,8 @@ import { Dashboard } from './dashboard';
 import { CultivosService } from '../../core/services/cultivos';
 import { PlagasService } from '../../core/services/plagas';
 import { ProductosService } from '../../core/services/productos';
+import { ReportesService } from '../../core/services/reportes';
+import { AlertasService } from '../../core/services/alertas';
 
 describe('Dashboard', () => {
   let component: Dashboard;
@@ -18,6 +20,8 @@ describe('Dashboard', () => {
         { provide: CultivosService, useValue: { findAll: () => of([]) } },
         { provide: PlagasService, useValue: { findAll: () => of([]) } },
         { provide: ProductosService, useValue: { findAll: () => of([]) } },
+        { provide: ReportesService, useValue: { findAll: () => of([]), findPendientes: () => of([]) } },
+        { provide: AlertasService, useValue: { findAllAlertas: () => of([]) } },
       ],
     }).compileComponents();
 

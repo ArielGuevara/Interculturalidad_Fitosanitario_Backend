@@ -1,5 +1,5 @@
 export interface ZonaAlerta {
-  id: number;
+  id?: number;
   nombre: string;
   descripcion?: string | null;
   latitudCentro: number;
@@ -19,7 +19,7 @@ export interface CreateZonaAlertaDto {
 }
 
 export interface ParametroAlerta {
-  id: number;
+  id?: number;
   nombre: string;
   plagaId?: number | null;
   cultivoId?: number | null;
