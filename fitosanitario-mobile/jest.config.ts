@@ -12,6 +12,7 @@ const config: Config = {
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
   collectCoverageFrom: ['src/**/*.{ts,tsx}', '!src/**/*.spec.{ts,tsx}', '!src/**/types.ts'],
   coverageReporters: ['lcov', 'text-summary'],
+  reporters: ['default', 'jest-junit'],
 };
 
 export default config;

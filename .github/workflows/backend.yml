@@ -43,6 +43,11 @@ jobs:
         run: |
           echo "test_suites=$(grep -oP 'Test Suites: .+' /tmp/backend-test.log 2>/dev/null || echo 'N/A')" >> $GITHUB_OUTPUT
           echo "test_tests=$(grep -oP 'Tests: .+' /tmp/backend-test.log 2>/dev/null || echo 'N/A')" >> $GITHUB_OUTPUT
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: junit-backend
+          path: fitosanitario-backend/junit.xml
 
   build:
     runs-on: ubuntu-latest
