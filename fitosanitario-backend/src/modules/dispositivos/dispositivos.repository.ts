@@ -11,22 +11,36 @@ export class DispositivosRepository {
   ) {}
 
   async findAll() {
-    return this.db.select().from(schema.dispositivos).where(eq(schema.dispositivos.activo, true));
+    return this.db
+      .select()
+      .from(schema.dispositivos)
+      .where(eq(schema.dispositivos.activo, true));
   }
 
   async findByUser(usuarioId: number) {
     return this.db
       .select()
       .from(schema.dispositivos)
-      .where(and(eq(schema.dispositivos.usuarioId, usuarioId), eq(schema.dispositivos.activo, true)));
+      .where(
+        and(
+          eq(schema.dispositivos.usuarioId, usuarioId),
+          eq(schema.dispositivos.activo, true),
+        ),
+      );
   }
 
   async findByToken(token: string) {
-    const rows = await this.db.select().from(schema.dispositivos).where(eq(schema.dispositivos.token, token));
+    const rows = await this.db
+      .select()
+      .from(schema.dispositivos)
+      .where(eq(schema.dispositivos.token, token));
     return rows[0] || null;
   }
 
-  async register(usuarioId: number, data: { token: string; plataforma: string }) {
+  async register(
+    usuarioId: number,
+    data: { token: string; plataforma: string },
+  ) {
     const existing = await this.findByToken(data.token);
     if (existing) {
       const rows = await this.db

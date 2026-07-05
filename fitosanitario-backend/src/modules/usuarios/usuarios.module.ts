@@ -3,6 +3,6 @@ import { UsuariosRepository } from './usuarios.repository';
 
 @Module({
   providers: [UsuariosRepository],
-  exports:   [UsuariosRepository],
+  exports: [UsuariosRepository],
 })
 export class UsuariosModule {}

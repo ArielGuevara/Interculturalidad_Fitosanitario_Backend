@@ -8,10 +8,9 @@ import { UpdateProductoDto } from './dto/update-producto.dto';
 
 @Injectable()
 export class ProductosRepository {
-
-    constructor(
-            @Inject(DB_CONNECTION) private db: NodePgDatabase<typeof schema>,
-          ) {}
+  constructor(
+    @Inject(DB_CONNECTION) private db: NodePgDatabase<typeof schema>,
+  ) {}
 
   findAll() {
     return this.db.select().from(schema.productosFitosanitarios);

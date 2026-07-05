@@ -1,17 +1,16 @@
 import { IsString, IsEmail, IsEnum, IsOptional } from 'class-validator';
 
 export class RegisterDto {
-  
-    @IsString()
-    nombre: string = '';
+  @IsString()
+  nombre: string = '';
 
-    @IsEmail()
-    email: string = '';
+  @IsEmail()
+  email: string = '';
 
-    @IsString()
-    password: string = '';
+  @IsString()
+  password: string = '';
 
-    @IsEnum(['AGRICULTOR', 'MODERADOR'])
-    @IsOptional()
-    rol?: 'AGRICULTOR' | 'MODERADOR';
+  @IsEnum(['AGRICULTOR', 'MODERADOR'])
+  @IsOptional()
+  rol?: 'AGRICULTOR' | 'MODERADOR';
 }

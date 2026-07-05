@@ -1,13 +1,20 @@
 import {
-  Controller, Get, Post, Patch, Delete,
-  Param, Body, ParseIntPipe, UseGuards,
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Param,
+  Body,
+  ParseIntPipe,
+  UseGuards,
 } from '@nestjs/common';
 import { CultivosService } from './cultivos.service';
 import { CreateCultivoDto } from './dto/create-cultivo.dto';
 import { UpdateCultivoDto } from './dto/update-cultivo.dto';
-import { JwtAuthGuard }    from '../../common/guards/jwt-auth.guard';
-import { RolesGuard }      from '../../common/guards/roles.guard';
-import { Roles }           from '../../common/decorators/roles.decorator';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
 
 @Controller('cultivos')
 @UseGuards(JwtAuthGuard, RolesGuard)

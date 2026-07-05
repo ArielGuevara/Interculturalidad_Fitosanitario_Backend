@@ -43,8 +43,8 @@ describe('AuthService', () => {
     }).compile();
 
     service = module.get<AuthService>(AuthService);
-    usuariosRepo = module.get(UsuariosRepository) as jest.Mocked<UsuariosRepository>;
-    jwtService = module.get(JwtService) as jest.Mocked<JwtService>;
+    usuariosRepo = module.get(UsuariosRepository);
+    jwtService = module.get(JwtService);
   });
 
   afterEach(() => {
@@ -56,11 +56,17 @@ describe('AuthService', () => {
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
       usuariosRepo.findByEmail.mockResolvedValue(mockUsuario);
 
-      const dto: LoginDto = { email: 'juan@example.com', password: 'password123' };
+      const dto: LoginDto = {
+        email: 'juan@example.com',
+        password: 'password123',
+      };
       const result = await service.login(dto);
 
       expect(usuariosRepo.findByEmail).toHaveBeenCalledWith('juan@example.com');
-      expect(bcrypt.compare).toHaveBeenCalledWith('password123', mockUsuario.passwordHash);
+      expect(bcrypt.compare).toHaveBeenCalledWith(
+        'password123',
+        mockUsuario.passwordHash,
+      );
       expect(result.accessToken).toBe('fake-jwt-token');
       expect(result.usuario).toEqual({
         id: 1,
@@ -78,7 +84,10 @@ describe('AuthService', () => {
     it('should throw UnauthorizedException when user is not found', async () => {
       usuariosRepo.findByEmail.mockResolvedValue(null);
 
-      const dto: LoginDto = { email: 'unknown@example.com', password: 'password123' };
+      const dto: LoginDto = {
+        email: 'unknown@example.com',
+        password: 'password123',
+      };
 
       await expect(service.login(dto)).rejects.toThrow(UnauthorizedException);
       expect(bcrypt.compare).not.toHaveBeenCalled();
@@ -88,7 +97,10 @@ describe('AuthService', () => {
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
       usuariosRepo.findByEmail.mockResolvedValue(mockUsuario);
 
-      const dto: LoginDto = { email: 'juan@example.com', password: 'wrongpassword' };
+      const dto: LoginDto = {
+        email: 'juan@example.com',
+        password: 'wrongpassword',
+      };
 
       await expect(service.login(dto)).rejects.toThrow(UnauthorizedException);
     });

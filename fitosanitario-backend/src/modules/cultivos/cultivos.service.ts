@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CultivosRepository } from './cultivos.repository';
-import { CreateCultivoDto }   from './dto/create-cultivo.dto';
-import { UpdateCultivoDto }   from './dto/update-cultivo.dto';
+import { CreateCultivoDto } from './dto/create-cultivo.dto';
+import { UpdateCultivoDto } from './dto/update-cultivo.dto';
 
 @Injectable()
 export class CultivosService {

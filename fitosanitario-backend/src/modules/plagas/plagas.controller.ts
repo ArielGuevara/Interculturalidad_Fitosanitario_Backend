@@ -1,13 +1,20 @@
 import {
-  Controller, Get, Post, Patch, Delete,
-  Param, Body, ParseIntPipe, UseGuards,
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Param,
+  Body,
+  ParseIntPipe,
+  UseGuards,
 } from '@nestjs/common';
-import { PlagasService }   from './plagas.service';
-import { CreatePlagaDto }  from './dto/create-plaga.dto';
-import { UpdatePlagaDto }  from './dto/update-plaga.dto';
-import { JwtAuthGuard }    from '../../common/guards/jwt-auth.guard';
-import { RolesGuard }      from '../../common/guards/roles.guard';
-import { Roles }           from '../../common/decorators/roles.decorator';
+import { PlagasService } from './plagas.service';
+import { CreatePlagaDto } from './dto/create-plaga.dto';
+import { UpdatePlagaDto } from './dto/update-plaga.dto';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
 
 @Controller('plagas')
 @UseGuards(JwtAuthGuard, RolesGuard)

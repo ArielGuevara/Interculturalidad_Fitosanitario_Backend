@@ -54,8 +54,8 @@ describe('ReportesService', () => {
     }).compile();
 
     service = module.get<ReportesService>(ReportesService);
-    reportesRepository = module.get(ReportesRepository) as jest.Mocked<ReportesRepository>;
-    multimediaService = module.get(MultimediaService) as jest.Mocked<MultimediaService>;
+    reportesRepository = module.get(ReportesRepository);
+    multimediaService = module.get(MultimediaService);
   });
 
   afterEach(() => {
@@ -73,15 +73,28 @@ describe('ReportesService', () => {
         longitud: -78.45,
       };
 
-      multimediaService.uploadImages.mockResolvedValue({ count: 2, urls: ['url1', 'url2'] });
+      multimediaService.uploadImages.mockResolvedValue({
+        count: 2,
+        urls: ['url1', 'url2'],
+      });
       multimediaService.uploadAudio.mockResolvedValue({ url: 'audio-url' });
       reportesRepository.create.mockResolvedValue(mockReporte);
 
       const result = await service.create({
         dto,
         usuarioId: 1,
-        images: [{ originalname: 'img.jpg', buffer: Buffer.from(''), mimetype: 'image/jpeg' } as Express.Multer.File],
-        audio: { originalname: 'audio.mp3', buffer: Buffer.from(''), mimetype: 'audio/mpeg' } as Express.Multer.File,
+        images: [
+          {
+            originalname: 'img.jpg',
+            buffer: Buffer.from(''),
+            mimetype: 'image/jpeg',
+          } as Express.Multer.File,
+        ],
+        audio: {
+          originalname: 'audio.mp3',
+          buffer: Buffer.from(''),
+          mimetype: 'audio/mpeg',
+        } as Express.Multer.File,
       });
 
       expect(multimediaService.uploadImages).toHaveBeenCalled();
@@ -138,9 +151,9 @@ describe('ReportesService', () => {
         mimetype: 'image/jpeg',
       })) as Express.Multer.File[];
 
-      await expect(service.create({ dto, usuarioId: 1, images: manyImages })).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        service.create({ dto, usuarioId: 1, images: manyImages }),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 

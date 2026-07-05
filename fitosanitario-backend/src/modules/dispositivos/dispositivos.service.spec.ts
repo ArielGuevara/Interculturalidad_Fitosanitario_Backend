@@ -33,7 +33,7 @@ describe('DispositivosService', () => {
     }).compile();
 
     service = module.get<DispositivosService>(DispositivosService);
-    repo = module.get(DispositivosRepository) as jest.Mocked<DispositivosRepository>;
+    repo = module.get(DispositivosRepository);
   });
 
   afterEach(() => {

@@ -1,6 +1,11 @@
 import {
-  IsInt, IsString, IsNotEmpty, IsOptional,
-  IsEnum, Min, Max,
+  IsInt,
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsEnum,
+  Min,
+  Max,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -29,7 +34,8 @@ export class CreateRecomendacionDto {
   descripcion: string;
 
   @IsEnum(['RECOMENDACION', 'CONSULTA', 'CONOCIMIENTO_ANCESTRAL'])
-  tipo: 'RECOMENDACION' | 'CONSULTA' | 'CONOCIMIENTO_ANCESTRAL' = 'RECOMENDACION';
+  tipo: 'RECOMENDACION' | 'CONSULTA' | 'CONOCIMIENTO_ANCESTRAL' =
+    'RECOMENDACION';
 }
 
 export class CreateValoracionDto {

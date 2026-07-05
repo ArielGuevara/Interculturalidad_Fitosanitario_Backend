@@ -4,9 +4,9 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { MultimediaService }  from '../multimedia/multimedia.service';
+import { MultimediaService } from '../multimedia/multimedia.service';
 import { ReportesRepository } from './reportes.repository';
-import { CreateReporteDto }   from './dto/create-reporte.dto';
+import { CreateReporteDto } from './dto/create-reporte.dto';
 import * as schema from '../../db/schema';
 
 @Injectable()
@@ -36,17 +36,17 @@ export class ReportesService {
       : { url: null as string | null };
 
     return this.reportesRepository.create({
-      titulo:              params.dto.titulo,
-      descripcion:         params.dto.descripcion,
+      titulo: params.dto.titulo,
+      descripcion: params.dto.descripcion,
       descripcionProblema: params.dto.descripcionProblema,
-      usuarioId:           params.usuarioId,
-      cultivoId:           params.dto.cultivoId,
-      plagaId:             params.dto.plagaId,
-      imagenesUrls:        imagenesUpload.urls,
-      audioUrl:            audioUpload.url,
-      latitud:             params.dto.latitud,
-      longitud:            params.dto.longitud,
-      sincronizado:        params.dto.sincronizado,
+      usuarioId: params.usuarioId,
+      cultivoId: params.dto.cultivoId,
+      plagaId: params.dto.plagaId,
+      imagenesUrls: imagenesUpload.urls,
+      audioUrl: audioUpload.url,
+      latitud: params.dto.latitud,
+      longitud: params.dto.longitud,
+      sincronizado: params.dto.sincronizado,
     });
   }
 
@@ -71,17 +71,17 @@ export class ReportesService {
   async cambiarEstado(params: {
     reporteId: number;
     usuarioId: number;
-    estadoNuevo: typeof schema.estadoReporteEnum.enumValues[number];
+    estadoNuevo: (typeof schema.estadoReporteEnum.enumValues)[number];
     motivo?: string;
   }) {
     const reporte = await this.findById(params.reporteId);
 
     return this.reportesRepository.cambiarEstado({
-      reporteId:      params.reporteId,
-      usuarioId:      params.usuarioId,
+      reporteId: params.reporteId,
+      usuarioId: params.usuarioId,
       estadoAnterior: reporte.estado,
-      estadoNuevo:    params.estadoNuevo,
-      motivo:         params.motivo,
+      estadoNuevo: params.estadoNuevo,
+      motivo: params.motivo,
     });
   }
 
@@ -94,17 +94,17 @@ export class ReportesService {
     const results: any[] = [];
     for (const r of reportes) {
       const created = await this.reportesRepository.create({
-        titulo:              r.titulo,
-        descripcion:         r.descripcion,
+        titulo: r.titulo,
+        descripcion: r.descripcion,
         descripcionProblema: r.descripcionProblema,
         usuarioId,
-        cultivoId:           r.cultivoId,
-        plagaId:             r.plagaId,
-        imagenesUrls:        r.imagenesUrls ?? [],
-        audioUrl:            r.audioUrl ?? null,
-        latitud:             r.latitud,
-        longitud:            r.longitud,
-        sincronizado:        true,
+        cultivoId: r.cultivoId,
+        plagaId: r.plagaId,
+        imagenesUrls: r.imagenesUrls ?? [],
+        audioUrl: r.audioUrl ?? null,
+        latitud: r.latitud,
+        longitud: r.longitud,
+        sincronizado: true,
       });
       results.push(created);
     }

@@ -43,3 +43,19 @@ jobs:
           cache-dependency-path: fitosanitario-frontend/package-lock.json
       - run: npm ci
       - run: npm run build --configuration=production
+
+  notify:
+    needs: [lint, test, build]
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notificar fallo a Telegram
+        run: |
+          MENSAJE="❌ Frontend CI FALLÓ%0A"
+          [ "${{ needs.lint.result }}" = "failure" ] && MENSAJE="${MENSAJE}  - Lint: ❌%0A"
+          [ "${{ needs.test.result }}" = "failure" ] && MENSAJE="${MENSAJE}  - Test: ❌%0A"
+          [ "${{ needs.build.result }}" = "failure" ] && MENSAJE="${MENSAJE}  - Build: ❌%0A"
+          MENSAJE="${MENSAJE}Repo: ${{ github.repository }}%0AUrl: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+            -d text="$MENSAJE"

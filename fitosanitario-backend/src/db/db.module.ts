@@ -6,7 +6,7 @@ import * as schema from './schema';
 
 export const DB_CONNECTION = 'DB_CONNECTION';
 
-@Global() 
+@Global()
 @Module({
   providers: [
     {

@@ -26,17 +26,17 @@ export class ReportesRepository {
     const result = await this.db
       .insert(schema.reportes)
       .values({
-        titulo:              params.titulo,
-        descripcion:         params.descripcion ?? null,
+        titulo: params.titulo,
+        descripcion: params.descripcion ?? null,
         descripcionProblema: params.descripcionProblema ?? null,
-        usuarioId:           params.usuarioId,
-        cultivoId:           params.cultivoId,
-        plagaId:             params.plagaId ?? null,
-        imagenesUrls:        params.imagenesUrls,
-        audioUrl:            params.audioUrl ?? null,
-        latitud:             params.latitud,
-        longitud:            params.longitud,
-        sincronizado:        params.sincronizado ?? true,
+        usuarioId: params.usuarioId,
+        cultivoId: params.cultivoId,
+        plagaId: params.plagaId ?? null,
+        imagenesUrls: params.imagenesUrls,
+        audioUrl: params.audioUrl ?? null,
+        latitud: params.latitud,
+        longitud: params.longitud,
+        sincronizado: params.sincronizado ?? true,
       })
       .returning();
 
@@ -79,8 +79,8 @@ export class ReportesRepository {
   async cambiarEstado(params: {
     reporteId: number;
     usuarioId: number;
-    estadoAnterior: typeof schema.estadoReporteEnum.enumValues[number];
-    estadoNuevo: typeof schema.estadoReporteEnum.enumValues[number];
+    estadoAnterior: (typeof schema.estadoReporteEnum.enumValues)[number];
+    estadoNuevo: (typeof schema.estadoReporteEnum.enumValues)[number];
     motivo?: string;
   }) {
     // Actualiza estado del reporte
@@ -91,15 +91,13 @@ export class ReportesRepository {
       .returning();
 
     // Registra en historial
-    await this.db
-      .insert(schema.reporteHistorialEstado)
-      .values({
-        reporteId:      params.reporteId,
-        usuarioId:      params.usuarioId,
-        estadoAnterior: params.estadoAnterior,
-        estadoNuevo:    params.estadoNuevo,
-        motivo:         params.motivo ?? null,
-      });
+    await this.db.insert(schema.reporteHistorialEstado).values({
+      reporteId: params.reporteId,
+      usuarioId: params.usuarioId,
+      estadoAnterior: params.estadoAnterior,
+      estadoNuevo: params.estadoNuevo,
+      motivo: params.motivo ?? null,
+    });
 
     return reporteActualizado;
   }
@@ -107,13 +105,13 @@ export class ReportesRepository {
   async getHistorial(reporteId: number) {
     return this.db
       .select({
-        id:             schema.reporteHistorialEstado.id,
+        id: schema.reporteHistorialEstado.id,
         estadoAnterior: schema.reporteHistorialEstado.estadoAnterior,
-        estadoNuevo:    schema.reporteHistorialEstado.estadoNuevo,
-        motivo:         schema.reporteHistorialEstado.motivo,
-        fechaCambio:    schema.reporteHistorialEstado.fechaCambio,
+        estadoNuevo: schema.reporteHistorialEstado.estadoNuevo,
+        motivo: schema.reporteHistorialEstado.motivo,
+        fechaCambio: schema.reporteHistorialEstado.fechaCambio,
         usuario: {
-          id:     schema.usuarios.id,
+          id: schema.usuarios.id,
           nombre: schema.usuarios.nombre,
         },
       })

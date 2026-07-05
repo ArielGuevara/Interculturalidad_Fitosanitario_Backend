@@ -1,14 +1,21 @@
 import {
-  Controller, Get, Post, Patch, Param,
-  Body, ParseIntPipe, UseGuards, Query,
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Param,
+  Body,
+  ParseIntPipe,
+  UseGuards,
+  Query,
 } from '@nestjs/common';
-import { TratamientosService }  from './tratamientos.service';
+import { TratamientosService } from './tratamientos.service';
 import { CreateTratamientoDto } from './dto/create-tratamiento.dto';
 import { UpdateTratamientoDto } from './dto/update-tratamiento.dto';
-import { JwtAuthGuard }         from '../../common/guards/jwt-auth.guard';
-import { RolesGuard }           from '../../common/guards/roles.guard';
-import { Roles }                from '../../common/decorators/roles.decorator';
-import { CurrentUser }          from '../../common/decorators/current-user.decorator';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @Controller('tratamientos')
 @UseGuards(JwtAuthGuard, RolesGuard)

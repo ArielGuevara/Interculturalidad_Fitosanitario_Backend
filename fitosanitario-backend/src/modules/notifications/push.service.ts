@@ -29,7 +29,10 @@ export class PushService {
         this.logger.log(`Push enviados: ${messages.length}`);
       }
     } catch (err) {
-      this.logger.error('Error enviando push notifications', err instanceof Error ? err.message : err);
+      this.logger.error(
+        'Error enviando push notifications',
+        err instanceof Error ? err.message : err,
+      );
     }
   }
 

@@ -8,8 +8,7 @@ import { UpdateCultivoDto } from './dto/update-cultivo.dto';
 
 @Injectable()
 export class CultivosRepository {
-
-    constructor(
+  constructor(
     @Inject(DB_CONNECTION) private db: NodePgDatabase<typeof schema>,
   ) {}
 

@@ -1,13 +1,24 @@
 import {
-  Controller, Get, Post, Patch, Delete, Param,
-  Body, ParseIntPipe, UseGuards, Query,
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Param,
+  Body,
+  ParseIntPipe,
+  UseGuards,
+  Query,
 } from '@nestjs/common';
-import { RecomendacionesService }   from './recomendaciones.service';
-import { CreateRecomendacionDto, CreateValoracionDto } from './dto/create-recomendacion.dto';
-import { JwtAuthGuard }            from '../../common/guards/jwt-auth.guard';
-import { RolesGuard }              from '../../common/guards/roles.guard';
-import { Roles }                   from '../../common/decorators/roles.decorator';
-import { CurrentUser }             from '../../common/decorators/current-user.decorator';
+import { RecomendacionesService } from './recomendaciones.service';
+import {
+  CreateRecomendacionDto,
+  CreateValoracionDto,
+} from './dto/create-recomendacion.dto';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @Controller('recomendaciones')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -23,7 +34,7 @@ export class RecomendacionesController {
     return this.service.findAll({
       tipo,
       cultivoId: cultivoId ? parseInt(cultivoId, 10) : undefined,
-      plagaId:   plagaId   ? parseInt(plagaId, 10)   : undefined,
+      plagaId: plagaId ? parseInt(plagaId, 10) : undefined,
     });
   }
 

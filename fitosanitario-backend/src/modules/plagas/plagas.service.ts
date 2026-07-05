@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PlagasRepository } from './plagas.repository';
-import { CreatePlagaDto }   from './dto/create-plaga.dto';
-import { UpdatePlagaDto }   from './dto/update-plaga.dto';
+import { CreatePlagaDto } from './dto/create-plaga.dto';
+import { UpdatePlagaDto } from './dto/update-plaga.dto';
 
 @Injectable()
 export class PlagasService {

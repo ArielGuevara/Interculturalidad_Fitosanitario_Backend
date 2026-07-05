@@ -1,13 +1,20 @@
 import {
-  Controller, Get, Post, Patch, Delete,
-  Param, Body, ParseIntPipe, UseGuards,
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Param,
+  Body,
+  ParseIntPipe,
+  UseGuards,
 } from '@nestjs/common';
-import { ProductosService }   from './productos.service';
-import { CreateProductoDto }  from './dto/create-producto.dto';
-import { UpdateProductoDto }  from './dto/update-producto.dto';
-import { JwtAuthGuard }       from '../../common/guards/jwt-auth.guard';
-import { RolesGuard }         from '../../common/guards/roles.guard';
-import { Roles }              from '../../common/decorators/roles.decorator';
+import { ProductosService } from './productos.service';
+import { CreateProductoDto } from './dto/create-producto.dto';
+import { UpdateProductoDto } from './dto/update-producto.dto';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
 
 @Controller('productos')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -32,7 +39,10 @@ export class ProductosController {
 
   @Patch(':id')
   @Roles('MODERADOR')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateProductoDto) {
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateProductoDto,
+  ) {
     return this.productosService.update(id, dto);
   }
 

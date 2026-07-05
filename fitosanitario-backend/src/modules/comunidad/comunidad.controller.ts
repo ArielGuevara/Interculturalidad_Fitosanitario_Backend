@@ -1,15 +1,21 @@
 import {
-  Controller, Get, Post, Delete,
-  Param, Body, ParseIntPipe, UseGuards,
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Param,
+  Body,
+  ParseIntPipe,
+  UseGuards,
 } from '@nestjs/common';
-import { ComunidadService }       from './comunidad.service';
+import { ComunidadService } from './comunidad.service';
 import { CreateRecomendacionDto } from './dto/create-recomendacion.dto';
-import { CreateValoracionDto }    from './dto/create-valoracion.dto';
-import { CreateComentarioDto }    from './dto/create-comentario.dto';
-import { JwtAuthGuard }           from '../../common/guards/jwt-auth.guard';
-import { RolesGuard }             from '../../common/guards/roles.guard';
-import { Roles }                  from '../../common/decorators/roles.decorator';
-import { CurrentUser }            from '../../common/decorators/current-user.decorator';
+import { CreateValoracionDto } from './dto/create-valoracion.dto';
+import { CreateComentarioDto } from './dto/create-comentario.dto';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @Controller()
 @UseGuards(JwtAuthGuard, RolesGuard)

@@ -8,10 +8,7 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import {
-  FileInterceptor,
-  FilesInterceptor,
-} from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { MulterExceptionFilter } from '../../common/filters/multer-exception.filter';
@@ -32,7 +29,10 @@ export class MultimediaController {
       },
       fileFilter: (_req, file, cb) => {
         if (!file.mimetype?.startsWith('image/')) {
-          return cb(new BadRequestException('MIME inválido (solo imágenes)') as any, false);
+          return cb(
+            new BadRequestException('MIME inválido (solo imágenes)'),
+            false,
+          );
         }
         return cb(null, true);
       },
@@ -51,7 +51,10 @@ export class MultimediaController {
       },
       fileFilter: (_req, file, cb) => {
         if (!file.mimetype?.startsWith('audio/')) {
-          return cb(new BadRequestException('MIME inválido (solo audio)') as any, false);
+          return cb(
+            new BadRequestException('MIME inválido (solo audio)'),
+            false,
+          );
         }
         return cb(null, true);
       },

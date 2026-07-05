@@ -1,6 +1,12 @@
 import {
-  IsInt, IsNumber, IsString, IsOptional,
-  IsNotEmpty, Min, ValidateIf, IsEnum,
+  IsInt,
+  IsNumber,
+  IsString,
+  IsOptional,
+  IsNotEmpty,
+  Min,
+  ValidateIf,
+  IsEnum,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -40,8 +46,11 @@ export class CreateRecomendacionDto {
 
   @IsString()
   @IsOptional()
-  @ValidateIf(o => !o.productoId)
-  @IsNotEmpty({ message: 'Debes indicar un producto del catálogo o escribir el nombre del producto' })
+  @ValidateIf((o) => !o.productoId)
+  @IsNotEmpty({
+    message:
+      'Debes indicar un producto del catálogo o escribir el nombre del producto',
+  })
   productoNombreLibre?: string;
 
   @IsNumber()

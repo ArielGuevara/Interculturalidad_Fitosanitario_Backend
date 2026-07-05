@@ -61,7 +61,7 @@ describe('PushService', () => {
       );
 
       expect(mockFetch).toHaveBeenCalledTimes(1);
-      const callArg = JSON.parse((mockFetch.mock.calls[0][1] as any).body);
+      const callArg = JSON.parse(mockFetch.mock.calls[0][1].body);
       expect(callArg).toHaveLength(2);
       expect(callArg[0]).toEqual({
         to: 'ExponentPushToken[aaa]',

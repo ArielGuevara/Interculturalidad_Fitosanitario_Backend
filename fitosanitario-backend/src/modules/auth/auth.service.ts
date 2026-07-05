@@ -7,13 +7,13 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UsuariosRepository } from '../usuarios/usuarios.repository';
 import { RegisterDto } from './dto/register.dto';
-import { LoginDto }    from './dto/login.dto';
+import { LoginDto } from './dto/login.dto';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly usuariosRepo: UsuariosRepository,
-    private readonly jwtService:   JwtService,
+    private readonly jwtService: JwtService,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -26,9 +26,9 @@ export class AuthService {
 
     const usuario = await this.usuariosRepo.create({
       nombre: dto.nombre,
-      email:  dto.email,
+      email: dto.email,
       passwordHash,
-      rol:    dto.rol ?? 'AGRICULTOR',
+      rol: dto.rol ?? 'AGRICULTOR',
     });
 
     return this.buildResponse(usuario);
@@ -40,7 +40,10 @@ export class AuthService {
       throw new UnauthorizedException('Credenciales inválidas');
     }
 
-    const passwordValido = await bcrypt.compare(dto.password, usuario.passwordHash);
+    const passwordValido = await bcrypt.compare(
+      dto.password,
+      usuario.passwordHash,
+    );
     if (!passwordValido) {
       throw new UnauthorizedException('Credenciales inválidas');
     }
@@ -50,15 +53,15 @@ export class AuthService {
 
   private buildResponse(usuario: any) {
     const payload = { sub: usuario.id, email: usuario.email, rol: usuario.rol };
-    const token   = this.jwtService.sign(payload);
+    const token = this.jwtService.sign(payload);
 
     return {
       accessToken: token,
       usuario: {
-        id:     usuario.id,
+        id: usuario.id,
         nombre: usuario.nombre,
-        email:  usuario.email,
-        rol:    usuario.rol,
+        email: usuario.email,
+        rol: usuario.rol,
       },
     };
   }

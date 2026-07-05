@@ -1,6 +1,12 @@
 import {
-  IsInt, IsNumber, IsString, IsNotEmpty,
-  IsOptional, IsEnum, IsBoolean, Min,
+  IsInt,
+  IsNumber,
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsEnum,
+  IsBoolean,
+  Min,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 

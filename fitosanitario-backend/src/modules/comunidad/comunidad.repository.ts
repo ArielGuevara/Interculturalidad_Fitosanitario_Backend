@@ -1,10 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { NodePgDatabase }     from 'drizzle-orm/node-postgres';
-import { DB_CONNECTION }      from '../../db/db.module';
-import * as schema            from '../../db/schema';
+import { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { DB_CONNECTION } from '../../db/db.module';
+import * as schema from '../../db/schema';
 import { eq, desc, avg, count, and } from 'drizzle-orm';
 import { CreateRecomendacionDto } from './dto/create-recomendacion.dto';
-import { CreateComentarioDto }    from './dto/create-comentario.dto';
+import { CreateComentarioDto } from './dto/create-comentario.dto';
 
 @Injectable()
 export class ComunidadRepository {
@@ -21,13 +21,13 @@ export class ComunidadRepository {
     const result = await this.db
       .insert(schema.recomendacionesComunidad)
       .values({
-        reporteId:           dto.reporteId ?? null,
+        reporteId: dto.reporteId ?? null,
         usuarioId,
-        cultivoId:           dto.cultivoId ?? null,
-        plagaId:             dto.plagaId ?? null,
+        cultivoId: dto.cultivoId ?? null,
+        plagaId: dto.plagaId ?? null,
         titulo,
         descripcion,
-        tipo:                dto.tipo ?? 'RECOMENDACION',
+        tipo: dto.tipo ?? 'RECOMENDACION',
       })
       .returning();
 
@@ -38,32 +38,44 @@ export class ComunidadRepository {
     // Trae recomendaciones activas con promedio de puntuación y conteo
     const recomendaciones = await this.db
       .select({
-        id:                  schema.recomendacionesComunidad.id,
-        reporteId:           schema.recomendacionesComunidad.reporteId,
-        titulo:              schema.recomendacionesComunidad.titulo,
-        descripcion:         schema.recomendacionesComunidad.descripcion,
-        tipo:                schema.recomendacionesComunidad.tipo,
-        valoracionPromedio:  schema.recomendacionesComunidad.valoracionPromedio,
-        totalValoraciones:   schema.recomendacionesComunidad.totalValoraciones,
-        moderado:            schema.recomendacionesComunidad.moderado,
-        createdAt:           schema.recomendacionesComunidad.createdAt,
+        id: schema.recomendacionesComunidad.id,
+        reporteId: schema.recomendacionesComunidad.reporteId,
+        titulo: schema.recomendacionesComunidad.titulo,
+        descripcion: schema.recomendacionesComunidad.descripcion,
+        tipo: schema.recomendacionesComunidad.tipo,
+        valoracionPromedio: schema.recomendacionesComunidad.valoracionPromedio,
+        totalValoraciones: schema.recomendacionesComunidad.totalValoraciones,
+        moderado: schema.recomendacionesComunidad.moderado,
+        createdAt: schema.recomendacionesComunidad.createdAt,
         usuario: {
-          id:     schema.usuarios.id,
+          id: schema.usuarios.id,
           nombre: schema.usuarios.nombre,
         },
         cultivo: {
-          id:     schema.cultivos.id,
+          id: schema.cultivos.id,
           nombre: schema.cultivos.nombre,
         },
         plaga: {
-          id:     schema.plagasEnfermedades.id,
+          id: schema.plagasEnfermedades.id,
           nombre: schema.plagasEnfermedades.nombre,
         },
       })
       .from(schema.recomendacionesComunidad)
-      .innerJoin(schema.usuarios, eq(schema.recomendacionesComunidad.usuarioId, schema.usuarios.id))
-      .leftJoin(schema.cultivos, eq(schema.recomendacionesComunidad.cultivoId, schema.cultivos.id))
-      .leftJoin(schema.plagasEnfermedades, eq(schema.recomendacionesComunidad.plagaId, schema.plagasEnfermedades.id))
+      .innerJoin(
+        schema.usuarios,
+        eq(schema.recomendacionesComunidad.usuarioId, schema.usuarios.id),
+      )
+      .leftJoin(
+        schema.cultivos,
+        eq(schema.recomendacionesComunidad.cultivoId, schema.cultivos.id),
+      )
+      .leftJoin(
+        schema.plagasEnfermedades,
+        eq(
+          schema.recomendacionesComunidad.plagaId,
+          schema.plagasEnfermedades.id,
+        ),
+      )
       .where(
         and(
           eq(schema.recomendacionesComunidad.reporteId, reporteId),
@@ -90,9 +102,9 @@ export class ComunidadRepository {
     const result = await this.db
       .update(schema.recomendacionesComunidad)
       .set({
-        activo:          false,
-        moderado:        true,
-        updatedAt:       new Date(),
+        activo: false,
+        moderado: true,
+        updatedAt: new Date(),
       })
       .where(eq(schema.recomendacionesComunidad.id, id))
       .returning();
@@ -122,7 +134,10 @@ export class ComunidadRepository {
     usuarioId: number,
     puntuacion: number,
   ) {
-    const existente = await this.findValoracionExistente(recomendacionId, usuarioId);
+    const existente = await this.findValoracionExistente(
+      recomendacionId,
+      usuarioId,
+    );
 
     if (existente) {
       // Actualiza la valoración existente
@@ -146,14 +161,14 @@ export class ComunidadRepository {
     const result = await this.db
       .select({
         promedio: avg(schema.valoraciones.puntuacion),
-        total:    count(schema.valoraciones.id),
+        total: count(schema.valoraciones.id),
       })
       .from(schema.valoraciones)
       .where(eq(schema.valoraciones.recomendacionId, recomendacionId));
 
     return {
       promedio: Number(result[0]?.promedio ?? 0),
-      total:    Number(result[0]?.total ?? 0),
+      total: Number(result[0]?.total ?? 0),
     };
   }
 
@@ -164,8 +179,8 @@ export class ComunidadRepository {
       .update(schema.recomendacionesComunidad)
       .set({
         valoracionPromedio: promedio.promedio,
-        totalValoraciones:  promedio.total,
-        updatedAt:          new Date(),
+        totalValoraciones: promedio.total,
+        updatedAt: new Date(),
       })
       .where(eq(schema.recomendacionesComunidad.id, recomendacionId));
 
@@ -185,7 +200,7 @@ export class ComunidadRepository {
         recomendacionId,
         usuarioId,
         comentarioPadreId: dto.comentarioPadreId ?? null,
-        contenido:         dto.contenido,
+        contenido: dto.contenido,
       })
       .returning();
 
@@ -196,17 +211,20 @@ export class ComunidadRepository {
   async findComentariosByRecomendacion(recomendacionId: number) {
     const todos = await this.db
       .select({
-        id:                schema.comentariosForo.id,
+        id: schema.comentariosForo.id,
         comentarioPadreId: schema.comentariosForo.comentarioPadreId,
-        contenido:         schema.comentariosForo.contenido,
-        fechaComentario:   schema.comentariosForo.fechaComentario,
+        contenido: schema.comentariosForo.contenido,
+        fechaComentario: schema.comentariosForo.fechaComentario,
         usuario: {
-          id:     schema.usuarios.id,
+          id: schema.usuarios.id,
           nombre: schema.usuarios.nombre,
         },
       })
       .from(schema.comentariosForo)
-      .innerJoin(schema.usuarios, eq(schema.comentariosForo.usuarioId, schema.usuarios.id))
+      .innerJoin(
+        schema.usuarios,
+        eq(schema.comentariosForo.usuarioId, schema.usuarios.id),
+      )
       .where(
         and(
           eq(schema.comentariosForo.recomendacionId, recomendacionId),
@@ -216,12 +234,12 @@ export class ComunidadRepository {
       .orderBy(schema.comentariosForo.fechaComentario);
 
     // Armar árbol: raíces con sus respuestas anidadas
-    const raices   = todos.filter(c => !c.comentarioPadreId);
-    const respuestas = todos.filter(c =>  c.comentarioPadreId);
+    const raices = todos.filter((c) => !c.comentarioPadreId);
+    const respuestas = todos.filter((c) => c.comentarioPadreId);
 
-    return raices.map(raiz => ({
+    return raices.map((raiz) => ({
       ...raiz,
-      respuestas: respuestas.filter(r => r.comentarioPadreId === raiz.id),
+      respuestas: respuestas.filter((r) => r.comentarioPadreId === raiz.id),
     }));
   }
 
@@ -239,8 +257,8 @@ export class ComunidadRepository {
     const result = await this.db
       .update(schema.comentariosForo)
       .set({
-        activo:          false,
-        moderadoPor:     moderadorId,
+        activo: false,
+        moderadoPor: moderadorId,
         fechaModeracion: new Date(),
       })
       .where(eq(schema.comentariosForo.id, id))
@@ -250,20 +268,34 @@ export class ComunidadRepository {
   }
 
   private buildTitulo(dto: CreateRecomendacionDto) {
-    const producto = dto.productoNombreLibre || (dto.productoId ? `Producto #${dto.productoId}` : 'Recomendación comunitaria');
+    const producto =
+      dto.productoNombreLibre ||
+      (dto.productoId
+        ? `Producto #${dto.productoId}`
+        : 'Recomendación comunitaria');
     return `${producto}`.slice(0, 200);
   }
 
   private buildDescripcion(dto: CreateRecomendacionDto) {
     const partes = [
       dto.observaciones,
-      dto.dosis !== undefined && dto.unidadDosis ? `Dosis: ${dto.dosis} ${dto.unidadDosis}` : undefined,
-      dto.intervaloDias ? `Intervalo: cada ${dto.intervaloDias} día(s)` : undefined,
-      dto.numeroAplicaciones ? `Aplicaciones: ${dto.numeroAplicaciones}` : undefined,
-      dto.duracionTotalDias ? `Duración total: ${dto.duracionTotalDias} día(s)` : undefined,
+      dto.dosis !== undefined && dto.unidadDosis
+        ? `Dosis: ${dto.dosis} ${dto.unidadDosis}`
+        : undefined,
+      dto.intervaloDias
+        ? `Intervalo: cada ${dto.intervaloDias} día(s)`
+        : undefined,
+      dto.numeroAplicaciones
+        ? `Aplicaciones: ${dto.numeroAplicaciones}`
+        : undefined,
+      dto.duracionTotalDias
+        ? `Duración total: ${dto.duracionTotalDias} día(s)`
+        : undefined,
       dto.metodoAplicacion ? `Método: ${dto.metodoAplicacion}` : undefined,
     ].filter(Boolean);
 
-    return partes.join('. ') || 'Recomendación comunitaria sin descripción adicional';
+    return (
+      partes.join('. ') || 'Recomendación comunitaria sin descripción adicional'
+    );
   }
 }

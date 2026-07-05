@@ -1,13 +1,13 @@
 import { Module } from '@nestjs/common';
-import { TratamientosService }    from './tratamientos.service';
+import { TratamientosService } from './tratamientos.service';
 import { TratamientosController } from './tratamientos.controller';
 import { TratamientosRepository } from './tratamientos.repository';
-import { ReportesModule }         from '../reportes/reportes.module';
+import { ReportesModule } from '../reportes/reportes.module';
 
 @Module({
-  imports:     [ReportesModule],
+  imports: [ReportesModule],
   controllers: [TratamientosController],
-  providers:   [TratamientosService, TratamientosRepository],
-  exports:     [TratamientosService],
+  providers: [TratamientosService, TratamientosRepository],
+  exports: [TratamientosService],
 })
 export class TratamientosModule {}

@@ -126,7 +126,7 @@ export class StorageService implements OnModuleInit {
         params.buffer.length,
         {
           'Content-Type': params.contentType,
-        } as any, 
+        },
       );
 
       const url = buildMinioPublicUrl({

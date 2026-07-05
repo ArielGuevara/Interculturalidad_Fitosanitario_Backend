@@ -4,15 +4,15 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { TratamientosRepository } from './tratamientos.repository';
-import { ReportesService }        from '../reportes/reportes.service';
-import { CreateTratamientoDto }   from './dto/create-tratamiento.dto';
-import { UpdateTratamientoDto }   from './dto/update-tratamiento.dto';
+import { ReportesService } from '../reportes/reportes.service';
+import { CreateTratamientoDto } from './dto/create-tratamiento.dto';
+import { UpdateTratamientoDto } from './dto/update-tratamiento.dto';
 
 @Injectable()
 export class TratamientosService {
   constructor(
     private readonly tratamientosRepo: TratamientosRepository,
-    private readonly reportesService:  ReportesService,
+    private readonly reportesService: ReportesService,
   ) {}
 
   findAll() {
@@ -53,10 +53,10 @@ export class TratamientosService {
       const tratamiento = await this.tratamientosRepo.create(dto, moderadorId);
 
       await this.reportesService.cambiarEstado({
-        reporteId:   reporte.id,
-        usuarioId:   moderadorId,
+        reporteId: reporte.id,
+        usuarioId: moderadorId,
         estadoNuevo: 'VALIDADO',
-        motivo:      'Tratamiento oficial emitido',
+        motivo: 'Tratamiento oficial emitido',
       });
 
       return tratamiento;

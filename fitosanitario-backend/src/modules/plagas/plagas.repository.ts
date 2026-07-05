@@ -8,11 +8,9 @@ import { UpdatePlagaDto } from './dto/update-plaga.dto';
 
 @Injectable()
 export class PlagasRepository {
-
-    constructor(
-        @Inject(DB_CONNECTION) private db: NodePgDatabase<typeof schema>,
-      ) {}
-    
+  constructor(
+    @Inject(DB_CONNECTION) private db: NodePgDatabase<typeof schema>,
+  ) {}
 
   findAll() {
     return this.db.select().from(schema.plagasEnfermedades);

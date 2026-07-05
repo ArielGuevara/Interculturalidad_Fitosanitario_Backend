@@ -83,9 +83,9 @@ describe('AlertasService', () => {
     }).compile();
 
     service = module.get<AlertasService>(AlertasService);
-    alertasRepo = module.get(AlertasRepository) as jest.Mocked<AlertasRepository>;
-    dispositivosRepo = module.get(DispositivosRepository) as jest.Mocked<DispositivosRepository>;
-    pushService = module.get(PushService) as jest.Mocked<PushService>;
+    alertasRepo = module.get(AlertasRepository);
+    dispositivosRepo = module.get(DispositivosRepository);
+    pushService = module.get(PushService);
   });
 
   afterEach(() => {
@@ -107,7 +107,9 @@ describe('AlertasService', () => {
     it('should throw NotFoundException for non-existent zona', async () => {
       alertasRepo.findZonaById.mockResolvedValue(null);
 
-      await expect(service.findZonaById(999)).rejects.toThrow(NotFoundException);
+      await expect(service.findZonaById(999)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should return zona when found', async () => {
@@ -130,7 +132,10 @@ describe('AlertasService', () => {
         ventanaHoras: 48,
       };
 
-      alertasRepo.createParametro.mockResolvedValue({ ...mockParametro, ...data });
+      alertasRepo.createParametro.mockResolvedValue({
+        ...mockParametro,
+        ...data,
+      });
 
       const result = await service.createParametro(data);
 

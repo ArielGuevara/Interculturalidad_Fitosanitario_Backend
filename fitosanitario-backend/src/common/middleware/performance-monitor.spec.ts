@@ -30,8 +30,12 @@ describe('PerformanceMonitor', () => {
 
     mockNext = jest.fn();
 
-    loggerWarnSpy = jest.spyOn(Logger.prototype as any, 'warn').mockImplementation();
-    loggerLogSpy = jest.spyOn(Logger.prototype as any, 'log').mockImplementation();
+    loggerWarnSpy = jest
+      .spyOn(Logger.prototype as any, 'warn')
+      .mockImplementation();
+    loggerLogSpy = jest
+      .spyOn(Logger.prototype as any, 'log')
+      .mockImplementation();
 
     dateNowSpy = jest.spyOn(Date, 'now').mockReturnValue(1000);
   });
@@ -63,8 +67,6 @@ describe('PerformanceMonitor', () => {
     dateNowSpy.mockReturnValue(3500);
     finishHandler!();
 
-    expect(loggerWarnSpy).toHaveBeenCalledWith(
-      expect.stringContaining('SLOW'),
-    );
+    expect(loggerWarnSpy).toHaveBeenCalledWith(expect.stringContaining('SLOW'));
   });
 });

@@ -17,7 +17,7 @@ jobs:
           node-version: 20
           cache: 'npm'
           cache-dependency-path: fitosanitario-mobile/package-lock.json
-      - run: npm ci
+      - run: npm ci --legacy-peer-deps
       - run: npx tsc --noEmit
 
   test:
@@ -29,7 +29,7 @@ jobs:
           node-version: 20
           cache: 'npm'
           cache-dependency-path: fitosanitario-mobile/package-lock.json
-      - run: npm ci
+      - run: npm ci --legacy-peer-deps
       - run: npx jest --passWithNoTests
 
   lint:
@@ -41,5 +41,21 @@ jobs:
           node-version: 20
           cache: 'npm'
           cache-dependency-path: fitosanitario-mobile/package-lock.json
-      - run: npm ci
+      - run: npm ci --legacy-peer-deps
       - run: npx eslint .
+
+  notify:
+    needs: [typecheck, test, lint]
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notificar fallo a Telegram
+        run: |
+          MENSAJE="❌ Mobile CI FALLÓ%0A"
+          [ "${{ needs.typecheck.result }}" = "failure" ] && MENSAJE="${MENSAJE}  - Typecheck: ❌%0A"
+          [ "${{ needs.test.result }}" = "failure" ] && MENSAJE="${MENSAJE}  - Test: ❌%0A"
+          [ "${{ needs.lint.result }}" = "failure" ] && MENSAJE="${MENSAJE}  - Lint: ❌%0A"
+          MENSAJE="${MENSAJE}Repo: ${{ github.repository }}%0AUrl: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+            -d text="$MENSAJE"
