@@ -180,7 +180,12 @@ export class TratamientosRepository {
     return this.db
       .select()
       .from(schema.tratamientosOficiales)
-      .where(and(eq(schema.tratamientosOficiales.enEnciclopedia, true)))
+      .where(
+        and(
+          eq(schema.tratamientosOficiales.enEnciclopedia, true),
+          gte(schema.tratamientosOficiales.fechaUltimaActualizacion, fechaDesde),
+        ),
+      )
       .orderBy(desc(schema.tratamientosOficiales.fechaUltimaActualizacion));
   }
 

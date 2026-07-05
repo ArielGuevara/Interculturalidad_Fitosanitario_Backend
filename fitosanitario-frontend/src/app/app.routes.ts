@@ -1,31 +1,21 @@
 import { Routes } from '@angular/router';
-import { Login } from './features/auth/login/login';
-import { Layout } from './shared/components/layout/layout';
-import { Dashboard } from './features/dashboard/dashboard';
-import { CultivoList } from './features/cultivos/cultivo-list/cultivo-list';
-import { PlagaList } from './features/plagas/plaga-list/plaga-list';
-import { ProductoList } from './features/productos/producto-list/producto-list';
 import { authGuard } from './core/guards/auth-guard';
-import { ReportesBandeja } from './features/reportes/reportes-bandeja/reportes-bandeja';
-import { ReporteDetail } from './features/reportes/reporte-detail/reporte-detail';
-import { ComunidadModeracion } from './features/comunidad/comunidad-moderacion/comunidad-moderacion';
-import { TratamientoList } from './features/tratamientos/tratamiento-list/tratamiento-list';
 
 export const routes: Routes = [
-  { path: 'login', component: Login },
+  { path: 'login', loadComponent: () => import('./features/auth/login/login').then(m => m.Login) },
   {
     path: '',
-    component: Layout,
+    loadComponent: () => import('./shared/components/layout/layout').then(m => m.Layout),
     canActivate: [authGuard],
     children: [
-      { path: 'dashboard', component: Dashboard },
-      { path: 'cultivos', component: CultivoList },
-      { path: 'plagas', component: PlagaList },
-      { path: 'productos', component: ProductoList },
-      { path: 'reportes', component: ReportesBandeja },
-      { path: 'reportes/:id', component: ReporteDetail },
-      { path: 'tratamientos', component: TratamientoList },
-      { path: 'comunidad', component: ComunidadModeracion },
+      { path: 'dashboard', loadComponent: () => import('./features/dashboard/dashboard').then(m => m.Dashboard) },
+      { path: 'cultivos', loadComponent: () => import('./features/cultivos/cultivo-list/cultivo-list').then(m => m.CultivoList) },
+      { path: 'plagas', loadComponent: () => import('./features/plagas/plaga-list/plaga-list').then(m => m.PlagaList) },
+      { path: 'productos', loadComponent: () => import('./features/productos/producto-list/producto-list').then(m => m.ProductoList) },
+      { path: 'reportes', loadComponent: () => import('./features/reportes/reportes-bandeja/reportes-bandeja').then(m => m.ReportesBandeja) },
+      { path: 'reportes/:id', loadComponent: () => import('./features/reportes/reporte-detail/reporte-detail').then(m => m.ReporteDetail) },
+      { path: 'tratamientos', loadComponent: () => import('./features/tratamientos/tratamiento-list/tratamiento-list').then(m => m.TratamientoList) },
+      { path: 'comunidad', loadComponent: () => import('./features/comunidad/comunidad-moderacion/comunidad-moderacion').then(m => m.ComunidadModeracion) },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]
   },

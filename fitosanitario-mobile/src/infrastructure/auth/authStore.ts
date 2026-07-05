@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import type { Usuario, Rol } from '../../domain/auth/types';
-import * as authApi from '../../data/auth/authApi';
+import * as authApi from '../data/auth/authApi';
 
 const STORAGE_TOKEN_KEY = 'fitosanitario.token';
 const STORAGE_USER_KEY = 'fitosanitario.user';

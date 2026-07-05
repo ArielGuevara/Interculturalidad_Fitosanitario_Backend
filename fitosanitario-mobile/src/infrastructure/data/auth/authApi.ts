@@ -1,22 +1,24 @@
-import axios from 'axios';
-import type { AuthResponse } from '../../../domain/auth/types';
-import { env } from '../../../shared/config/env';
+import { apiClient } from '../../http/apiClient';
+import type { AuthResponse, Rol } from '../../../domain/auth/types';
 
-const API_URL = env.apiBaseUrl;
-
-export const authApi = {
-  login: async (credentials: { email: string; password: string }): Promise<AuthResponse> => {
-    const { data } = await axios.post(`${API_URL}/auth/login`, credentials);
-    return data;
-  },
-
-  register: async (userData: {
-    nombre: string;
-    email: string;
-    password: string;
-    rol?: 'AGRICULTOR' | 'MODERADOR';
-  }): Promise<AuthResponse> => {
-    const { data } = await axios.post(`${API_URL}/auth/register`, userData);
-    return data;
-  },
+export type LoginDto = {
+  email: string;
+  password: string;
 };
+
+export type RegisterDto = {
+  nombre: string;
+  email: string;
+  password: string;
+  rol?: Rol;
+};
+
+export async function login(dto: LoginDto): Promise<AuthResponse> {
+  const res = await apiClient.post<AuthResponse>('/auth/login', dto);
+  return res.data;
+}
+
+export async function register(dto: RegisterDto): Promise<AuthResponse> {
+  const res = await apiClient.post<AuthResponse>('/auth/register', dto);
+  return res.data;
+}

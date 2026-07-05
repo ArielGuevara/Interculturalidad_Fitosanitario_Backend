@@ -10,22 +10,11 @@ Plataforma de gestión fitosanitaria para el monitoreo, reporte y control de pla
 | **Frontend Web** | Angular 19 | `fitosanitario-frontend/` |
 | **App Móvil** | Expo React Native | `fitosanitario-mobile/` |
 
-## Calidad de Software — ISO 25010
+## Estándares ISO
 
-El proyecto implementa controles y prácticas alineados con ISO 25010 en las siguientes categorías:
+El proyecto implementa controles alineados con ISO 25010, ISO 9001 e ISO 27001.
 
-| Dimensión | Implementación |
-|-----------|---------------|
-| **Functional Suitability** | CRUD completo, DTOs con validación, TypeScript strict en todos los módulos |
-| **Performance Efficiency** | Middleware de monitoreo, Pool de conexiones PostgreSQL, MinIO para archivos |
-| **Compatibility** | API REST stateless, Docker multi-contenedor, JWT interoperable |
-| **Usability** | Swagger/OpenAPI, diseño iOS-minimalista, badges de estado semánticos |
-| **Reliability** | Offline-first con SQLite local, historial de cambios auditado, manejo de errores global |
-| **Security** | Passwords bcrypt, JWT con expiración, guards por rol (AGRICULTOR/MODERADOR) |
-| **Maintainability** | Arquitectura modular NestJS, 12 módulos separados, inyección de dependencias |
-| **Portability** | Contenedores Docker, Expo multiplataforma, configuración por `.env` |
-
-> Documentación completa: [docs/qa/iso-25010.md](fitosanitario-backend/docs/qa/iso-25010.md)
+> Documentación detallada: [ISO 25010](fitosanitario-backend/docs/qa/iso-25010.md), [ISO 9001](fitosanitario-backend/docs/qa/iso-9001.md), [ISO 27001](fitosanitario-backend/docs/qa/iso-27001.md)
 
 ## CI/CD
 

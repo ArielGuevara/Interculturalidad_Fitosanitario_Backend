@@ -2,6 +2,7 @@ import {
   Injectable,
   ConflictException,
   UnauthorizedException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
@@ -17,6 +18,10 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto) {
+    if (dto.rol == 'MODERADOR') {
+      throw new ForbiddenException('No puedes registrarte como MODERADOR');
+    }
+
     const existe = await this.usuariosRepo.findByEmail(dto.email);
     if (existe) {
       throw new ConflictException('El email ya está registrado');

@@ -8,13 +8,16 @@ import {
   Body,
   ParseIntPipe,
   UseGuards,
+  Req,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { AlertasService } from './alertas.service';
 import { CreateZonaAlertaDto } from './dto/create-zona-alerta.dto';
+import { UpdateZonaAlertaDto } from './dto/update-zona-alerta.dto';
 import { CreateParametroAlertaDto } from './dto/create-parametro-alerta.dto';
+import { UpdateParametroAlertaDto } from './dto/update-parametro-alerta.dto';
 import { CreateAlertaDto } from './dto/create-alerta.dto';
 
 @Controller()
@@ -41,7 +44,7 @@ export class AlertasController {
 
   @Patch('zonas-alerta/:id')
   @Roles('MODERADOR')
-  updateZona(@Param('id', ParseIntPipe) id: number, @Body() dto: any) {
+  updateZona(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateZonaAlertaDto) {
     return this.service.updateZona(id, dto);
   }
 
@@ -70,7 +73,7 @@ export class AlertasController {
 
   @Patch('parametros-alerta/:id')
   @Roles('MODERADOR')
-  updateParametro(@Param('id', ParseIntPipe) id: number, @Body() dto: any) {
+  updateParametro(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateParametroAlertaDto) {
     return this.service.updateParametro(id, dto);
   }
 
@@ -111,8 +114,8 @@ export class AlertasController {
 
   // ── Notificaciones ──
   @Get('notificaciones')
-  findNotificaciones() {
-    return this.service.findNotificacionesByUser(0);
+  findNotificaciones(@Req() req: any) {
+    return this.service.findNotificacionesByUser(req.user.sub);
   }
 
   @Get('usuarios/:usuarioId/notificaciones')

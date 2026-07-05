@@ -1,4 +1,4 @@
-import { createReporteMultipart } from '../../data/reportes/reportesApi';
+import { createReporteMultipart } from '../data/reportes/reportesApi';
 import { deletePendingReporte, listPendingReportes } from './pendingReportes';
 import { getAccessToken } from '../auth/authStore';
 

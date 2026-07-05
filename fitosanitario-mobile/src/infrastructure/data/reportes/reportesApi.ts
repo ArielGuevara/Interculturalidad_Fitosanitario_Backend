@@ -1,68 +1,74 @@
+import type { Reporte, CreateReporteInput } from '../../../domain/reportes/types';
 import { apiClient } from '../../http/apiClient';
-import type { Reporte, CreateReporteInput, HistorialEntry } from '../../../domain/reportes/types';
 
-function guessMimeType(uri: string): string {
+export async function fetchReportes(): Promise<Reporte[]> {
+  const res = await apiClient.get<Reporte[]>('/reportes');
+  return res.data;
+}
+
+export async function fetchReporteById(id: number): Promise<Reporte> {
+  const res = await apiClient.get<Reporte>(`/reportes/${id}`);
+  return res.data;
+}
+
+function guessMimeType(uri: string, fallback: string) {
   const lower = uri.toLowerCase();
-  if (lower.endsWith('.png')) return 'image/png';
   if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
+  if (lower.endsWith('.png')) return 'image/png';
+  if (lower.endsWith('.webp')) return 'image/webp';
   if (lower.endsWith('.m4a')) return 'audio/m4a';
-  if (lower.endsWith('.mp3')) return 'audio/mpeg';
+  if (lower.endsWith('.aac')) return 'audio/aac';
   if (lower.endsWith('.wav')) return 'audio/wav';
-  return 'application/octet-stream';
+  return fallback;
 }
 
-function filenameFromUri(uri: string, fallback: string) {
-  const last = uri.split('/').pop();
-  return last && last.trim() ? last : fallback;
-}
-
-// GET /reportes
-export async function getReportes(): Promise<Reporte[]> {
-  const { data } = await apiClient.get<Reporte[]>('/reportes');
-  return data;
-}
-
-// GET /reportes/:id
-export async function getReporteById(id: number): Promise<Reporte> {
-  const { data } = await apiClient.get<Reporte>(`/reportes/${id}`);
-  return data;
-}
-
-// POST /reportes (with multipart/form-data)
-export async function createReporte(input: CreateReporteInput): Promise<Reporte> {
+export async function createReporteMultipart(
+  input: CreateReporteInput,
+  accessToken?: string | null,
+): Promise<Reporte> {
   const form = new FormData();
-
   form.append('titulo', input.titulo);
   if (input.descripcion) form.append('descripcion', input.descripcion);
   form.append('cultivoId', String(input.cultivoId));
   form.append('latitud', String(input.latitud));
   form.append('longitud', String(input.longitud));
 
-  for (const imageUri of input.imageUris) {
-    const name = filenameFromUri(imageUri, 'image.jpg');
-    const type = guessMimeType(imageUri);
-    form.append('images', { uri: imageUri, name, type } as any);
-  }
-
-  if (input.audioUri) {
-    const name = filenameFromUri(input.audioUri, 'audio.m4a');
-    const type = guessMimeType(input.audioUri);
-    form.append('audio', { uri: input.audioUri, name, type } as any);
-  }
-
-  const { data } = await apiClient.post<Reporte>('/reportes', form, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
+  input.imageUris.forEach((uri, i) => {
+    form.append(
+      'images',
+      {
+        uri,
+        name: `image-${i + 1}.jpg`,
+        type: guessMimeType(uri, 'image/jpeg'),
+      } as any,
+    );
   });
 
-  return data;
-}
+  if (input.audioUri) {
+    form.append(
+      'audio',
+      {
+        uri: input.audioUri,
+        name: 'audio.m4a',
+        type: guessMimeType(input.audioUri, 'audio/m4a'),
+      } as any,
+    );
+  }
 
-// GET /reportes/:id/historial
-export async function getHistorial(id: number): Promise<HistorialEntry[]> {
-  const { data } = await apiClient.get<HistorialEntry[]>(`/reportes/${id}/historial`);
-  return data;
-}
+  const token = accessToken;
+  const baseUrl = String(apiClient.defaults.baseURL ?? '').replace(/\/$/, '');
+  const res = await fetch(`${baseUrl}/reportes`, {
+    method: 'POST',
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: form,
+  });
 
-export const reportesApi = { getReportes, getReporteById, createReporte, getHistorial };
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || `HTTP ${res.status}`);
+  }
+
+  return (await res.json()) as Reporte;
+}

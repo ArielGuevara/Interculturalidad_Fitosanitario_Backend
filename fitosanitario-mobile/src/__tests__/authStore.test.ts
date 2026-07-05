@@ -9,7 +9,7 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   multiRemove: jest.fn(),
 }));
 
-jest.mock('../data/auth/authApi', () => ({
+jest.mock('../infrastructure/data/auth/authApi', () => ({
   login: jest.fn(),
   register: jest.fn(),
 }));

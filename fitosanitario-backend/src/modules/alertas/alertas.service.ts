@@ -1,5 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { AlertasRepository } from './alertas.repository';
+import { ZonasRepository } from './zonas.repository';
+import { ParametrosAlertaRepository } from './parametros-alerta.repository';
+import { NotificacionesRepository } from './notificaciones.repository';
 import { DispositivosRepository } from '../dispositivos/dispositivos.repository';
 import { PushService } from '../notifications/push.service';
 import { CreateAlertaDto } from './dto/create-alerta.dto';
@@ -8,50 +11,53 @@ import { CreateAlertaDto } from './dto/create-alerta.dto';
 export class AlertasService {
   constructor(
     private repo: AlertasRepository,
+    private zonasRepo: ZonasRepository,
+    private parametrosRepo: ParametrosAlertaRepository,
+    private notificacionesRepo: NotificacionesRepository,
     private dispositivosRepo: DispositivosRepository,
     private pushService: PushService,
   ) {}
 
   // ── Zonas ──
   async findAllZonas() {
-    return this.repo.findAllZonas();
+    return this.zonasRepo.findAll();
   }
   async findZonaById(id: number) {
-    const zona = await this.repo.findZonaById(id);
+    const zona = await this.zonasRepo.findById(id);
     if (!zona) throw new NotFoundException('Zona no encontrada');
     return zona;
   }
   async createZona(data: any) {
-    return this.repo.createZona(data);
+    return this.zonasRepo.create(data);
   }
   async updateZona(id: number, data: any) {
     await this.findZonaById(id);
-    return this.repo.updateZona(id, data);
+    return this.zonasRepo.update(id, data);
   }
   async deleteZona(id: number) {
     await this.findZonaById(id);
-    return this.repo.deleteZona(id);
+    return this.zonasRepo.delete(id);
   }
 
   // ── Parámetros ──
   async findAllParametros() {
-    return this.repo.findAllParametros();
+    return this.parametrosRepo.findAll();
   }
   async findParametroById(id: number) {
-    const p = await this.repo.findParametroById(id);
+    const p = await this.parametrosRepo.findById(id);
     if (!p) throw new NotFoundException('Parámetro no encontrado');
     return p;
   }
   async createParametro(data: any) {
-    return this.repo.createParametro(data);
+    return this.parametrosRepo.create(data);
   }
   async updateParametro(id: number, data: any) {
     await this.findParametroById(id);
-    return this.repo.updateParametro(id, data);
+    return this.parametrosRepo.update(id, data);
   }
   async deleteParametro(id: number) {
     await this.findParametroById(id);
-    return this.repo.deleteParametro(id);
+    return this.parametrosRepo.delete(id);
   }
 
   // ── Alertas ──
@@ -106,7 +112,7 @@ export class AlertasService {
       for (const d of dispositivos) {
         if (!usuariosNotificados.has(d.usuarioId)) {
           usuariosNotificados.add(d.usuarioId);
-          await this.repo.createNotificacion({
+          await this.notificacionesRepo.create({
             usuarioId: d.usuarioId,
             alertaId: alerta.id,
             titulo: alerta.titulo,
@@ -132,14 +138,14 @@ export class AlertasService {
 
   // ── Notificaciones ──
   async findNotificacionesByUser(usuarioId: number) {
-    return this.repo.findNotificacionesByUser(usuarioId);
+    return this.notificacionesRepo.findByUser(usuarioId);
   }
 
   async marcarNotificacionLeida(id: number) {
-    return this.repo.marcarNotificacionLeida(id);
+    return this.notificacionesRepo.marcarLeida(id);
   }
 
   async countNotificacionesNoLeidas(usuarioId: number) {
-    return this.repo.countNotificacionesNoLeidas(usuarioId);
+    return this.notificacionesRepo.countNoLeidas(usuarioId);
   }
 }
