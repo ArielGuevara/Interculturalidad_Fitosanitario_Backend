@@ -8,8 +8,8 @@ import { RootNavigator } from './src/presentation/navigation/RootNavigator';
 
 export default function App() {
   useEffect(() => {
-    startAutoSync();      // escucha internet
-    syncOnAppStart();     // sync al abrir app
+    startAutoSync();
+    syncOnAppStart();
   }, []);
 
   return (
