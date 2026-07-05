@@ -1,14 +1,7 @@
 name: Frontend CI
 
 on:
-  push:
-    branches: [dev, test, main]
-    paths:
-      - 'fitosanitario-frontend/**'
-  pull_request:
-    branches: [dev, test, main]
-    paths:
-      - 'fitosanitario-frontend/**'
+  workflow_call:
 
 defaults:
   run:
