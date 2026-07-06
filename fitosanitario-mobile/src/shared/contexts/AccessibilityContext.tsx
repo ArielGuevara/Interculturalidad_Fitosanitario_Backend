@@ -34,6 +34,14 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
     load();
   }, [load]);
 
+  // Detener speech inmediatamente cuando se apaga el modo fácil
+  useEffect(() => {
+    if (!easyMode) {
+      Speech.stop().catch(() => {});
+      lastSpeakRef.current = '';
+    }
+  }, [easyMode]);
+
   const speak = useCallback((text: string) => {
     if (!easyMode) return;
     if (text === lastSpeakRef.current) return;
