@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { ComunidadRepository } from './comunidad.repository';
 import { ReportesService } from '../reportes/reportes.service';
+import { NotificationEventService } from '../notifications/notification-event.service';
 import { CreateRecomendacionDto } from './dto/create-recomendacion.dto';
 import { CreateValoracionDto } from './dto/create-valoracion.dto';
 import { CreateComentarioDto } from './dto/create-comentario.dto';
@@ -15,12 +16,12 @@ export class ComunidadService {
   constructor(
     private readonly comunidadRepo: ComunidadRepository,
     private readonly reportesService: ReportesService,
+    private readonly notificationEvent: NotificationEventService,
   ) {}
 
   // ── Recomendaciones ────────────────────────────────────────
 
   async createRecomendacion(dto: CreateRecomendacionDto, usuarioId: number) {
-    // Valida que el reporte exista y no esté ya validado
     const reporte = await this.reportesService.findById(dto.reporteId!);
     if (reporte.estado === 'VALIDADO') {
       throw new BadRequestException(
@@ -42,7 +43,6 @@ export class ComunidadService {
       usuarioId,
     );
 
-    // Si el reporte estaba PENDIENTE, pasa a COMUNIDAD automáticamente
     if (reporte.estado === 'PENDIENTE') {
       await this.reportesService.cambiarEstado({
         reporteId: reporte.id,
@@ -51,6 +51,20 @@ export class ComunidadService {
         motivo: 'Primera recomendación comunitaria recibida',
       });
     }
+
+    await this.notificationEvent.notifyUser(
+      reporte.usuarioId,
+      'Nueva recomendación',
+      `Tu reporte "${reporte.titulo}" recibió una recomendación en el foro`,
+      { type: 'nueva_recomendacion', recomendacionId: recomendacion.id, reporteId: reporte.id },
+    );
+
+    await this.notificationEvent.notifyRole(
+      ['MODERADOR', 'ADMIN'],
+      'Nueva recomendación en foro',
+      `Se agregó una recomendación al reporte "${reporte.titulo}"`,
+      { type: 'nueva_recomendacion', recomendacionId: recomendacion.id, reporteId: reporte.id },
+    );
 
     return recomendacion;
   }
@@ -76,6 +90,13 @@ export class ComunidadService {
     if (!recomendacion)
       throw new NotFoundException(`Recomendación #${id} no encontrada`);
     return this.comunidadRepo.desactivarRecomendacion(id, moderadorId);
+  }
+
+  async toggleRecomendacion(id: number, _usuarioId: number) {
+    const recomendacion = await this.comunidadRepo.findRecomendacionById(id);
+    if (!recomendacion)
+      throw new NotFoundException(`Recomendación #${id} no encontrada`);
+    return this.comunidadRepo.toggleRecomendacionActiva(id);
   }
 
   // ── Valoraciones ───────────────────────────────────────────
@@ -116,7 +137,7 @@ export class ComunidadService {
   async createComentario(
     recomendacionId: number,
     usuarioId: number,
-    dto: CreateComentarioDto,
+    dto: CreateComentarioDto & { audioUrl?: string | null },
   ) {
     const recomendacion =
       await this.comunidadRepo.findRecomendacionById(recomendacionId);
@@ -126,7 +147,6 @@ export class ComunidadService {
       );
     }
 
-    // Si es respuesta, valida que el comentario padre exista
     if (dto.comentarioPadreId) {
       const padre = await this.comunidadRepo.findComentarioById(
         dto.comentarioPadreId,
@@ -136,7 +156,6 @@ export class ComunidadService {
           'El comentario al que intentas responder no existe',
         );
       }
-      // Evita anidar más de un nivel
       if (padre.comentarioPadreId) {
         throw new BadRequestException(
           'Solo se permite un nivel de respuestas anidadas',
@@ -144,7 +163,18 @@ export class ComunidadService {
       }
     }
 
-    return this.comunidadRepo.createComentario(recomendacionId, usuarioId, dto);
+    const comentario = await this.comunidadRepo.createComentario(recomendacionId, usuarioId, dto);
+
+    if (recomendacion.usuarioId !== usuarioId) {
+      await this.notificationEvent.notifyUser(
+        recomendacion.usuarioId,
+        'Nuevo comentario',
+        `Alguien comentó en tu recomendación "${recomendacion.titulo}"`,
+        { type: 'nuevo_comentario', recomendacionId, comentarioId: comentario.id },
+      );
+    }
+
+    return comentario;
   }
 
   async findComentarios(recomendacionId: number) {

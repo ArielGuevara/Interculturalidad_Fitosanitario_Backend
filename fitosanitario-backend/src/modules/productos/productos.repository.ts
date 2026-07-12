@@ -2,7 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../../db/schema';
 import { DB_CONNECTION } from '../../db/db.module';
-import { eq } from 'drizzle-orm';
+import { eq, ilike, or } from 'drizzle-orm';
 import { CreateProductoDto } from './dto/create-producto.dto';
 import { UpdateProductoDto } from './dto/update-producto.dto';
 
@@ -12,7 +12,17 @@ export class ProductosRepository {
     @Inject(DB_CONNECTION) private db: NodePgDatabase<typeof schema>,
   ) {}
 
-  findAll() {
+  findAll(search?: string) {
+    if (search) {
+      const pattern = `%${search}%`;
+      return this.db
+        .select()
+        .from(schema.productosFitosanitarios)
+        .where(or(
+          ilike(schema.productosFitosanitarios.nombreComercial, pattern),
+          ilike(schema.productosFitosanitarios.ingredienteActivo, pattern),
+        ));
+    }
     return this.db.select().from(schema.productosFitosanitarios);
   }
 

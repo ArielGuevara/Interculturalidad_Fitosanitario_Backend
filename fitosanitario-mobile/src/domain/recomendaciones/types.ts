@@ -47,6 +47,7 @@ export type Valoracion = {
 export type ComentarioForo = {
   id: number;
   contenido: string;
+  audioUrl?: string | null;
   usuario: {
     id: number;
     nombre: string;

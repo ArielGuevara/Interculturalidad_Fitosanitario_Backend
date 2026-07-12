@@ -7,8 +7,8 @@ import { UpdatePlagaDto } from './dto/update-plaga.dto';
 export class PlagasService {
   constructor(private readonly plagasRepo: PlagasRepository) {}
 
-  findAll() {
-    return this.plagasRepo.findAll();
+  findAll(search?: string) {
+    return this.plagasRepo.findAll(search);
   }
 
   async findById(id: number) {

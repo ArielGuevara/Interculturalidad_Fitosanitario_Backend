@@ -1,5 +1,6 @@
 ﻿import React, { useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, Text, View, StyleSheet, ActivityIndicator, Image, Dimensions } from 'react-native';
+import { Audio, AVPlaybackSource } from 'expo-av';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../../navigation/RootNavigator';
@@ -36,6 +37,8 @@ export function ReporteDetailScreen({ route }: Props) {
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [historial, setHistorial] = useState<HistorialEntry[]>([]);
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const [playing, setPlaying] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -57,6 +60,42 @@ export function ReporteDetailScreen({ route }: Props) {
     };
     load();
   }, [id]);
+
+  useEffect(() => {
+    return () => {
+      if (sound) { sound.unloadAsync(); }
+    };
+  }, [sound]);
+
+  const playAudio = async () => {
+    if (!reporte?.audioUrl) return;
+    try {
+      if (sound) {
+        const status = await sound.getStatusAsync();
+        if (status.isLoaded && status.isPlaying) {
+          await sound.pauseAsync();
+          setPlaying(false);
+          return;
+        }
+        if (status.isLoaded) {
+          await sound.playAsync();
+          setPlaying(true);
+          return;
+        }
+      }
+      const { sound: s } = await Audio.Sound.createAsync(
+        { uri: reporte.audioUrl } as AVPlaybackSource,
+      );
+      setSound(s);
+      setPlaying(true);
+      s.setOnPlaybackStatusUpdate((status) => {
+        if (status.isLoaded && !status.isPlaying) {
+          setPlaying(false);
+        }
+      });
+      await s.playAsync();
+    } catch { Alert.alert('Error', 'No se pudo reproducir el audio'); }
+  };
 
   if (loading) {
     return (
@@ -147,13 +186,14 @@ export function ReporteDetailScreen({ route }: Props) {
 
       {/* Audio */}
       {reporte.audioUrl && (
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Audio</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <Ionicons name="mic-outline" size={16} color="#64748b" />
-            <Text style={styles.audioPlaceholder}>Audio disponible</Text>
+        <Pressable style={styles.audioCard} onPress={playAudio}>
+          <Ionicons name={playing ? 'pause-circle' : 'mic-circle'} size={32} color="#059669" />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.cardTitle}>Audio</Text>
+            <Text style={styles.audioStatus}>{playing ? 'Reproduciendo...' : 'Toca para escuchar'}</Text>
           </View>
-        </View>
+          <Ionicons name={playing ? 'pause' : 'play'} size={22} color="#059669" />
+        </Pressable>
       )}
 
       {/* Treatment info */}
@@ -315,6 +355,18 @@ const styles = StyleSheet.create({
   imageRow: { flexDirection: 'row', gap: 8 },
   image: { width: W * 0.5, height: W * 0.4, borderRadius: 12 },
   audioPlaceholder: { fontSize: 14, color: '#64748b' },
+  audioCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderWidth: 1,
+    borderColor: '#d1fae5',
+  },
+  audioStatus: { fontSize: 13, color: '#059669', fontWeight: '500' },
   treatmentCard: {
     backgroundColor: '#fff',
     borderRadius: 16,

@@ -97,6 +97,17 @@ export class ComunidadRepository {
     return result[0] ?? null;
   }
 
+  async toggleRecomendacionActiva(id: number) {
+    const rec = await this.findRecomendacionById(id);
+    if (!rec) return null;
+    const result = await this.db
+      .update(schema.recomendacionesComunidad)
+      .set({ activo: !rec.activo, updatedAt: new Date() })
+      .where(eq(schema.recomendacionesComunidad.id, id))
+      .returning();
+    return result[0];
+  }
+
   // Eliminación lógica — RF-09
   async desactivarRecomendacion(id: number, moderadorId: number) {
     const result = await this.db
@@ -192,7 +203,7 @@ export class ComunidadRepository {
   async createComentario(
     recomendacionId: number,
     usuarioId: number,
-    dto: CreateComentarioDto,
+    dto: CreateComentarioDto & { audioUrl?: string | null },
   ) {
     const result = await this.db
       .insert(schema.comentariosForo)
@@ -201,6 +212,7 @@ export class ComunidadRepository {
         usuarioId,
         comentarioPadreId: dto.comentarioPadreId ?? null,
         contenido: dto.contenido,
+        audioUrl: dto.audioUrl ?? null,
       })
       .returning();
 
@@ -214,6 +226,7 @@ export class ComunidadRepository {
         id: schema.comentariosForo.id,
         comentarioPadreId: schema.comentariosForo.comentarioPadreId,
         contenido: schema.comentariosForo.contenido,
+        audioUrl: schema.comentariosForo.audioUrl,
         fechaComentario: schema.comentariosForo.fechaComentario,
         usuario: {
           id: schema.usuarios.id,

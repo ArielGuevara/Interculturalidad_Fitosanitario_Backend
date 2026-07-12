@@ -51,6 +51,15 @@ export class MultimediaService {
     }
   }
 
+  private buildProxyUrl(objectKey: string): string {
+    const baseUrl = this.configService.get<string>('backendPublicUrl') || 'http://localhost:3000';
+    const encodedKey = objectKey
+      .split('/')
+      .map((s) => encodeURIComponent(s))
+      .join('/');
+    return `${baseUrl.replace(/\/+$/, '')}/api/multimedia/${encodedKey}`;
+  }
+
   async uploadImages(files: Express.Multer.File[]) {
     if (!files || files.length === 0) {
       throw new BadRequestException('Debes enviar al menos 1 imagen');
@@ -68,17 +77,19 @@ export class MultimediaService {
           contentType: file.mimetype,
         });
 
-        return this.storageService.uploadBuffer({
+        await this.storageService.uploadBuffer({
           buffer: file.buffer,
           objectKey,
           contentType: file.mimetype,
         });
+
+        return objectKey;
       }),
     );
 
     return {
       count: uploads.length,
-      urls: uploads.map((u) => u.url),
+      urls: uploads.map((key) => this.buildProxyUrl(key)),
     };
   }
 
@@ -91,13 +102,13 @@ export class MultimediaService {
       contentType: file.mimetype,
     });
 
-    const upload = await this.storageService.uploadBuffer({
+    await this.storageService.uploadBuffer({
       buffer: file.buffer,
       objectKey,
       contentType: file.mimetype,
     });
 
-    return { url: upload.url };
+    return { url: this.buildProxyUrl(objectKey) };
   }
 
   getLimits() {

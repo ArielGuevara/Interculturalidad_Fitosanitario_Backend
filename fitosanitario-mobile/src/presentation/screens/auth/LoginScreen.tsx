@@ -30,6 +30,7 @@ export function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [emailFocused, setEmailFocused] = useState(false);
   const [passFocused, setPassFocused] = useState(false);
+  const [showPass, setShowPass] = useState(false);
 
   // Animaciones
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -113,10 +114,10 @@ export function LoginScreen() {
             {/* Password */}
             <View style={[styles.fieldWrap, { marginTop: 20 }]}>
               <Text style={styles.fieldLabel}>Contraseña</Text>
-              <View style={[styles.inputWrap, passFocused && styles.inputWrapFocused]}>
+              <View style={[styles.inputWrap, styles.inputRow, passFocused && styles.inputWrapFocused]}>
                 <TextInput
-                  style={styles.textInput}
-                  secureTextEntry
+                  style={[styles.textInput, { flex: 1 }]}
+                  secureTextEntry={!showPass}
                   value={password}
                   onChangeText={setPassword}
                   placeholder="••••••••"
@@ -124,11 +125,19 @@ export function LoginScreen() {
                   onFocus={() => setPassFocused(true)}
                   onBlur={() => setPassFocused(false)}
                 />
+                <Pressable onPress={() => setShowPass(!showPass)}>
+                  <Ionicons name={showPass ? 'eye-off-outline' : 'eye-outline'} size={22} color="rgba(255,255,255,0.5)" />
+                </Pressable>
               </View>
             </View>
 
+            {/* Olvidé contraseña */}
+            <Pressable style={styles.forgotLink} onPress={() => navigation.navigate('ForgotPassword' as never)}>
+              <Text style={styles.forgotText}>¿Olvidaste tu contraseña?</Text>
+            </Pressable>
+
             {/* Botón Ingresar */}
-            <Animated.View style={{ transform: [{ scale: btnScale }], marginTop: 32 }}>
+            <Animated.View style={{ transform: [{ scale: btnScale }], marginTop: 20 }}>
               <Pressable
                 style={[styles.btn, loading && styles.btnLoading]}
                 onPress={onSubmit}
@@ -251,6 +260,10 @@ const styles = StyleSheet.create({
     height: 60,
     justifyContent: 'center',
   },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   inputWrapFocused: {
     borderColor: '#10b981',
     backgroundColor: 'rgba(255,255,255,0.15)',
@@ -275,6 +288,15 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  forgotLink: {
+    marginTop: 14,
+    alignItems: 'flex-end',
+  },
+  forgotText: {
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: 13,
+    textDecorationLine: 'underline',
   },
   footerLink: {
     marginTop: 25,

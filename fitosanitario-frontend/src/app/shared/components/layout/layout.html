@@ -38,8 +38,12 @@
                     <span class="user-name">{{ authService.currentUser()?.nombre }}</span>
                     <span class="user-role">{{ authService.currentUser()?.rol }}</span>
                 </div>
+                <div class="notif-btn-wrapper">
+                    <p-button icon="pi pi-bell" styleClass="p-button-text p-button-secondary" (onClick)="toggleNotif($event)"></p-button>
+                    <span *ngIf="noLeidas() > 0" class="notification-badge-sm">{{ noLeidas() }}</span>
+                </div>
                 <p-button icon="pi pi-sign-out" 
-                          styleClass="p-button-text p-button-danger ml-auto p-2 logout-btn" 
+                          styleClass="p-button-text p-button-danger p-2 logout-btn" 
                           (onClick)="onLogout()"></p-button>
             </div>
         </footer>
@@ -51,10 +55,35 @@
         <header class="mobile-header lg:hidden">
             <p-button icon="pi pi-bars" styleClass="p-button-text p-button-secondary" (onClick)="toggleSidebar()"></p-button>
             <span class="font-black text-xl text-900 tracking-tighter">Fitosani</span>
-            <div class="flex align-items-center justify-content-center bg-green-500 border-round-lg p-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M7 20h10"/><path d="M10 20c5.5-2.5 8-6.4 8-10 0-4.4-3.6-8-8-8s-8 3.6-8 8c0 3.6 2.5 7.5 8 10Z"/><path d="M10 20c-5.5-2.5-8-6.4-8-10 0-4.4 3.6-8 8-8s8 3.6 8 8c0 3.6-2.5 7.5-8 10Z"/><path d="M10 20c1.5-3 3-6.5 3-10"/></svg>
+            <div class="flex align-items-center gap-2">
+                <div class="notif-btn-wrapper">
+                    <p-button icon="pi pi-bell" styleClass="p-button-text p-button-secondary" (onClick)="toggleNotif($event)"></p-button>
+                    <span *ngIf="noLeidas() > 0" class="notification-badge">{{ noLeidas() }}</span>
+                </div>
+                <div class="flex align-items-center justify-content-center bg-green-500 border-round-lg p-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M7 20h10"/><path d="M10 20c5.5-2.5 8-6.4 8-10 0-4.4-3.6-8-8-8s-8 3.6-8 8c0 3.6 2.5 7.5 8 10Z"/><path d="M10 20c-5.5-2.5-8-6.4-8-10 0-4.4 3.6-8 8-8s8 3.6 8 8c0 3.6-2.5 7.5-8 10Z"/><path d="M10 20c1.5-3 3-6.5 3-10"/></svg>
+                </div>
             </div>
         </header>
+
+        <!-- PANEL DE NOTIFICACIONES -->
+        <div class="notif-dropdown" *ngIf="notifOpen()" (click)="closeNotif()">
+            <div class="notif-dropdown-inner" (click)="$event.stopPropagation()">
+                <div class="notif-header">
+                    <strong>Notificaciones</strong>
+                    <small>{{noLeidas()}} sin leer</small>
+                </div>
+                <div *ngIf="notificaciones().length === 0" class="p-3 text-center text-gray-500">Sin notificaciones</div>
+                <div *ngFor="let n of notificaciones()" 
+                     (click)="marcarLeida(n.id)"
+                     class="notif-item"
+                     [class.notif-unread]="!n.leida">
+                    <div class="notif-title">{{ n.titulo }}</div>
+                    <div class="notif-body">{{ n.cuerpo }}</div>
+                    <small class="notif-time">{{ n.createdAt | date:'short' }}</small>
+                </div>
+            </div>
+        </div>
 
         <main class="main-content">
             <router-outlet></router-outlet>

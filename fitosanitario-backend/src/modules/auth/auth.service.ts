@@ -32,6 +32,7 @@ export class AuthService {
     const usuario = await this.usuariosRepo.create({
       nombre: dto.nombre,
       email: dto.email,
+      telefono: dto.telefono,
       passwordHash,
       rol: dto.rol ?? 'AGRICULTOR',
     });

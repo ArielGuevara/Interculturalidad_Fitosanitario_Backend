@@ -9,6 +9,7 @@ import { ConfigService } from '@nestjs/config';
 import { Client } from 'minio';
 import { randomUUID } from 'crypto';
 import * as path from 'path';
+import { Readable } from 'stream';
 import {
   buildMinioPublicUrl,
   MINIO_CLIENT,
@@ -106,6 +107,24 @@ export class StorageService implements OnModuleInit {
     const ext = extFromName || fallbackExt;
 
     return `${params.folder}/${randomUUID()}${ext}`;
+  }
+
+  get bucketName(): string {
+    return this.bucket;
+  }
+
+  async getObjectStream(objectKey: string): Promise<{ stream: Readable; contentType: string | undefined }> {
+    try {
+      const stream = await this.minio.getObject(this.bucket, objectKey);
+      const stat = await this.minio.statObject(this.bucket, objectKey);
+      return { stream, contentType: stat.metaData?.['content-type'] };
+    } catch (error: any) {
+      this.logger.error(`Error obteniendo objeto ${objectKey}`, error);
+      if (error?.code === 'NoSuchKey') {
+        throw new InternalServerErrorException('Imagen no encontrada');
+      }
+      throw new InternalServerErrorException('Error obteniendo archivo de almacenamiento');
+    }
   }
 
   async uploadBuffer(params: {

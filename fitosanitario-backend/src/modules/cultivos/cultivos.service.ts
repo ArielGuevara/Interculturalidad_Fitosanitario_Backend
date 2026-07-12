@@ -7,8 +7,8 @@ import { UpdateCultivoDto } from './dto/update-cultivo.dto';
 export class CultivosService {
   constructor(private readonly cultivosRepo: CultivosRepository) {}
 
-  findAll() {
-    return this.cultivosRepo.findAll();
+  findAll(search?: string) {
+    return this.cultivosRepo.findAll(search);
   }
 
   async findById(id: number) {

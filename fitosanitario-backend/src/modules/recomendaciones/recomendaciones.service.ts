@@ -22,6 +22,10 @@ export class RecomendacionesService {
     return this.repo.findAll(filtros);
   }
 
+  findByUsuario(usuarioId: number) {
+    return this.repo.findByUsuario(usuarioId);
+  }
+
   async findById(id: number) {
     const rec = await this.repo.findById(id);
     if (!rec) {

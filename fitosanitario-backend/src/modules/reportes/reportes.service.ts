@@ -7,6 +7,7 @@ import {
 import { MultimediaService } from '../multimedia/multimedia.service';
 import { ReportesRepository } from './reportes.repository';
 import { CreateReporteDto } from './dto/create-reporte.dto';
+import { NotificationEventService } from '../notifications/notification-event.service';
 import * as schema from '../../db/schema';
 
 @Injectable()
@@ -14,6 +15,7 @@ export class ReportesService {
   constructor(
     private readonly reportesRepository: ReportesRepository,
     private readonly multimediaService: MultimediaService,
+    private readonly notificationEvent: NotificationEventService,
   ) {}
 
   async create(params: {
@@ -35,7 +37,7 @@ export class ReportesService {
       ? await this.multimediaService.uploadAudio(params.audio)
       : { url: null as string | null };
 
-    return this.reportesRepository.create({
+    const reporte = await this.reportesRepository.create({
       titulo: params.dto.titulo,
       descripcion: params.dto.descripcion,
       descripcionProblema: params.dto.descripcionProblema,
@@ -48,6 +50,15 @@ export class ReportesService {
       longitud: params.dto.longitud,
       sincronizado: params.dto.sincronizado,
     });
+
+    await this.notificationEvent.notifyRole(
+      ['MODERADOR', 'ADMIN'],
+      'Nuevo reporte',
+      `Se ha creado un nuevo reporte: ${reporte.titulo}`,
+      { type: 'nuevo_reporte', reporteId: reporte.id },
+    );
+
+    return reporte;
   }
 
   findAll() {
@@ -76,13 +87,28 @@ export class ReportesService {
   }) {
     const reporte = await this.findById(params.reporteId);
 
-    return this.reportesRepository.cambiarEstado({
+    const result = await this.reportesRepository.cambiarEstado({
       reporteId: params.reporteId,
       usuarioId: params.usuarioId,
       estadoAnterior: reporte.estado,
       estadoNuevo: params.estadoNuevo,
       motivo: params.motivo,
     });
+
+    const estadoLabels: Record<string, string> = {
+      VALIDADO: 'validado',
+      RECHAZADO: 'rechazado',
+      COMUNIDAD: 'enviado a la comunidad',
+    };
+    const label = estadoLabels[params.estadoNuevo] || params.estadoNuevo;
+    await this.notificationEvent.notifyUser(
+      reporte.usuarioId,
+      'Reporte actualizado',
+      `Tu reporte "${reporte.titulo}" fue ${label}${params.motivo ? `: ${params.motivo}` : ''}`,
+      { type: 'cambio_estado', reporteId: reporte.id, estado: params.estadoNuevo },
+    );
+
+    return result;
   }
 
   async getHistorial(reporteId: number) {

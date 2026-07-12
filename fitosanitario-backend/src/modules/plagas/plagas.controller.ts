@@ -8,6 +8,7 @@ import {
   Body,
   ParseIntPipe,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { PlagasService } from './plagas.service';
 import { CreatePlagaDto } from './dto/create-plaga.dto';
@@ -22,8 +23,8 @@ export class PlagasController {
   constructor(private readonly plagasService: PlagasService) {}
 
   @Get()
-  findAll() {
-    return this.plagasService.findAll();
+  findAll(@Query('search') search?: string) {
+    return this.plagasService.findAll(search);
   }
 
   @Get(':id')

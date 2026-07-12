@@ -8,11 +8,15 @@ import { useAuthStore } from '../../infrastructure/auth/authStore';
 import { useNotifications } from '../hooks/useNotifications';
 import { LoginScreen } from '../screens/auth/LoginScreen';
 import { RegisterScreen } from '../screens/auth/RegisterScreen';
+import { ForgotPasswordScreen } from '../screens/auth/ForgotPasswordScreen';
+import { VerifyCodeScreen } from '../screens/auth/VerifyCodeScreen';
+import { ResetPasswordScreen } from '../screens/auth/ResetPasswordScreen';
 import { HomeScreen } from '../screens/home/HomeScreen';
 import { CatalogosScreen } from '../screens/catalogos/CatalogosScreen';
 import { CultivosScreen } from '../screens/catalogos/CultivosScreen';
 import { PlagasScreen } from '../screens/catalogos/PlagasScreen';
 import { ProductosScreen } from '../screens/catalogos/ProductosScreen';
+import { TratamientosScreen } from '../screens/catalogos/TratamientosScreen';
 import { ReportesScreen } from '../screens/reportes/ReportesScreen';
 import { ReporteDetailScreen } from '../screens/reportes/ReporteDetailScreen';
 import { CreateReporteScreen } from '../screens/reportes/CreateReporteScreen';
@@ -27,6 +31,9 @@ import { NotificacionesScreen } from '../screens/alertas/NotificacionesScreen';
 export type AuthStackParamList = {
   Login: undefined;
   Register: undefined;
+  ForgotPassword: undefined;
+  VerifyCode: { telefono: string };
+  ResetPassword: { telefono: string; codigo: string };
 };
 
 export type AppTabsParamList = {
@@ -42,6 +49,7 @@ export type AppStackParamList = {
   Cultivos: undefined;
   Plagas: undefined;
   Productos: undefined;
+  Tratamientos: undefined;
   ReporteDetail: { id: number };
   CreateReporte: undefined;
   TratamientoDetail: { id: number };
@@ -62,6 +70,9 @@ function AuthNavigator() {
     <AuthStack.Navigator>
       <AuthStack.Screen name="Login" component={LoginScreen} options={{ title: 'Ingresar', headerShown: false }} />
       <AuthStack.Screen name="Register" component={RegisterScreen} options={{ title: 'Crear cuenta' }} />
+      <AuthStack.Screen name="ForgotPassword" component={ForgotPasswordScreen} options={{ title: 'Recuperar cuenta', headerShown: false }} />
+      <AuthStack.Screen name="VerifyCode" component={VerifyCodeScreen} options={{ title: 'Verificar código', headerShown: false }} />
+      <AuthStack.Screen name="ResetPassword" component={ResetPasswordScreen} options={{ title: 'Nueva contraseña', headerShown: false }} />
     </AuthStack.Navigator>
   );
 }
@@ -129,6 +140,7 @@ function AppNavigator() {
       <AppStack.Screen name="Cultivos" component={CultivosScreen} options={{ title: 'Cultivos' }} />
       <AppStack.Screen name="Plagas" component={PlagasScreen} options={{ title: 'Plagas' }} />
       <AppStack.Screen name="Productos" component={ProductosScreen} options={{ title: 'Productos' }} />
+      <AppStack.Screen name="Tratamientos" component={TratamientosScreen} options={{ title: 'Tratamientos' }} />
       <AppStack.Screen
         name="ReporteDetail"
         component={ReporteDetailScreen}

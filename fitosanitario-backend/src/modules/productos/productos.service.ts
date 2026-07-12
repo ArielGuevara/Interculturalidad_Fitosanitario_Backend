@@ -7,8 +7,8 @@ import { UpdateProductoDto } from './dto/update-producto.dto';
 export class ProductosService {
   constructor(private readonly productosRepo: ProductosRepository) {}
 
-  findAll() {
-    return this.productosRepo.findAll();
+  findAll(search?: string) {
+    return this.productosRepo.findAll(search);
   }
 
   async findById(id: number) {

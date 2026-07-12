@@ -1,7 +1,11 @@
 import {
   BadRequestException,
   Controller,
+  Get,
+  Param,
   Post,
+  Req,
+  Res,
   UploadedFile,
   UploadedFiles,
   UseFilters,
@@ -10,15 +14,35 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
+import type { Request, Response } from 'express';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { MulterExceptionFilter } from '../../common/filters/multer-exception.filter';
 import { MultimediaService } from './multimedia.service';
+import { StorageService } from '../storage/storage.service';
 
 @Controller('multimedia')
-@UseGuards(JwtAuthGuard)
 @UseFilters(MulterExceptionFilter)
 export class MultimediaController {
-  constructor(private readonly multimediaService: MultimediaService) {}
+  constructor(
+    private readonly multimediaService: MultimediaService,
+    private readonly storageService: StorageService,
+  ) {}
+
+  @Get('*objectKey')
+  async serveImage(@Req() req: Request, @Res() res: Response) {
+    const raw = req.params.objectKey;
+    const objectKey = Array.isArray(raw) ? raw.join('/') : raw;
+    try {
+      const { stream, contentType } = await this.storageService.getObjectStream(objectKey);
+      if (contentType) {
+        res.setHeader('Content-Type', contentType);
+      }
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      stream.pipe(res);
+    } catch {
+      res.status(404).json({ message: 'Imagen no encontrada' });
+    }
+  }
 
   @Post('upload-image')
   @UseInterceptors(

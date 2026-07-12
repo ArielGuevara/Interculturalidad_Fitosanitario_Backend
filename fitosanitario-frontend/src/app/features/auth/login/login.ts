@@ -53,7 +53,7 @@ export class Login {
     this.loading = true;
     this.authService.login({ email: this.email, password: this.password }).subscribe({
       next: (res) => {
-        if (res.usuario.rol !== 'MODERADOR') {
+        if (res.usuario.rol !== 'MODERADOR' && res.usuario.rol !== 'ADMIN') {
           this.messageService.add({ 
             severity: 'error', 
             summary: 'Acceso Denegado', 

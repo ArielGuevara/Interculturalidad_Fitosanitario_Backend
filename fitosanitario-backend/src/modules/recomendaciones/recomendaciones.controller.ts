@@ -40,9 +40,7 @@ export class RecomendacionesController {
 
   @Get('mis-recomendaciones')
   findMine(@CurrentUser() user: { id: number }) {
-    // Re-uses findAll with no filters; the service doesn't filter by user by default
-    // We'll filter on the client side for simplicity
-    return this.service.findAll();
+    return this.service.findByUsuario(user.id);
   }
 
   @Get(':id/comentarios')

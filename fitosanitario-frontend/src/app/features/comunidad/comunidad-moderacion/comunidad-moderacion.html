@@ -48,6 +48,7 @@
                         <p-button icon="pi pi-check" styleClass="btn-icon" pTooltip="Marcar revisada" (onClick)="aprobar(rec)"></p-button>
                         <p-button icon="pi pi-comments" styleClass="btn-icon btn-comments" pTooltip="Ver comentarios" (onClick)="verComentarios(rec)"></p-button>
                         <p-button icon="pi pi-file-edit" styleClass="btn-icon btn-convert" pTooltip="Convertir en tratamiento" (onClick)="usarComoTratamiento(rec)"></p-button>
+                        <p-button [icon]="rec.activo ? 'pi pi-lock' : 'pi pi-lock-open'" [styleClass]="'btn-icon ' + (rec.activo ? 'btn-warning' : 'btn-success')" [pTooltip]="rec.activo ? 'Deshabilitar foro' : 'Habilitar foro'" (onClick)="toggleActivo(rec)"></p-button>
                         <p-button icon="pi pi-trash" styleClass="btn-icon btn-delete" pTooltip="Desactivar" (onClick)="eliminar(rec)"></p-button>
                     </div>
                 </td>

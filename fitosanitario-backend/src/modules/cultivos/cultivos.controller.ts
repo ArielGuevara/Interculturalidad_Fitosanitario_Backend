@@ -8,6 +8,7 @@ import {
   Body,
   ParseIntPipe,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { CultivosService } from './cultivos.service';
 import { CreateCultivoDto } from './dto/create-cultivo.dto';
@@ -23,8 +24,8 @@ export class CultivosController {
 
   // Cualquier usuario autenticado puede leer
   @Get()
-  findAll() {
-    return this.cultivosService.findAll();
+  findAll(@Query('search') search?: string) {
+    return this.cultivosService.findAll(search);
   }
 
   @Get(':id')

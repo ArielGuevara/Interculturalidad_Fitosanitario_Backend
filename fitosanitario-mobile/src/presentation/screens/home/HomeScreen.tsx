@@ -1,34 +1,35 @@
 ﻿import React, { useEffect, useRef, useState } from 'react';
-import { 
-  Alert, 
-  Animated, 
-  Dimensions, 
-  Pressable, 
-  ScrollView, 
-  StyleSheet, 
-  Text, 
-  View, 
-  StatusBar, 
-  Platform 
+import {
+  Alert,
+  Animated,
+  Dimensions,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  StatusBar,
+  Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useAuthStore } from '../../../infrastructure/auth/authStore';
 import { syncPendingReportes } from '../../../infrastructure/offline/sync';
+import { listPendingReportes } from '../../../infrastructure/offline/pendingReportes';
 import { recomendacionesApi } from '../../../infrastructure/data/recomendaciones/recomendacionesApi';
+import { fetchReportes } from '../../../infrastructure/data/reportes/reportesApi';
 import { Ionicons } from '@expo/vector-icons';
 import { AccessibleButton } from '../../../shared/components/AccessibleButton';
 import { useAccessibilityStore } from '../../../shared/stores/accessibilityStore';
 
 const { width: W } = Dimensions.get('window');
+const CARD_GAP = 12;
+const BODY_PADDING = 20;
+const GRID_CARD_WIDTH = (W - BODY_PADDING * 2 - CARD_GAP) / 2;
 
-interface AnimatedPressableProps {
-  style?: any;
-  onPress?: () => void;
-  children: React.ReactNode;
-}
+const STATUSBAR_HEIGHT = Platform.OS === 'ios' ? 50 : StatusBar.currentHeight || 24;
 
-interface QuickCardProps {
-  iconName: string;
+interface FeatureItem {
+  icon: string;
   label: string;
   color: string;
   onPress: () => void;
@@ -39,18 +40,26 @@ export function HomeScreen() {
   const usuario = useAuthStore((s) => s.usuario);
   const easyMode = useAccessibilityStore((s) => s.easyMode);
   const [comunidadCount, setComunidadCount] = useState(0);
+  const [reporteCount, setReporteCount] = useState(0);
+  const [pendingCount, setPendingCount] = useState(0);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
 
   useEffect(() => {
-    const loadCount = async () => {
+    const loadData = async () => {
       try {
-        const data = await recomendacionesApi.getAll();
-        setComunidadCount(data.length);
+        const [recomendaciones, reportes, pendings] = await Promise.all([
+          recomendacionesApi.getAll(),
+          fetchReportes(),
+          listPendingReportes(),
+        ]);
+        setComunidadCount(recomendaciones.length);
+        setReporteCount(reportes.length);
+        setPendingCount(pendings.length);
       } catch {}
     };
-    loadCount();
+    loadData();
   }, []);
 
   useEffect(() => {
@@ -64,6 +73,8 @@ export function HomeScreen() {
     try {
       const result = await syncPendingReportes();
       Alert.alert('Sincronización', `Enviados: ${result.synced}\nFallidos: ${result.failed}`);
+      const pendings = await listPendingReportes();
+      setPendingCount(pendings.length);
     } catch {
       Alert.alert('Error', 'Hubo un problema al sincronizar los datos.');
     }
@@ -80,18 +91,58 @@ export function HomeScreen() {
   const initials = getInitials(usuario?.nombre);
   const firstName = usuario?.nombre ? usuario.nombre.trim().split(/\s+/)[0] : '';
 
+  const features: FeatureItem[] = [
+    {
+      icon: 'clipboard-outline',
+      label: 'Mis Reportes',
+      color: '#10b981',
+      onPress: () => navigation.navigate('Tabs', { screen: 'Reportes' }),
+    },
+    {
+      icon: 'leaf-outline',
+      label: 'Catálogos',
+      color: '#3b82f6',
+      onPress: () => navigation.navigate('Cultivos'),
+    },
+    {
+      icon: 'chatbubbles-outline',
+      label: 'Foro',
+      color: '#8b5cf6',
+      onPress: () => navigation.navigate('ForoList'),
+    },
+    {
+      icon: 'notifications-outline',
+      label: 'Alertas',
+      color: '#f59e0b',
+      onPress: () => navigation.navigate('Alertas'),
+    },
+    {
+      icon: 'cloud-outline',
+      label: 'Sincronizar',
+      color: '#0ea5e9',
+      onPress: onSync,
+    },
+    {
+      icon: 'person-outline',
+      label: 'Perfil',
+      color: '#64748b',
+      onPress: () => {},
+    },
+  ];
+
   return (
     <View style={styles.root}>
-      <StatusBar barStyle="light-content" backgroundColor="#0a2412" translucent={true} />
-      
+      <StatusBar barStyle="light-content" backgroundColor="#0a2412" translucent />
+
       <View style={styles.header}>
         <View style={styles.blobA} />
         <View style={styles.blobB} />
         <View style={styles.headerContent}>
-          <View>
+          <View style={styles.headerText}>
             <Text style={styles.greeting}>
               Hola{firstName ? `, ${firstName}` : ''}
             </Text>
+            <Text style={styles.subtitle}>Campo Inteligente</Text>
           </View>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>{initials}</Text>
@@ -155,60 +206,57 @@ export function HomeScreen() {
             </>
           ) : (
             <>
-              <AnimatedPressable
-                style={styles.ctaCard}
+              <View style={styles.statsRow}>
+                <View style={styles.statCard}>
+                  <View style={[styles.statIconWrap, { backgroundColor: '#d1fae5' }]}>
+                    <Ionicons name="document-text-outline" size={18} color="#10b981" />
+                  </View>
+                  <Text style={styles.statValue}>{reporteCount}</Text>
+                  <Text style={styles.statLabel}>Reportes</Text>
+                </View>
+                <View style={styles.statCard}>
+                  <View style={[styles.statIconWrap, { backgroundColor: '#ede9fe' }]}>
+                    <Ionicons name="chatbubbles-outline" size={18} color="#8b5cf6" />
+                  </View>
+                  <Text style={styles.statValue}>{comunidadCount}</Text>
+                  <Text style={styles.statLabel}>Foro</Text>
+                </View>
+                <Pressable style={styles.statCard} onPress={onSync}>
+                  <View style={[styles.statIconWrap, { backgroundColor: '#fef3c7' }]}>
+                    <Ionicons name="cloud-outline" size={18} color="#f59e0b" />
+                  </View>
+                  <Text style={styles.statValue}>{pendingCount}</Text>
+                  <Text style={styles.statLabel}>Pendientes</Text>
+                  {pendingCount > 0 && <View style={styles.statDot} />}
+                </Pressable>
+              </View>
+
+              <Pressable
+                style={styles.ctaButton}
                 onPress={() => navigation.navigate('CreateReporte')}
               >
                 <View style={styles.ctaShine} />
                 <View style={styles.ctaIconWrap}>
-                  <Ionicons name="clipboard-outline" size={24} color="#fff" />
+                  <Ionicons name="camera-outline" size={24} color="#fff" />
                 </View>
-                <View style={styles.ctaText}>
-                  <Text style={styles.ctaTitle}>Crear reporte</Text>
-                  <Text style={styles.ctaSub}>Documenta un hallazgo en campo</Text>
-                </View>
-                <Text style={styles.ctaArrow}>→</Text>
-              </AnimatedPressable>
+                <Text style={styles.ctaText}>Nuevo Reporte</Text>
+                <Ionicons name="arrow-forward" size={20} color="rgba(255,255,255,0.5)" />
+              </Pressable>
 
-              <AnimatedPressable style={styles.syncCard} onPress={onSync}>
-                <Ionicons name="cloud-upload-outline" size={18} color="#10b981" style={{ marginRight: 12 }} />
-                <Text style={styles.syncText}>Sincronizar pendientes</Text>
-                <Text style={styles.syncArrow}>↑</Text>
-              </AnimatedPressable>
+              <Text style={styles.sectionLabel}>ACCIONES RÁPIDAS</Text>
 
-              <Text style={styles.sectionLabel}>CATÁLOGOS</Text>
-              <View style={styles.quickGrid}>
-                <QuickCard
-                  iconName="leaf"
-                  label="Cultivos"
-                  color="#14532d"
-                  onPress={() => navigation.navigate('Cultivos')}
-                />
-                <QuickCard
-                  iconName="bug"
-                  label="Plagas"
-                  color="#7f1d1d"
-                  onPress={() => navigation.navigate('Plagas')}
-                />
+              <View style={styles.grid}>
+                {features.map((f, idx) => (
+                  <Pressable
+                    key={idx}
+                    style={[styles.gridCard, { backgroundColor: f.color, width: GRID_CARD_WIDTH }]}
+                    onPress={f.onPress}
+                  >
+                    <Ionicons name={f.icon as any} size={28} color="#fff" />
+                    <Text style={styles.gridLabel}>{f.label}</Text>
+                  </Pressable>
+                ))}
               </View>
-              <QuickCardWide
-                iconName="medkit"
-                label="Productos"
-                color="#1e3a5f"
-                onPress={() => navigation.navigate('Productos')}
-              />
-              <QuickCardWide
-                iconName="notifications"
-                label="Alertas"
-                color="#b45309"
-                onPress={() => navigation.navigate('Alertas')}
-              />
-              <QuickCardWide
-                iconName="chatbubbles"
-                label={`Foro Comunitario (${comunidadCount})`}
-                color="#7c3aed"
-                onPress={() => navigation.navigate('ForoList')}
-              />
             </>
           )}
 
@@ -218,56 +266,6 @@ export function HomeScreen() {
     </View>
   );
 }
-
-function AnimatedPressable({ style, onPress, children }: AnimatedPressableProps) {
-  const scale = useRef(new Animated.Value(1)).current;
-  return (
-    <Pressable
-      onPress={onPress}
-      onPressIn={() => Animated.spring(scale, { toValue: 0.97, tension: 300, friction: 10, useNativeDriver: true }).start()}
-      onPressOut={() => Animated.spring(scale, { toValue: 1, tension: 300, friction: 10, useNativeDriver: true }).start()}
-    >
-      <Animated.View style={[style, { transform: [{ scale }] }]}>{children}</Animated.View>
-    </Pressable>
-  );
-}
-
-function QuickCard({ iconName, label, color, onPress }: QuickCardProps) {
-  const scale = useRef(new Animated.Value(1)).current;
-  return (
-    <Pressable
-      style={styles.quickCard}
-      onPress={onPress}
-      onPressIn={() => Animated.spring(scale, { toValue: 0.96, tension: 300, friction: 10, useNativeDriver: true }).start()}
-      onPressOut={() => Animated.spring(scale, { toValue: 1, tension: 300, friction: 10, useNativeDriver: true }).start()}
-    >
-      <Animated.View style={[styles.quickCardInner, { backgroundColor: color, transform: [{ scale }] }]}>
-        <Ionicons name={iconName as any} size={28} color="#fff" />
-        <Text style={styles.quickLabel}>{label}</Text>
-        <Text style={styles.quickArrow}>→</Text>
-      </Animated.View>
-    </Pressable>
-  );
-}
-
-function QuickCardWide({ iconName, label, color, onPress }: QuickCardProps) {
-  const scale = useRef(new Animated.Value(1)).current;
-  return (
-    <Pressable
-      onPress={onPress}
-      onPressIn={() => Animated.spring(scale, { toValue: 0.97, tension: 300, friction: 10, useNativeDriver: true }).start()}
-      onPressOut={() => Animated.spring(scale, { toValue: 1, tension: 300, friction: 10, useNativeDriver: true }).start()}
-    >
-      <Animated.View style={[styles.quickCardWide, { backgroundColor: color, transform: [{ scale }] }]}>
-        <Ionicons name={iconName as any} size={28} color="#fff" />
-        <Text style={[styles.quickLabel, { fontSize: 15 }]}>{label}</Text>
-        <Text style={[styles.quickArrow, { marginLeft: 'auto' }]}>→</Text>
-      </Animated.View>
-    </Pressable>
-  );
-}
-
-const STATUSBAR_HEIGHT = Platform.OS === 'ios' ? 50 : StatusBar.currentHeight || 24;
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#f0faf2' },
@@ -287,8 +285,25 @@ const styles = StyleSheet.create({
     position: 'absolute', width: W * 0.4, height: W * 0.4, borderRadius: W,
     backgroundColor: '#166534', opacity: 0.35, bottom: -W * 0.1, left: -W * 0.1,
   },
-  headerContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
-  greeting: { fontSize: 22, fontWeight: '800', color: '#ffffff', letterSpacing: -0.3 },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  headerText: { flex: 1 },
+  greeting: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#ffffff',
+    letterSpacing: -0.3,
+  },
+  subtitle: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: 'rgba(255,255,255,0.55)',
+    marginTop: 4,
+    letterSpacing: 0.3,
+  },
   avatar: {
     width: 48, height: 48, borderRadius: 24,
     backgroundColor: '#15803d',
@@ -298,60 +313,125 @@ const styles = StyleSheet.create({
   avatarText: { color: '#fff', fontWeight: '800', fontSize: 16 },
 
   body: { flex: 1 },
-  bodyContent: { padding: 20 },
-  sectionLabel: {
-    fontSize: 12, fontWeight: '600', color: '#94a3b8',
-    letterSpacing: 0.5, marginBottom: 8, marginTop: 16,
+  bodyContent: { padding: BODY_PADDING },
+
+  statsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 20,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  statIconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
+  },
+  statValue: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#1e293b',
+  },
+  statLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#94a3b8',
+    marginTop: 2,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  statDot: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#f59e0b',
   },
 
-  ctaCard: {
+  ctaButton: {
     backgroundColor: '#15803d',
-    borderRadius: 20, padding: 20,
-    flexDirection: 'row', alignItems: 'center',
-    marginBottom: 12, overflow: 'hidden',
-    shadowColor: '#14532d', shadowOpacity: 0.4,
-    shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 6,
+    borderRadius: 20,
+    paddingVertical: 18,
+    paddingHorizontal: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+    overflow: 'hidden',
+    shadowColor: '#14532d',
+    shadowOpacity: 0.35,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 6,
   },
   ctaShine: {
-    position: 'absolute', top: 0, left: 0, right: 0, height: '50%',
-    backgroundColor: 'rgba(255,255,255,0.07)',
-    borderTopLeftRadius: 20, borderTopRightRadius: 20,
+    position: 'absolute',
+    top: 0, left: 0, right: 0,
+    height: '50%',
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
   },
   ctaIconWrap: {
-    width: 48, height: 48, borderRadius: 14,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     backgroundColor: 'rgba(255,255,255,0.15)',
-    alignItems: 'center', justifyContent: 'center', marginRight: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 14,
   },
-  ctaText: { flex: 1 },
-  ctaTitle: { fontSize: 17, fontWeight: '800', color: '#fff' },
-  ctaSub: { fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 2 },
-  ctaArrow: { fontSize: 20, color: 'rgba(255,255,255,0.6)', fontWeight: '300' },
-
-  syncCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16, padding: 16,
-    flexDirection: 'row', alignItems: 'center',
-    borderWidth: 1.5, borderColor: '#d1fae5',
-    shadowColor: '#000', shadowOpacity: 0.04,
-    shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 2,
+  ctaText: {
+    flex: 1,
+    fontSize: 17,
+    fontWeight: '800',
+    color: '#fff',
   },
-  syncText: { flex: 1, fontSize: 15, fontWeight: '600', color: '#1a4731' },
-  syncArrow: { fontSize: 18, color: '#10b981', fontWeight: '700' },
 
-  quickGrid: { flexDirection: 'row', gap: 12, marginBottom: 12 },
-  quickCard: { flex: 1 },
-  quickCardInner: {
-    borderRadius: 18, padding: 18, minHeight: 120,
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#94a3b8',
+    letterSpacing: 0.8,
+    marginBottom: 12,
+  },
+
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: CARD_GAP,
+  },
+  gridCard: {
+    borderRadius: 20,
+    padding: BODY_PADDING,
+    paddingTop: 24,
+    minHeight: 110,
     justifyContent: 'space-between',
-    shadowColor: '#000', shadowOpacity: 0.15,
-    shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
   },
-  quickCardWide: {
-    borderRadius: 18, padding: 18,
-    flexDirection: 'row', alignItems: 'center', gap: 14,
-    shadowColor: '#000', shadowOpacity: 0.15,
-    shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 4,
+  gridLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#fff',
+    marginTop: 8,
   },
-  quickLabel: { fontSize: 14, fontWeight: '700', color: '#fff', marginTop: 8 },
-  quickArrow: { fontSize: 16, color: 'rgba(255,255,255,0.5)' },
 });

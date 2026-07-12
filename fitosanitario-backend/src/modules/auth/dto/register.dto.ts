@@ -8,6 +8,10 @@ export class RegisterDto {
   email = '';
 
   @IsString()
+  @IsOptional()
+  telefono?: string;
+
+  @IsString()
   password = '';
 
   @IsEnum(['AGRICULTOR', 'MODERADOR'])

@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DB_CONNECTION } from '../../db/db.module';
 import * as schema from '../../db/schema';
-import { eq, desc, and, gte } from 'drizzle-orm';
+import { eq, desc, and, gte, ilike, or } from 'drizzle-orm';
 import { CreateTratamientoDto } from './dto/create-tratamiento.dto';
 import { UpdateTratamientoDto } from './dto/update-tratamiento.dto';
 
@@ -41,8 +41,8 @@ export class TratamientosRepository {
     return result[0];
   }
 
-  async findAll() {
-    return this.db
+  async findAll(search?: string) {
+    const query = this.db
       .select({
         id: schema.tratamientosOficiales.id,
         dosis: schema.tratamientosOficiales.dosis,
@@ -92,8 +92,16 @@ export class TratamientosRepository {
       .innerJoin(
         schema.usuarios,
         eq(schema.tratamientosOficiales.moderadorId, schema.usuarios.id),
-      )
-      .orderBy(desc(schema.tratamientosOficiales.fechaValidacion));
+      );
+    if (search) {
+      const pattern = `%${search}%`;
+      query.where(or(
+        ilike(schema.productosFitosanitarios.nombreComercial, pattern),
+        ilike(schema.cultivos.nombre, pattern),
+        ilike(schema.plagasEnfermedades.nombre, pattern),
+      ));
+    }
+    return query.orderBy(desc(schema.tratamientosOficiales.fechaValidacion));
   }
 
   async findById(id: number) {

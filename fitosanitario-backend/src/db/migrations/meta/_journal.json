@@ -64,6 +64,27 @@
       "when": 1782740738043,
       "tag": "0008_powerful_midnight",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1783297784409,
+      "tag": "0009_perpetual_vulture",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1783300472071,
+      "tag": "0010_loving_giant_girl",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1783887981439,
+      "tag": "0011_flowery_magus",
+      "breakpoints": true
     }
   ]
 }

@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState, useMemo } from 'react';
 import { 
   Alert, 
   FlatList, 
@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { Producto } from '../../../domain/catalogos/types';
 import { getProductos } from '../../../infrastructure/data/catalogos/productosApi';
 import { getCache, setCache } from '../../../infrastructure/offline/cache';
+import { SearchBar } from '../../../presentation/components/SearchBar';
 
 const CACHE_KEY = 'productos.list';
 
@@ -20,6 +21,17 @@ export function ProductosScreen() {
   const [items, setItems] = useState<Producto[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredItems = useMemo(() => {
+    if (!searchQuery.trim()) return items;
+    const q = searchQuery.toLowerCase();
+    return items.filter(i =>
+      i.nombreComercial.toLowerCase().includes(q) ||
+      (i.ingredienteActivo && i.ingredienteActivo.toLowerCase().includes(q)) ||
+      (i.tipo && i.tipo.toLowerCase().includes(q))
+    );
+  }, [items, searchQuery]);
 
   const loadData = async (isRefreshing = false) => {
     if (isRefreshing) setRefreshing(true);
@@ -97,8 +109,12 @@ export function ProductosScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Medicina para plagas</Text>
-        <Text style={styles.headerSubtitle}>{items.length} productos disponibles</Text>
+        <Text style={styles.headerSubtitle}>
+          {searchQuery ? `${filteredItems.length} de ${items.length} productos` : `${items.length} productos disponibles`}
+        </Text>
       </View>
+
+      <SearchBar value={searchQuery} onChangeText={setSearchQuery} placeholder="Buscar productos..." />
 
       {loading ? (
         <View style={styles.loadingContainer}>
@@ -107,7 +123,7 @@ export function ProductosScreen() {
         </View>
       ) : (
         <FlatList
-          data={items}
+          data={filteredItems}
           keyExtractor={(i) => String(i.id)}
           renderItem={renderItem}
           contentContainerStyle={styles.listContainer}

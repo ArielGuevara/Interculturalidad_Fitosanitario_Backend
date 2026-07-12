@@ -18,6 +18,7 @@ type AuthState = {
   register: (params: {
     nombre: string;
     email: string;
+    telefono?: string;
     password: string;
     rol?: Rol;
   }) => Promise<void>;
@@ -60,6 +61,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     const res = await authApi.register({
       nombre: params.nombre,
       email: params.email,
+      telefono: params.telefono,
       password: params.password,
       rol: params.rol,
     });

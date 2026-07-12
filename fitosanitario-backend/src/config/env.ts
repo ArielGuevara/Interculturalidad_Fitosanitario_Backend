@@ -1,5 +1,6 @@
 export const envConfig = () => ({
   port: parseInt(process.env.PORT || '3000', 10),
+  backendPublicUrl: process.env.BACKEND_PUBLIC_URL || `http://${process.env.MINIO_PUBLIC_ENDPOINT || 'localhost'}:${parseInt(process.env.PORT || '3000', 10)}`,
   databaseUrl: process.env.DATABASE_URL || '',
   jwt: {
     secret: process.env.JWT_SECRET || '',
@@ -26,6 +27,11 @@ export const envConfig = () => ({
         process.env.MINIO_USE_SSL ||
         'false'
       ).toLowerCase() === 'true',
+  },
+  twilio: {
+    accountSid: process.env.TWILIO_ACCOUNT_SID || '',
+    authToken: process.env.TWILIO_AUTH_TOKEN || '',
+    whatsappNumber: process.env.TWILIO_WHATSAPP_NUMBER || 'whatsapp:+14155238886',
   },
   uploads: {
     // Límites por archivo (en bytes). Si no se setean, se usan defaults seguros en código.

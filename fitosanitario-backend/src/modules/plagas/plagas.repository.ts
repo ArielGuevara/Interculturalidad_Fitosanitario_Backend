@@ -2,7 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../../db/schema';
 import { DB_CONNECTION } from '../../db/db.module';
-import { eq } from 'drizzle-orm';
+import { eq, ilike, or } from 'drizzle-orm';
 import { CreatePlagaDto } from './dto/create-plaga.dto';
 import { UpdatePlagaDto } from './dto/update-plaga.dto';
 
@@ -12,8 +12,16 @@ export class PlagasRepository {
     @Inject(DB_CONNECTION) private db: NodePgDatabase<typeof schema>,
   ) {}
 
-  findAll() {
-    return this.db.select().from(schema.plagasEnfermedades);
+  findAll(search?: string) {
+    const query = this.db.select().from(schema.plagasEnfermedades);
+    if (search) {
+      const pattern = `%${search}%`;
+      return this.db
+        .select()
+        .from(schema.plagasEnfermedades)
+        .where(ilike(schema.plagasEnfermedades.nombre, pattern));
+    }
+    return query;
   }
 
   async findById(id: number) {

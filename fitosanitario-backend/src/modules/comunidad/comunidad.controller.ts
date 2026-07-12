@@ -2,13 +2,18 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Delete,
   Param,
   Body,
   ParseIntPipe,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { ComunidadService } from './comunidad.service';
+import { MultimediaService } from '../multimedia/multimedia.service';
 import { CreateRecomendacionDto } from './dto/create-recomendacion.dto';
 import { CreateValoracionDto } from './dto/create-valoracion.dto';
 import { CreateComentarioDto } from './dto/create-comentario.dto';
@@ -20,17 +25,18 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 @Controller()
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ComunidadController {
-  constructor(private readonly comunidadService: ComunidadService) {}
+  constructor(
+    private readonly comunidadService: ComunidadService,
+    private readonly multimediaService: MultimediaService,
+  ) {}
 
   // ── Recomendaciones ────────────────────────────────────────
 
-  // GET /reportes/:reporteId/recomendaciones
   @Get('reportes/:reporteId/recomendaciones')
   findRecomendaciones(@Param('reporteId', ParseIntPipe) reporteId: number) {
     return this.comunidadService.findRecomendacionesByReporte(reporteId);
   }
 
-  // POST /reportes/:reporteId/recomendaciones
   @Post('reportes/:reporteId/recomendaciones')
   createRecomendacion(
     @Param('reporteId', ParseIntPipe) reporteId: number,
@@ -43,7 +49,6 @@ export class ComunidadController {
     );
   }
 
-  // DELETE /recomendaciones/:id — eliminación lógica, solo MODERADOR
   @Delete('recomendaciones/:id')
   @Roles('MODERADOR')
   desactivarRecomendacion(
@@ -53,9 +58,17 @@ export class ComunidadController {
     return this.comunidadService.desactivarRecomendacion(id, user.id);
   }
 
+  @Patch('recomendaciones/:id/toggle')
+  @Roles('MODERADOR', 'ADMIN')
+  toggleRecomendacion(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: { id: number },
+  ) {
+    return this.comunidadService.toggleRecomendacion(id, user.id);
+  }
+
   // ── Valoraciones ───────────────────────────────────────────
 
-  // POST /recomendaciones/:id/valorar
   @Post('recomendaciones/:id/valorar')
   valorar(
     @Param('id', ParseIntPipe) id: number,
@@ -67,13 +80,11 @@ export class ComunidadController {
 
   // ── Comentarios ────────────────────────────────────────────
 
-  // GET /recomendaciones/:id/comentarios
   @Get('recomendaciones/:id/comentarios')
   findComentarios(@Param('id', ParseIntPipe) id: number) {
     return this.comunidadService.findComentarios(id);
   }
 
-  // POST /recomendaciones/:id/comentarios
   @Post('recomendaciones/:id/comentarios')
   createComentario(
     @Param('id', ParseIntPipe) id: number,
@@ -83,7 +94,22 @@ export class ComunidadController {
     return this.comunidadService.createComentario(id, user.id, dto);
   }
 
-  // DELETE /comentarios/:id — eliminación lógica, solo MODERADOR
+  @Post('recomendaciones/:id/comentarios/with-audio')
+  @UseInterceptors(FileInterceptor('audio'))
+  async createComentarioWithAudio(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: CreateComentarioDto,
+    @UploadedFile() audio: Express.Multer.File,
+    @CurrentUser() user: { id: number },
+  ) {
+    let audioUrl: string | null = null;
+    if (audio) {
+      const upload = await this.multimediaService.uploadAudio(audio);
+      audioUrl = upload.url;
+    }
+    return this.comunidadService.createComentario(id, user.id, { ...dto, audioUrl });
+  }
+
   @Delete('comentarios/:id')
   @Roles('MODERADOR')
   desactivarComentario(

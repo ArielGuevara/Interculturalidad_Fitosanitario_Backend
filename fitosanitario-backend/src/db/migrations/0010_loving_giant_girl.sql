@@ -1,0 +1,1 @@
+ALTER TABLE "comentarios_foro" ADD COLUMN "audio_url" varchar(500);

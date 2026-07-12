@@ -71,6 +71,14 @@ export function CatalogosScreen() {
             color="bg-emerald-100"
           />
 
+          <CatalogItem
+            title="Tratamientos"
+            description="Planes de aplicación y dosis recomendadas"
+            iconName="medkit-outline"
+            route="Tratamientos"
+            color="bg-blue-100"
+          />
+
           {/* Tarjeta Informativa Extra */}
           <View className="mt-6 rounded-3xl bg-emerald-900 p-6 shadow-xl shadow-emerald-900/20">
             <Text className="text-white font-bold text-lg">Tip de Campo</Text>

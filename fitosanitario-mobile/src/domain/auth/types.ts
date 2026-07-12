@@ -1,4 +1,4 @@
-export type Rol = 'AGRICULTOR' | 'MODERADOR';
+export type Rol = 'AGRICULTOR' | 'MODERADOR' | 'ADMIN';
 
 export type Usuario = {
   id: number;

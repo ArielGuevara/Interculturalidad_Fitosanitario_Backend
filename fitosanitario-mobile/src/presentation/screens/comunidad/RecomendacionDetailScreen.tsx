@@ -1,9 +1,10 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   Alert, ScrollView, Text, View, StyleSheet,
   ActivityIndicator, TextInput, KeyboardAvoidingView, Platform,
-  Pressable,
+  Pressable, Keyboard,
 } from 'react-native';
+import { Audio, AVPlaybackSource } from 'expo-av';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import type { AppStackParamList } from '../../navigation/RootNavigator';
@@ -13,6 +14,18 @@ import { StarRating } from '../../../shared/components/StarRating';
 import { useAuthStore } from '../../../infrastructure/auth/authStore';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'RecomendacionDetail'>;
+
+const TIPO_COLORS: Record<string, string> = {
+  RECOMENDACION: '#059669',
+  CONSULTA: '#d97706',
+  CONOCIMIENTO_ANCESTRAL: '#7c3aed',
+};
+
+const TIPO_ICONS: Record<string, any> = {
+  RECOMENDACION: 'bulb-outline',
+  CONSULTA: 'help-circle-outline',
+  CONOCIMIENTO_ANCESTRAL: 'leaf-outline',
+};
 
 function ComentarioItem({
   comentario,
@@ -24,6 +37,24 @@ function ComentarioItem({
   nivel?: number;
 }) {
   const hasRespuestas = comentario.respuestas && comentario.respuestas.length > 0;
+  const [playing, setPlaying] = useState(false);
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
+
+  const playAudio = async () => {
+    if (!comentario.audioUrl) return;
+    try {
+      const { sound: s } = await Audio.Sound.createAsync({ uri: comentario.audioUrl } as AVPlaybackSource);
+      setSound(s);
+      setPlaying(true);
+      s.setOnPlaybackStatusUpdate((status) => {
+        if (status.isLoaded && !status.isPlaying) {
+          setPlaying(false);
+          s.unloadAsync();
+        }
+      });
+      await s.playAsync();
+    } catch { Alert.alert('Error', 'No se pudo reproducir el audio'); }
+  };
 
   return (
     <View style={[styles.comentarioItem, { marginLeft: nivel * 20 }]}>
@@ -39,6 +70,12 @@ function ComentarioItem({
         </View>
       </View>
       <Text style={styles.comentarioContenido}>{comentario.contenido}</Text>
+      {comentario.audioUrl && (
+        <Pressable onPress={playAudio} style={styles.audioPlayBtn}>
+          <Ionicons name={playing ? 'volume-high' : 'volume-medium'} size={18} color="#059669" />
+          <Text style={styles.audioPlayText}>{playing ? 'Reproduciendo...' : 'Escuchar audio'}</Text>
+        </Pressable>
+      )}
       <Pressable
         onPress={() => onReply(comentario.id, comentario.usuario.nombre)}
         style={styles.replyBtn}
@@ -57,18 +94,26 @@ function ComentarioItem({
 export function RecomendacionDetailScreen({ route }: Props) {
   const { id } = route.params;
   const usuario = useAuthStore((s) => s.usuario);
+  const scrollRef = useRef<ScrollView>(null);
   const [recomendacion, setRecomendacion] = useState<Recomendacion | null>(null);
   const [valoraciones, setValoraciones] = useState<Valoracion[]>([]);
   const [comentarios, setComentarios] = useState<ComentarioForo[]>([]);
   const [loading, setLoading] = useState(true);
   const [miValoracion, setMiValoracion] = useState(0);
   const [comentarioVal, setComentarioVal] = useState('');
-  const [enviandoVal, setEnviandoVal] = useState(false);
 
-  // Comentarios state
+  // Comentarios
   const [nuevoComentario, setNuevoComentario] = useState('');
   const [enviandoComentario, setEnviandoComentario] = useState(false);
   const [replyTo, setReplyTo] = useState<{ id: number; username: string } | null>(null);
+
+  // Audio
+  const [recording, setRecording] = useState<Audio.Recording | null>(null);
+  const [audioUri, setAudioUri] = useState<string | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -80,7 +125,7 @@ export function RecomendacionDetailScreen({ route }: Props) {
       setRecomendacion(rec);
       setValoraciones(vals);
 
-      // Build tree: raíces + respuestas anidadas
+      // Build tree
       const map = new Map<number, ComentarioForo>();
       const roots: ComentarioForo[] = [];
       for (const c of comentariosData) {
@@ -109,10 +154,14 @@ export function RecomendacionDetailScreen({ route }: Props) {
     loadData();
   }, [loadData]);
 
+  useEffect(() => {
+    return () => stopTimer();
+  }, []);
+
   const handleValorar = async (puntuacion: number) => {
-    if (enviandoVal || miValoracion > 0) return;
+    if (enviandoComentario || miValoracion > 0) return;
+    setEnviandoComentario(true);
     try {
-      setEnviandoVal(true);
       await recomendacionesApi.valorar(id, puntuacion, comentarioVal || undefined);
       const [rec, vals] = await Promise.all([
         recomendacionesApi.getById(id),
@@ -125,22 +174,106 @@ export function RecomendacionDetailScreen({ route }: Props) {
     } catch (e: any) {
       Alert.alert('Error', e?.message || 'No se pudo valorar');
     } finally {
-      setEnviandoVal(false);
+      setEnviandoComentario(false);
     }
   };
 
+  const startTimer = () => {
+    setRecordingTime(0);
+    timerRef.current = setInterval(() => {
+      setRecordingTime((t) => t + 1);
+    }, 1000);
+  };
+
+  const stopTimer = () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+
+  const startRecording = async () => {
+    try {
+      const { granted } = await Audio.requestPermissionsAsync();
+      if (!granted) { Alert.alert('Permiso', 'Se necesita permiso para grabar audio'); return; }
+      await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
+      const rec = new Audio.Recording();
+      await rec.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
+      await rec.startAsync();
+      setRecording(rec);
+      setIsRecording(true);
+      setIsPaused(false);
+      startTimer();
+    } catch { Alert.alert('Error', 'No se pudo iniciar la grabación'); }
+  };
+
+  const pauseRecording = async () => {
+    if (!recording) return;
+    try {
+      await recording.pauseAsync();
+      setIsPaused(true);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    } catch { Alert.alert('Error', 'No se pudo pausar la grabación'); }
+  };
+
+  const resumeRecording = async () => {
+    if (!recording) return;
+    try {
+      await recording.startAsync();
+      setIsPaused(false);
+      timerRef.current = setInterval(() => {
+        setRecordingTime((t) => t + 1);
+      }, 1000);
+    } catch { Alert.alert('Error', 'No se pudo reanudar la grabación'); }
+  };
+
+  const stopRecording = async () => {
+    if (!recording) return;
+    try {
+      await recording.stopAndUnloadAsync();
+      await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
+      const uri = recording.getURI();
+      setAudioUri(uri);
+      setRecording(null);
+      setIsRecording(false);
+      setIsPaused(false);
+      stopTimer();
+    } catch { Alert.alert('Error', 'No se pudo detener la grabación'); }
+  };
+
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  };
+
   const handleEnviarComentario = async () => {
-    if (!nuevoComentario.trim() || enviandoComentario) return;
+    if ((!nuevoComentario.trim() && !audioUri) || enviandoComentario) return;
     try {
       setEnviandoComentario(true);
-      await recomendacionesApi.createComentario(
-        id,
-        nuevoComentario.trim(),
-        replyTo?.id || undefined,
-      );
+      if (audioUri) {
+        await recomendacionesApi.createComentarioWithAudio(
+          id,
+          nuevoComentario.trim(),
+          audioUri,
+          replyTo?.id || undefined,
+        );
+      } else {
+        await recomendacionesApi.createComentario(
+          id,
+          nuevoComentario.trim(),
+          replyTo?.id || undefined,
+        );
+      }
       setNuevoComentario('');
       setReplyTo(null);
+      setAudioUri(null);
       await loadData();
+      // Scroll to bottom after new comment
+      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 300);
     } catch (e: any) {
       Alert.alert('Error', e?.message || 'No se pudo enviar el comentario');
     } finally {
@@ -174,28 +307,22 @@ export function RecomendacionDetailScreen({ route }: Props) {
     );
   }
 
-  const tipoColors: Record<string, string> = {
-    RECOMENDACION: '#059669',
-    CONSULTA: '#d97706',
-    CONOCIMIENTO_ANCESTRAL: '#7c3aed',
-  };
-
-  const tipoIcons: Record<string, any> = {
-    RECOMENDACION: 'bulb-outline',
-    CONSULTA: 'help-circle-outline',
-    CONOCIMIENTO_ANCESTRAL: 'leaf-outline',
-  };
-
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <ScrollView
+        ref={scrollRef}
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+      >
         {/* Tipo badge */}
-        <View style={[styles.tipoBadge, { backgroundColor: (tipoColors[recomendacion.tipo] || '#6b7280') + '20' }]}>
-          <Ionicons name={tipoIcons[recomendacion.tipo] || 'chatbubble-outline'} size={14} color="#10b981" />
-          <Text style={[styles.tipoText, { color: tipoColors[recomendacion.tipo] || '#6b7280' }]}>
+        <View style={[styles.tipoBadge, { backgroundColor: (TIPO_COLORS[recomendacion.tipo] || '#6b7280') + '20' }]}>
+          <Ionicons name={TIPO_ICONS[recomendacion.tipo] || 'chatbubble-outline'} size={14} color="#10b981" />
+          <Text style={[styles.tipoText, { color: TIPO_COLORS[recomendacion.tipo] || '#6b7280' }]}>
             {recomendacion.tipo === 'CONOCIMIENTO_ANCESTRAL' ? 'CONOCIMIENTO ANCESTRAL' : recomendacion.tipo}
           </Text>
         </View>
@@ -218,7 +345,9 @@ export function RecomendacionDetailScreen({ route }: Props) {
               <Text style={styles.tag}><Ionicons name="leaf" size={12} color="#16a34a" /> {recomendacion.cultivo.nombre}</Text>
             )}
             {recomendacion.plaga && (
-              <Text style={styles.tag}><Ionicons name="bug" size={12} color="#dc2626" /> {recomendacion.plaga.nombre}</Text>
+              <Text style={[styles.tag, { backgroundColor: '#fee2e2', color: '#dc2626' }]}>
+                <Ionicons name="bug" size={12} color="#dc2626" /> {recomendacion.plaga.nombre}
+              </Text>
             )}
           </View>
         )}
@@ -228,94 +357,11 @@ export function RecomendacionDetailScreen({ route }: Props) {
           <Text style={styles.descText}>{recomendacion.descripcion}</Text>
         </View>
 
-        {/* Rating stats */}
-        <View style={styles.ratingStats}>
-          <StarRating value={recomendacion.valoracionPromedio} readonly size={20} showValue />
-          <Text style={styles.ratingCount}>
-            {recomendacion.totalValoraciones} valoración(es)
-          </Text>
-        </View>
-
-        {/* User rating */}
-        {miValoracion === 0 ? (
-          <View style={styles.valorarCard}>
-            <Text style={styles.valorarTitle}>¿Te fue útil esta recomendación?</Text>
-            <StarRating value={miValoracion} onChange={handleValorar} size={36} />
-            <TextInput
-              style={styles.commentInput}
-              placeholder="Agrega un comentario (opcional)..."
-              placeholderTextColor="#94a3b8"
-              value={comentarioVal}
-              onChangeText={setComentarioVal}
-            />
-          </View>
-        ) : (
-          <View style={styles.valorarCard}>
-            <Text style={styles.valorarTitle}>Tu valoración: {miValoracion}/5</Text>
-            <StarRating value={miValoracion} readonly size={24} />
-          </View>
-        )}
-
-        {/* Lista de valoraciones */}
-        {valoraciones.length > 0 && (
-          <View style={styles.valoracionesSection}>
-            <Text style={styles.sectionTitle}>Valoraciones</Text>
-            {valoraciones.map((v) => (
-              <View key={v.id} style={styles.valoracionItem}>
-                <View style={styles.valoracionHeader}>
-                  <Text style={styles.valoracionAuthor}>{v.usuario.nombre}</Text>
-                  <StarRating value={v.puntuacion} readonly size={14} />
-                </View>
-                {v.comentario && (
-                  <Text style={styles.valoracionComment}>{v.comentario}</Text>
-                )}
-                <Text style={styles.valoracionDate}>
-                  {new Date(v.createdAt).toLocaleDateString()}
-                </Text>
-              </View>
-            ))}
-          </View>
-        )}
-
-        {/* Foro: Hilo de comentarios */}
+        {/* ── COMENTARIOS SECTION ── */}
         <View style={styles.comentariosSection}>
           <Text style={styles.sectionTitle}>
             Comentarios ({comentarios.length})
           </Text>
-
-          {replyTo && (
-            <View style={styles.replyIndicator}>
-              <Ionicons name="arrow-undo" size={16} color="#059669" />
-              <Text style={styles.replyIndicatorText}>
-                Respondiendo a {replyTo.username}
-              </Text>
-              <Pressable onPress={cancelarReply}>
-                <Ionicons name="close-circle" size={20} color="#94a3b8" />
-              </Pressable>
-            </View>
-          )}
-
-          <View style={styles.nuevoComentarioRow}>
-            <TextInput
-              style={styles.nuevoComentarioInput}
-              placeholder={replyTo ? 'Escribe tu respuesta...' : 'Añade un comentario...'}
-              placeholderTextColor="#94a3b8"
-              value={nuevoComentario}
-              onChangeText={setNuevoComentario}
-              multiline
-            />
-            <Pressable
-              style={[styles.enviarBtn, !nuevoComentario.trim() && styles.enviarBtnDisabled]}
-              onPress={handleEnviarComentario}
-              disabled={!nuevoComentario.trim() || enviandoComentario}
-            >
-              {enviandoComentario ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <Ionicons name="send" size={18} color="#fff" />
-              )}
-            </Pressable>
-          </View>
 
           {comentarios.length > 0 ? (
             comentarios.map((c) => (
@@ -325,15 +371,139 @@ export function RecomendacionDetailScreen({ route }: Props) {
             <Text style={styles.sinComentarios}>No hay comentarios aún. ¡Sé el primero!</Text>
           )}
         </View>
+
+        {/* ── RATING SECTION (al final) ── */}
+        <View style={styles.ratingSection}>
+          {/* Rating stats */}
+          <View style={styles.ratingStats}>
+            <StarRating value={recomendacion.valoracionPromedio} readonly size={20} showValue />
+            <Text style={styles.ratingCount}>
+              {recomendacion.totalValoraciones} valoración(es)
+            </Text>
+          </View>
+
+          {/* User rating */}
+          {miValoracion === 0 ? (
+            <View style={styles.valorarCard}>
+              <Text style={styles.valorarTitle}>¿Te fue útil esta publicación?</Text>
+              <StarRating value={miValoracion} onChange={handleValorar} size={36} />
+              <TextInput
+                style={styles.commentInput}
+                placeholder="Agrega un comentario (opcional)..."
+                placeholderTextColor="#94a3b8"
+                value={comentarioVal}
+                onChangeText={setComentarioVal}
+              />
+            </View>
+          ) : (
+            <View style={styles.valorarCard}>
+              <Text style={styles.valorarTitle}>Tu valoración: {miValoracion}/5</Text>
+              <StarRating value={miValoracion} readonly size={24} />
+            </View>
+          )}
+
+          {/* Lista de valoraciones */}
+          {valoraciones.length > 0 && (
+            <View style={styles.valoracionesSection}>
+              <Text style={styles.sectionTitle}>Valoraciones</Text>
+              {valoraciones.map((v) => (
+                <View key={v.id} style={styles.valoracionItem}>
+                  <View style={styles.valoracionHeader}>
+                    <Text style={styles.valoracionAuthor}>{v.usuario.nombre}</Text>
+                    <StarRating value={v.puntuacion} readonly size={14} />
+                  </View>
+                  {v.comentario && (
+                    <Text style={styles.valoracionComment}>{v.comentario}</Text>
+                  )}
+                  <Text style={styles.valoracionDate}>
+                    {new Date(v.createdAt).toLocaleDateString()}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
       </ScrollView>
+
+      {/* ── WHATSAPP-STYLE INPUT BAR (sticky at bottom) ── */}
+      <View style={styles.inputBar}>
+        {replyTo && (
+          <View style={styles.replyIndicator}>
+            <Ionicons name="arrow-undo" size={14} color="#059669" />
+            <Text style={styles.replyIndicatorText} numberOfLines={1}>
+              {replyTo.username}
+            </Text>
+            <Pressable onPress={cancelarReply} hitSlop={8}>
+              <Ionicons name="close-circle" size={18} color="#94a3b8" />
+            </Pressable>
+          </View>
+        )}
+
+        {/* Recording indicator */}
+        {isRecording && (
+          <View style={styles.recordingIndicator}>
+            <Ionicons name="radio-button-on" size={14} color="#ef4444" />
+            <Text style={styles.recordingTimer}>{formatTime(recordingTime)}</Text>
+            <View style={[styles.recordingDot, isPaused && { backgroundColor: '#f59e0b' }]} />
+            <Text style={styles.recordingStatus}>{isPaused ? 'En pausa' : 'Grabando...'}</Text>
+          </View>
+        )}
+
+        <View style={styles.inputRow}>
+          {isRecording ? (
+            <View style={{ flexDirection: 'row', gap: 4 }}>
+              {isPaused ? (
+                <Pressable style={styles.micBtnPause} onPress={resumeRecording}>
+                  <Ionicons name="play" size={18} color="#fff" />
+                </Pressable>
+              ) : (
+                <Pressable style={styles.micBtnPause} onPress={pauseRecording}>
+                  <Ionicons name="pause" size={18} color="#fff" />
+                </Pressable>
+              )}
+              <Pressable style={styles.micBtnRecording} onPress={stopRecording}>
+                <Ionicons name="stop" size={18} color="#fff" />
+              </Pressable>
+            </View>
+          ) : audioUri ? (
+            <Pressable style={styles.micBtnDone} onPress={() => setAudioUri(null)}>
+              <Ionicons name="checkmark-circle" size={22} color="#10b981" />
+            </Pressable>
+          ) : (
+            <Pressable style={styles.micBtn} onPress={startRecording}>
+              <Ionicons name="mic" size={20} color="#059669" />
+            </Pressable>
+          )}
+          <TextInput
+            style={styles.inputField}
+            placeholder={replyTo ? 'Escribe tu respuesta...' : 'Escribe un comentario...'}
+            placeholderTextColor="#94a3b8"
+            value={nuevoComentario}
+            onChangeText={setNuevoComentario}
+            multiline
+          />
+          <Pressable
+            style={[styles.sendBtn, (!nuevoComentario.trim() && !audioUri) && styles.sendBtnDisabled]}
+            onPress={handleEnviarComentario}
+            disabled={(!nuevoComentario.trim() && !audioUri) || enviandoComentario}
+          >
+            {enviandoComentario ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Ionicons name="arrow-forward" size={22} color="#fff" />
+            )}
+          </Pressable>
+        </View>
+      </View>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f0faf2' },
-  content: { padding: 16, paddingBottom: 40 },
+  content: { padding: 16, paddingBottom: 100 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f0faf2' },
+
   tipoBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -350,14 +520,7 @@ const styles = StyleSheet.create({
   author: { fontSize: 13, color: '#64748b' },
   date: { fontSize: 12, color: '#94a3b8' },
   tagsRow: { flexDirection: 'row', gap: 6, marginBottom: 16 },
-  tag: {
-    fontSize: 12,
-    color: '#059669',
-    backgroundColor: '#d1fae5',
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 8,
-  },
+  tag: { fontSize: 12, color: '#059669', backgroundColor: '#d1fae5', paddingHorizontal: 10, paddingVertical: 3, borderRadius: 8 },
   descCard: {
     backgroundColor: '#fff',
     borderRadius: 16,
@@ -370,12 +533,51 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   descText: { fontSize: 15, color: '#334155', lineHeight: 22 },
-  ratingStats: {
+
+  // ── Comentarios ──
+  comentariosSection: {
+    marginTop: 8,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1e293b',
+    marginBottom: 12,
+  },
+  sinComentarios: { fontSize: 13, color: '#94a3b8', textAlign: 'center', paddingVertical: 20 },
+  comentarioItem: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#f1f5f9',
+  },
+  comentarioHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
+  comentarioAvatar: { marginRight: 4 },
+  comentarioAuthor: { fontSize: 13, fontWeight: '600', color: '#374151' },
+  comentarioDate: { fontSize: 11, color: '#94a3b8' },
+  comentarioContenido: { fontSize: 14, color: '#334155', lineHeight: 20, marginBottom: 6 },
+  audioPlayBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 16,
+    gap: 4,
+    backgroundColor: '#f0fdf4',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+    marginBottom: 4,
+    borderWidth: 1,
+    borderColor: '#d1fae5',
   },
+  audioPlayText: { fontSize: 12, color: '#059669', fontWeight: '600' },
+  replyBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  replyBtnText: { fontSize: 12, color: '#059669', fontWeight: '600' },
+
+  // ── Rating (al final) ──
+  ratingSection: { marginTop: 24, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#e2e8f0' },
+  ratingStats: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 },
   ratingCount: { fontSize: 12, color: '#94a3b8' },
   valorarCard: {
     backgroundColor: '#fff',
@@ -401,12 +603,6 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
   valoracionesSection: { marginTop: 8 },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1e293b',
-    marginBottom: 12,
-  },
   valoracionItem: {
     backgroundColor: '#fff',
     borderRadius: 12,
@@ -415,85 +611,104 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#f1f5f9',
   },
-  valoracionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
+  valoracionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
   valoracionAuthor: { fontSize: 13, fontWeight: '600', color: '#374151' },
   valoracionComment: { fontSize: 13, color: '#64748b', marginBottom: 4 },
   valoracionDate: { fontSize: 11, color: '#94a3b8' },
 
-  // ── Comentarios ──
-  comentariosSection: {
-    marginTop: 24,
-    paddingTop: 16,
+  // ── WhatsApp-style Input Bar ──
+  inputBar: {
+    backgroundColor: '#fff',
     borderTopWidth: 1,
     borderTopColor: '#e2e8f0',
+    paddingHorizontal: 12,
+    paddingBottom: Platform.OS === 'ios' ? 24 : 8,
+    paddingTop: 4,
   },
   replyIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     backgroundColor: '#d1fae5',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
-    marginBottom: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    marginBottom: 4,
   },
-  replyIndicatorText: { fontSize: 13, color: '#059669', flex: 1 },
-  nuevoComentarioRow: {
+  replyIndicatorText: { fontSize: 12, color: '#059669', flex: 1 },
+  inputRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     gap: 8,
-    marginBottom: 16,
   },
-  nuevoComentarioInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    borderRadius: 12,
-    padding: 12,
-    fontSize: 14,
-    color: '#1e293b',
-    backgroundColor: '#fff',
-    minHeight: 44,
-    maxHeight: 100,
-    textAlignVertical: 'top',
+  micBtn: {
+    backgroundColor: '#f0fdf4',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: '#d1fae5',
   },
-  enviarBtn: {
-    backgroundColor: '#059669',
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+  recordingIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#fef2f2',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    marginBottom: 4,
+  },
+  recordingTimer: { fontSize: 13, fontWeight: '700', color: '#ef4444', fontVariant: ['tabular-nums'] },
+  recordingDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#ef4444' },
+  recordingStatus: { fontSize: 12, color: '#ef4444', fontWeight: '600' },
+  micBtnRecording: {
+    backgroundColor: '#ef4444',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  enviarBtnDisabled: { opacity: 0.5 },
-  sinComentarios: { fontSize: 13, color: '#94a3b8', textAlign: 'center', paddingVertical: 20 },
-  comentarioItem: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 8,
+  micBtnPause: {
+    backgroundColor: '#f59e0b',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  micBtnDone: {
+    backgroundColor: '#f0fdf4',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: '#d1fae5',
+  },
+  inputField: {
+    flex: 1,
     borderWidth: 1,
-    borderColor: '#f1f5f9',
+    borderColor: '#e2e8f0',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: '#1e293b',
+    backgroundColor: '#f8fafc',
+    maxHeight: 80,
   },
-  comentarioHeader: {
-    flexDirection: 'row',
+  sendBtn: {
+    backgroundColor: '#059669',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 6,
+    justifyContent: 'center',
   },
-  comentarioAvatar: { marginRight: 4 },
-  comentarioAuthor: { fontSize: 13, fontWeight: '600', color: '#374151' },
-  comentarioDate: { fontSize: 11, color: '#94a3b8' },
-  comentarioContenido: { fontSize: 14, color: '#334155', lineHeight: 20, marginBottom: 6 },
-  replyBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  replyBtnText: { fontSize: 12, color: '#059669', fontWeight: '600' },
+  sendBtnDisabled: { opacity: 0.5 },
 });

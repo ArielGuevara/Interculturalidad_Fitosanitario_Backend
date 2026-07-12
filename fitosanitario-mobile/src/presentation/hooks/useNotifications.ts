@@ -1,84 +1,90 @@
 import { useEffect, useRef } from 'react';
-import { Platform } from 'react-native';
-import * as Notifications from 'expo-notifications';
-import * as Device from 'expo-device';
+import { Platform, NativeModules } from 'react-native';
 import { useAuthStore } from '../../infrastructure/auth/authStore';
 import { registrarDispositivo } from '../../infrastructure/data/alertas/alertasApi';
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
-});
+let Notifications: any = null;
+let Device: any = null;
+
+try {
+  Notifications = require('expo-notifications');
+  Device = require('expo-device');
+} catch {
+  // expo-notifications no está disponible en Expo Go SDK 53+
+  // Usar development build para notificaciones push
+}
+
+if (Notifications) {
+  try {
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldShowBanner: true,
+        shouldShowList: true,
+        shouldPlaySound: true,
+        shouldSetBadge: true,
+      }),
+    });
+  } catch {}
+}
 
 async function registerForPushNotificationsAsync(): Promise<string | null> {
-  if (!Device.isDevice) {
+  if (!Device || !Notifications) return null;
+  try {
+    if (!Device.isDevice) return null;
+
+    let finalStatus = (await Notifications.getPermissionsAsync()).status;
+    if (finalStatus !== 'granted') {
+      finalStatus = (await Notifications.requestPermissionsAsync()).status;
+    }
+    if (finalStatus !== 'granted') return null;
+
+    const tokenData = await Notifications.getExpoPushTokenAsync();
+
+    if (Platform.OS === 'android') {
+      await Notifications.setNotificationChannelAsync('default', {
+        name: 'default',
+        importance: Notifications.AndroidImportance?.MAX ?? 4,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#10b981',
+      });
+    }
+
+    return tokenData.data;
+  } catch {
     return null;
   }
-
-  const { status: existingStatus } = await Notifications.getPermissionsAsync();
-  let finalStatus = existingStatus;
-
-  if (existingStatus !== 'granted') {
-    const { status } = await Notifications.requestPermissionsAsync();
-    finalStatus = status;
-  }
-
-  if (finalStatus !== 'granted') {
-    return null;
-  }
-
-  const tokenData = await Notifications.getExpoPushTokenAsync();
-  const token = tokenData.data;
-
-  if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('default', {
-      name: 'default',
-      importance: Notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#10b981',
-    });
-  }
-
-  return token;
 }
 
 export function useNotifications(onNotificationTap?: () => void) {
-  const notificationListener = useRef<Notifications.EventSubscription>(null!);
-  const responseListener = useRef<Notifications.EventSubscription>(null!);
+  const notificationListener = useRef<any>(null);
+  const responseListener = useRef<any>(null);
   const tokenRegistered = useRef(false);
 
   useEffect(() => {
+    if (!Notifications || !Device) return;
+
     const setup = async () => {
-      const usuario = useAuthStore.getState().usuario;
-      if (!usuario || tokenRegistered.current) return;
-
-      const token = await registerForPushNotificationsAsync();
-      if (!token) return;
-
       try {
+        const usuario = useAuthStore.getState().usuario;
+        if (!usuario || tokenRegistered.current) return;
+
+        const token = await registerForPushNotificationsAsync();
+        if (!token) return;
+
         const plataforma = Platform.OS === 'ios' ? 'ios' : 'android';
         await registrarDispositivo(token, plataforma);
         tokenRegistered.current = true;
-      } catch {
-        // ya registrado o error de red
-      }
+      } catch {}
     };
 
     setup();
 
-    notificationListener.current = Notifications.addNotificationReceivedListener(() => {});
-
-    responseListener.current = Notifications.addNotificationResponseReceivedListener(() => {
-      onNotificationTap?.();
-    });
-
-    return () => {
-      notificationListener.current?.remove();
-      responseListener.current?.remove();
-    };
+    try {
+      notificationListener.current = Notifications.addNotificationReceivedListener(() => {});
+      responseListener.current = Notifications.addNotificationResponseReceivedListener(() => {
+        onNotificationTap?.();
+      });
+    } catch {}
   }, [onNotificationTap]);
 }

@@ -16,6 +16,7 @@ import {
 export const rolUsuarioEnum = pgEnum('rol_usuario', [
   'AGRICULTOR',
   'MODERADOR',
+  'ADMIN',
 ]);
 
 export const tipoPlagaEnum = pgEnum('tipo_plaga', [
@@ -49,6 +50,7 @@ export const usuarios = pgTable('usuarios', {
   id: serial('id').primaryKey(),
   nombre: varchar('nombre', { length: 100 }).notNull(),
   email: varchar('email', { length: 150 }).notNull().unique(),
+  telefono: varchar('telefono', { length: 20 }),
   passwordHash: varchar('password_hash', { length: 255 }).notNull(),
   rol: rolUsuarioEnum('rol').notNull().default('AGRICULTOR'),
   fechaRegistro: timestamp('fecha_registro').notNull().defaultNow(),
@@ -214,6 +216,7 @@ export const comentariosForo = pgTable('comentarios_foro', {
     .references(() => usuarios.id),
   comentarioPadreId: integer('comentario_padre_id'),
   contenido: text('contenido').notNull(),
+  audioUrl: varchar('audio_url', { length: 500 }),
   activo: boolean('activo').notNull().default(true),
   moderadoPor: integer('moderado_por').references(() => usuarios.id),
   fechaModeracion: timestamp('fecha_moderacion'),
@@ -286,5 +289,18 @@ export const notificaciones = pgTable('notificaciones', {
   titulo: varchar('titulo', { length: 200 }).notNull(),
   cuerpo: text('cuerpo').notNull(),
   leida: boolean('leida').notNull().default(false),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+// ── Tabla: RESET_TOKENS ──────────────────────────────────────
+export const resetTokens = pgTable('reset_tokens', {
+  id: serial('id').primaryKey(),
+  usuarioId: integer('usuario_id')
+    .notNull()
+    .references(() => usuarios.id, { onDelete: 'cascade' }),
+  codigo: varchar('codigo', { length: 6 }).notNull(),
+  telefono: varchar('telefono', { length: 20 }).notNull(),
+  expiresAt: timestamp('expires_at').notNull(),
+  usado: boolean('usado').notNull().default(false),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });

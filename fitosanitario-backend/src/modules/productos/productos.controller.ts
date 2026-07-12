@@ -8,6 +8,7 @@ import {
   Body,
   ParseIntPipe,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { ProductosService } from './productos.service';
 import { CreateProductoDto } from './dto/create-producto.dto';
@@ -22,8 +23,8 @@ export class ProductosController {
   constructor(private readonly productosService: ProductosService) {}
 
   @Get()
-  findAll() {
-    return this.productosService.findAll();
+  findAll(@Query('search') search?: string) {
+    return this.productosService.findAll(search);
   }
 
   @Get(':id')

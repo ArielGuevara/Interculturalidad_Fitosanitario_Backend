@@ -90,6 +90,17 @@ export class ComunidadModeracion implements OnInit {
     });
   }
 
+  toggleActivo(rec: RecomendacionComunidad) {
+    this.recomendacionesService.toggle(rec.id).subscribe({
+      next: () => {
+        const msg = rec.activo ? 'Foro deshabilitado — ya no se aceptan más mensajes' : 'Foro habilitado';
+        this.messageService.add({ severity: 'success', summary: 'Estado cambiado', detail: msg });
+        this.loadRecomendaciones();
+      },
+      error: () => this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo cambiar el estado del foro.' })
+    });
+  }
+
   eliminar(rec: RecomendacionComunidad) {
     this.confirmationService.confirm({
       message: `¿Deseas desactivar la recomendación "${rec.titulo}"?`,

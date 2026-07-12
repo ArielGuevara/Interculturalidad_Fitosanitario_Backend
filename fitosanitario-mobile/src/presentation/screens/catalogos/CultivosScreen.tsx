@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState, useMemo } from 'react';
 import { 
   Alert, 
   FlatList, 
@@ -9,13 +9,16 @@ import {
   StyleSheet, 
   SafeAreaView, 
   RefreshControl,
-  ActivityIndicator
+  ActivityIndicator,
+  Modal,
+  ScrollView
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { Cultivo } from '../../../domain/catalogos/types';
 import { getCultivos } from '../../../infrastructure/data/catalogos/cultivosApi';
 import { getCache, setCache } from '../../../infrastructure/offline/cache';
 import { ImageViewerModal } from '../../../presentation/components/ImageViewerModal';
+import { SearchBar } from '../../../presentation/components/SearchBar';
 
 const CACHE_KEY = 'cultivos.list';
 
@@ -24,6 +27,17 @@ export function CultivosScreen() {
   const [loading, setLoading] = useState(true); 
   const [refreshing, setRefreshing] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedItem, setSelectedItem] = useState<Cultivo | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredItems = useMemo(() => {
+    if (!searchQuery.trim()) return items;
+    const q = searchQuery.toLowerCase();
+    return items.filter(i =>
+      i.nombre.toLowerCase().includes(q) ||
+      (i.descripcion && i.descripcion.toLowerCase().includes(q))
+    );
+  }, [items, searchQuery]);
 
   const loadData = async (isRefreshing = false) => {
     if (isRefreshing) setRefreshing(true);
@@ -63,7 +77,7 @@ export function CultivosScreen() {
       )}
       
       {/* Información */}
-      <View style={styles.textContainer}>
+      <Pressable style={styles.textContainer} onPress={() => setSelectedItem(item)}>
         <Text style={styles.title}>{item.nombre}</Text>
         {!!item.descripcion ? (
           <Text style={styles.description} numberOfLines={2}>
@@ -72,7 +86,7 @@ export function CultivosScreen() {
         ) : (
           <Text style={styles.noDescription}>Sin descripción disponible</Text>
         )}
-      </View>
+      </Pressable>
     </View>
   );
 
@@ -93,8 +107,12 @@ export function CultivosScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Catálogo de Cultivos</Text>
-        <Text style={styles.headerSubtitle}>{items.length} registros disponibles</Text>
+        <Text style={styles.headerSubtitle}>
+          {searchQuery ? `${filteredItems.length} de ${items.length} registros` : `${items.length} registros disponibles`}
+        </Text>
       </View>
+
+      <SearchBar value={searchQuery} onChangeText={setSearchQuery} placeholder="Buscar cultivos..." />
 
       {loading ? (
         <View style={styles.loadingContainer}>
@@ -103,7 +121,7 @@ export function CultivosScreen() {
         </View>
       ) : (
         <FlatList
-          data={items}
+          data={filteredItems}
           keyExtractor={(i) => String(i.id)}
           renderItem={renderItem}
           contentContainerStyle={styles.listContainer}
@@ -125,6 +143,21 @@ export function CultivosScreen() {
         imageUrl={selectedImage ?? ''}
         onClose={() => setSelectedImage(null)}
       />
+
+      <Modal visible={selectedItem !== null} animationType="fade" transparent>
+        <View style={styles.modalOverlay}>
+          <ScrollView contentContainerStyle={styles.modalContent}>
+            {selectedItem?.imagenUrl && (
+              <Image source={{ uri: selectedItem.imagenUrl }} style={styles.modalImage} resizeMode="cover" />
+            )}
+            <Text style={styles.modalTitle}>{selectedItem?.nombre}</Text>
+            <Text style={styles.modalDescription}>{selectedItem?.descripcion || 'Sin descripción disponible'}</Text>
+            <Pressable style={styles.modalCloseBtn} onPress={() => setSelectedItem(null)}>
+              <Text style={styles.modalCloseText}>Cerrar</Text>
+            </Pressable>
+          </ScrollView>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -242,5 +275,46 @@ const styles = StyleSheet.create({
     color: '#64748b',
     textAlign: 'center',
     lineHeight: 20,
+  },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 24,
+  },
+  modalImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#0f172a',
+    marginBottom: 8,
+  },
+  modalDescription: {
+    fontSize: 15,
+    color: '#334155',
+    lineHeight: 22,
+    marginBottom: 20,
+  },
+  modalCloseBtn: {
+    backgroundColor: '#059669',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  modalCloseText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 16,
   },
 });

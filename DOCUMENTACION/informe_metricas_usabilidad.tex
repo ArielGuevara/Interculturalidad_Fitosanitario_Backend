@@ -1,0 +1,1060 @@
+\documentclass[a4paper,12pt]{report}
+
+% =========================
+% PAQUETES BASE
+% =========================
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish]{babel}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+
+\usepackage{graphicx}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{multirow}
+\usepackage{lmodern}
+\usepackage{setspace}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{colortbl}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{pifont}
+\usepackage{listings}
+\usepackage{float}
+\usepackage{multicol}
+\usepackage{pgfplotstable}
+\usepackage{tabu}
+
+% =========================
+% TIKZ / PGFPLOTS (MODO COMPLETO)
+% =========================
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usetikzlibrary{
+  shapes.geometric,
+  arrows.meta,
+  positioning,
+  shadows,
+  backgrounds,
+  fit,
+  calc,
+  matrix,
+  decorations.pathreplacing
+}
+\pgfplotsset{compat=1.18}
+
+% =========================
+% TCOLORBOX / MDFRAMED
+% =========================
+\usepackage[most]{tcolorbox}
+\usepackage{mdframed}
+\tcbuselibrary{skins,breakable}
+
+% =========================
+% SÍMBOLOS
+% =========================
+\newcommand{\cmark}{\ding{51}}  % ✓
+\newcommand{\xmark}{\ding{55}}  % ✗
+
+% =========================
+% CONFIG GENERAL
+% =========================
+\setcounter{secnumdepth}{3}
+\setstretch{1.3}
+
+% =========================
+% COLORES
+% =========================
+\definecolor{headerblue}{RGB}{25,45,120}
+\definecolor{lightblue}{RGB}{100,150,230}
+\definecolor{darkblue}{RGB}{15,35,100}
+\definecolor{accentorange}{RGB}{255,140,0}
+\definecolor{lightgray}{RGB}{240,240,240}
+\definecolor{mediumgray}{RGB}{180,180,180}
+\definecolor{securityred}{RGB}{220,50,50}
+\definecolor{securitygreen}{RGB}{50,180,50}
+\definecolor{avocadogreen}{RGB}{86,130,3}
+
+% =========================
+% FORMATO DE TÍTULOS
+% =========================
+\titleformat{\chapter}[display]
+  {\normalfont\huge\bfseries\color{headerblue}}{\chaptertitlename\ \thechapter}{20pt}{\Huge}
+\titleformat{\section}[hang]{\Large\bfseries\color{headerblue}}{}{0em}{}
+\titleformat{\subsection}[hang]{\large\bfseries\color{headerblue}}{}{0em}{}
+\titleformat{\subsubsection}[hang]{\normalsize\bfseries\color{lightblue}}{}{0em}{}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    citecolor=black,
+    urlcolor=blue
+}
+
+% =========================
+% CAJAS
+% =========================
+\newtcolorbox{principiobox}[1]{
+    colback=lightblue!5,
+    colframe=headerblue,
+    fonttitle=\bfseries,
+    title=#1,
+    breakable,
+    enhanced,
+    attach boxed title to top left={yshift=-2mm, xshift=5mm},
+    boxed title style={colback=headerblue}
+}
+
+\newtcolorbox{definitionbox}[1]{
+    colback=lightgray,
+    colframe=darkblue,
+    fonttitle=\bfseries,
+    title=#1,
+    breakable,
+    sharp corners
+}
+
+\newtcolorbox{warningbox}{
+    colback=securityred!10,
+    colframe=securityred,
+    breakable,
+    sharp corners,
+    leftrule=5mm
+}
+
+\newtcolorbox{successbox}{
+    colback=securitygreen!10,
+    colframe=securitygreen,
+    breakable,
+    sharp corners,
+    leftrule=5mm
+}
+
+% =========================
+% ESTILOS TIKZ
+% =========================
+\tikzstyle{proceso} = [
+  rectangle, rounded corners,
+  minimum width=3cm, minimum height=1cm,
+  text centered, draw=headerblue,
+  fill=lightblue!30, drop shadow
+]
+\tikzstyle{componente} = [
+  rectangle, rounded corners,
+  minimum width=4cm, minimum height=1.2cm,
+  text centered, draw=darkblue,
+  fill=lightblue!40, drop shadow
+]
+\tikzstyle{clase} = [
+  rectangle, rounded corners,
+  minimum width=3.5cm, minimum height=1cm,
+  text centered, draw=headerblue,
+  fill=lightgray!50
+]
+\tikzstyle{arrow} = [thick,->,>=Stealth]
+
+% =========================
+% CONFIGURACIÓN LISTINGS
+% =========================
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{lightgray},
+    commentstyle=\color{securitygreen},
+    keywordstyle=\color{headerblue},
+    numberstyle=\tiny\color{mediumgray},
+    stringstyle=\color{accentorange},
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showstringspaces=false,
+    tabsize=2
+}
+\lstset{style=mystyle}
+
+\begin{document}
+
+% =====================================
+% PORTADA
+% =====================================
+\begin{titlepage}
+    \centering
+    \vspace*{0.5cm}
+
+    % CAPTURA: Logo institucional de la ESPE. Buscar en Google "logo ESPE PNG", descargar y guardar como "logo_espe.png" en figuras/
+    \includegraphics[width=0.15\linewidth]{figuras/logo_espe.png}\par
+    \vspace{1cm}
+
+    {\Huge\bfseries Universidad de las Fuerzas Armadas ESPE\par}
+    \vspace{0.4cm}
+    {\Large Departamento de Ciencias de la Computación\par}
+    \vspace{0.3cm}
+    {\large Carrera de Ingeniería de Software\par}
+    \vspace{0.5cm}
+
+    {\large DESARROLLO DE SOFTWARE APLICADO AL DOMINIO DE LA INTERCULTURALIDAD -- NRC: 22431\par}
+    \vspace{0.8cm}
+
+    \noindent\rule{0.8\textwidth}{0.4pt}
+    \vspace{0.8cm}
+
+    {\LARGE\bfseries Evaluación de Usabilidad y Experiencia de Usuario\par}
+    {\large Aplicación de PSSUQ y UEQ al Sistema Integral de Gestión Fitosanitaria\par}
+    \vspace{0.4cm}
+
+    \noindent\rule{0.8\textwidth}{0.4pt}
+    \vspace{0.4cm}
+
+    \begin{minipage}{0.9\textwidth}
+        \centering
+        \renewcommand{\arraystretch}{1.2}
+        \begin{tabular}{@{}l p{0.68\textwidth}@{}}
+            \textbf{Estudiante:} & Ariel Guevara, Elkin Pabón, Micaela Salcedo \\
+            \textbf{Carrera:}    & Ingeniería de Software \\
+            \textbf{Profesor:}   & Ing. Cristian Cola \\
+            \textbf{Asignatura:} & Desarrollo de Software Aplicado al Dominio de la Interculturalidad \\
+            \textbf{Fecha:}      & Julio de 2026 \\
+        \end{tabular}
+    \end{minipage}
+
+    \vspace{0.6cm}
+
+    \textbf{Enlace al formulario:} \url{https://docs.google.com/forms/d/e/1FAIpQLSdGLyl96iXaheSxcNtB6xc7R7yCJbHBMycVD_s1rcc4NR84AA/formResponse}
+
+\end{titlepage}
+
+\newpage
+
+% =====================================
+% ÍNDICE GENERAL
+% =====================================
+\tableofcontents
+\newpage
+
+\listoffigures
+\newpage
+
+\listoftables
+\newpage
+
+
+
+% =====================================
+% INTRODUCCIÓN
+% =====================================
+\chapter{Introducción}
+
+La evaluación de la calidad de un sistema de software no se limita a la verificación de requisitos funcionales. Aspectos como la facilidad de uso, la satisfacción del usuario y la experiencia emocional durante la interacción son determinantes para la adopción y el éxito de una aplicación, especialmente cuando el público objetivo incluye usuarios con distintos niveles de alfabetización digital, como es el caso de los pequeños y medianos agricultores en el Ecuador.
+
+El \textbf{Sistema Integral de Gestión Fitosanitaria} es una plataforma tecnológica diseñada para abordar la problemática del control de plagas y enfermedades en cultivos, integrando un enfoque intercultural que reconoce y valora tanto el conocimiento científico-agronómico como los saberes ancestrales de las comunidades agrícolas. El sistema se compone de:
+
+\begin{itemize}
+    \item \textbf{Aplicación móvil} (Expo React Native): Permite a los agricultores crear reportes de campo con hasta 10 fotografías, grabación de audio y coordenadas GPS; explorar catálogos de cultivos, plagas y tratamientos de forma offline; participar en un foro comunitario donde pueden compartir recomendaciones, consultas y conocimiento ancestral (etiquetado como \texttt{CONOCIMIENTO\_ANCESTRAL}); recibir notificaciones de alertas fitosanitarias geográficas; y acceder a un modo de accesibilidad (``Modo Fácil'') con botones grandes, guía por voz e instrucciones paso a paso.
+    \item \textbf{Frontend web} (Angular + PrimeNG): Orientado a moderadores y administradores para la gestión de catálogos, moderación del foro, administración de zonas de alerta y visualización de dashboards con indicadores.
+    \item \textbf{Backend} (NestJS + Drizzle ORM + PostgreSQL + MinIO): API RESTful con 14 módulos que gestionan autenticación JWT, roles (agricultor, moderador, administrador), reportes, tratamientos oficiales, recomendaciones comunitarias con valoraciones, alertas automáticas y almacenamiento multimedia.
+\end{itemize}
+
+La dimensión intercultural del proyecto se manifiesta explícitamente en el foro comunitario, donde los usuarios pueden publicar contenido clasificado como \texttt{CONOCIMIENTO\_ANCESTRAL}, el cual recibe un tratamiento visual distintivo (ícono de hoja, color púrpura) y se integra en igualdad de condiciones con las recomendaciones técnicas y científicas. Este enfoque reconoce que las comunidades agrícolas poseen un acervo de prácticas tradicionales de control de plagas que complementan y, en ocasiones, superan a las soluciones agronómicas convencionales.
+
+\begin{figure}[H]
+    \centering
+    % CAPTURA: Abrir la app móvil en un emulador o dispositivo físico. Capturar la pantalla de inicio (HomeScreen) mostrando las tarjetas de acceso rápido. Guardar como "interfaz_home_app.png"
+    \includegraphics[width=0.6\linewidth]{figuras/interfaz_home_app.png}
+    \caption{Pantalla de inicio de la aplicación móvil del Sistema Integral de Gestión Fitosanitaria. Se observan las tarjetas de acceso a reportes, catálogos, foro y perfil.}
+    \label{fig:home_app}
+\end{figure}
+
+\newpage
+
+% =====================================
+% FUNDAMENTACIÓN TEÓRICA
+% =====================================
+\chapter{Fundamentación Teórica}
+
+En este capítulo se describen los dos instrumentos de evaluación seleccionados para el estudio, justificando su elección en función de las características del proyecto evaluado y de la literatura científica especializada. La selección sigue el criterio establecido en la actividad: una métrica de usabilidad (PSSUQ) y una métrica de experiencia de usuario (UEQ), ambas diferentes a SUS y a las heurísticas de Jakob Nielsen.
+
+% =====================================
+\section{Post-Study System Usability Questionnaire (PSSUQ)}
+
+\subsection{Definición}
+
+El \textbf{Post-Study System Usability Questionnaire (PSSUQ)} es un instrumento estandarizado de evaluación de usabilidad desarrollado por James R. Lewis en IBM a finales de la década de 1980 como parte del proyecto SUMS (System Usability Metrics). La versión más utilizada actualmente es la \textbf{Versión 3}, compuesta por 16 ítems, aunque también existe la Versión 2 con 19 ítems, que es la empleada en el presente estudio. El PSSUQ utiliza una escala Likert de 7 puntos donde $1 = \text{Totalmente de acuerdo}$ (mejor puntuación) y $7 = \text{Totalmente en desacuerdo}$ (peor puntuación), con una opción ``No aplica'' (Lewis, 2002).
+
+\subsection{Objetivo}
+
+El objetivo del PSSUQ es medir la \textbf{satisfacción percibida del usuario} respecto a la usabilidad de un sistema después de haberlo utilizado en una sesión de prueba controlada. El instrumento cubre tres dimensiones fundamentales:
+
+\begin{itemize}
+    \item \textbf{System Usefulness (SystUse)} — Ítems 1 a 8: Evalúa la utilidad percibida del sistema, la facilidad de uso, la velocidad para completar tareas, la comodidad durante el uso, la facilidad de aprendizaje y la productividad.
+    \item \textbf{Information Quality (InfoQual)} — Ítems 9 a 15: Evalúa la claridad, organización y efectividad de la información presentada por el sistema, incluyendo mensajes de error, ayuda en línea y documentación.
+    \item \textbf{Interface Quality (InterQual)} — Ítems 16 a 19: Evalúa la calidad estética y funcional de la interfaz, incluyendo si el sistema posee las capacidades esperadas y la satisfacción general.
+\end{itemize}
+
+\subsection{Tipo de evaluación}
+
+Se trata de una evaluación \textbf{cuantitativa, sumativa y subjetiva}. Es cuantitativa porque produce puntuaciones numéricas que permiten comparaciones estadísticas; es sumativa porque se aplica al finalizar una sesión de uso para obtener una impresión global; y es subjetiva porque recoge la percepción del usuario, no medidas objetivas de rendimiento (como tiempo de finalización o tasa de errores).
+
+\subsection{Justificación de selección}
+
+El PSSUQ fue seleccionado por las siguientes razones técnicas:
+
+\begin{enumerate}
+    \item \textbf{Alineación con la complejidad del sistema}: El Sistema Integral de Gestión Fitosanitaria involucra múltiples flujos de trabajo (creación de reportes con multimedia, navegación del foro con filtros, consulta de alertas geográficas, gestión de perfil). El PSSUQ es particularmente adecuado para sistemas complejos porque sus subescalas de \textit{Information Quality} e \textit{Interface Quality} capturan dimensiones que otros instrumentos como SUS (que produce una única puntuación global) no desglosan (Lewis, 2002; Fruhling \& Lee, 2005).
+
+    \item \textbf{Sensibilidad a muestras pequeñas}: Múltiples estudios han demostrado que el PSSUQ mantiene propiedades psicométricas aceptables (alfa de Cronbach $> 0.83$) incluso con muestras reducidas de 8 a 12 participantes (Lewis, 2002; Sauro \& Lewis, 2016). Esto lo hace viable para entornos académicos donde el reclutamiento de una gran muestra puede ser logísticamente complejo.
+
+    \item \textbf{Benchmark disponible}: Lewis (2002) proporcionó valores de referencia para las tres subescalas basados en un metaanálisis de 21 estudios con 210 participantes: Overall = 2.82, SystUse = 2.80, InfoQual = 3.02 e InterQual = 2.49. Estos benchmarks permiten interpretar si los resultados obtenidos están por encima o por debajo del promedio histórico.
+
+    \item \textbf{Correlación con SUS}: Estudios recientes han demostrado una alta correlación entre las puntuaciones del PSSUQ y SUS (Encyclopedia.pub, 2023), lo que permite realizar comparaciones indirectas incluso en ausencia de una medición SUS previa en el mismo sistema.
+
+    \item \textbf{Idoneidad para el perfil de usuarios}: La escala de 7 puntos con opción ``No aplica'' reduce la frustración de usuarios con menor experiencia tecnológica (como los agricultores), ya que pueden omitir ítems que no comprendan completamente sin sesgar los resultados.
+
+    \item \textbf{Licencia libre}: El PSSUQ no requiere licencia para su uso, lo que facilita su aplicación en proyectos académicos y de investigación (Lewis, 1992; UX4All, 2024).
+\end{enumerate}
+
+\begin{definitionbox}{PSSUQ -- Post-Study System Usability Questionnaire}
+\begin{itemize}
+    \item \textbf{Autor}: James R. Lewis (IBM, 1992)
+    \item \textbf{Ítems}: 19 (Versión 2) / 16 (Versión 3)
+    \item \textbf{Escala}: Likert de 7 puntos ($1 =$ mejor, $7 =$ peor)
+    \item \textbf{Dimensiones}: SystUse (ítems 1--8), InfoQual (ítems 9--15), InterQual (ítems 16--19), Overall (ítems 1--19)
+    \item \textbf{Confiabilidad}: Alfa de Cronbach entre 0.83 y 0.96
+\end{itemize}
+\end{definitionbox}
+
+% =====================================
+\section{User Experience Questionnaire (UEQ)}
+
+\subsection{Definición}
+
+El \textbf{User Experience Questionnaire (UEQ)} es un instrumento de medición de la experiencia de usuario desarrollado por Laugwitz, Schrepp y Held en 2008. A diferencia de los cuestionarios de usabilidad tradicionales, el UEQ se centra en la \textbf{experiencia subjetiva e impresión general} que produce un producto interactivo en el usuario, integrando tanto aspectos pragmáticos (eficiencia, claridad) como hedónicos (estimulación, novedad). El cuestionario consta de 26 pares de adjetivos opuestos (diferencial semántico) organizados en 6 escalas, cada una evaluada en una escala de 7 puntos que va de $-3$ (más negativo) a $+3$ (más positivo), con 0 como punto neutral (Laugwitz et al., 2008; Schrepp, 2023).
+
+\subsection{Objetivo}
+
+El UEQ tiene como objetivo proporcionar un \textbf{perfil comprehensivo de la experiencia de usuario} de un producto interactivo, permitiendo identificar qué aspectos de la experiencia funcionan bien y cuáles requieren mejora. Las seis escalas cubren:
+
+\begin{itemize}
+    \item \textbf{Atractividad (Attractiveness)}: Impresión global del producto. ¿Gusta o disgusta al usuario? (6 ítems: molesto/disfrutable, malo/bueno, antipático/simpático, desagradable/agradable, poco atractivo/atractivo, poco amigable/amigable).
+    \item \textbf{Perspicuidad (Perspicuity)}: ¿Es fácil familiarizarse con el producto y aprender a usarlo? (4 ítems: no entendible/entendible, difícil de aprender/fácil de aprender, complicado/sencillo, confuso/claro).
+    \item \textbf{Eficiencia (Efficiency)}: ¿Pueden los usuarios resolver sus tareas sin esfuerzo innecesario? ¿Responde rápido? (4 ítems: lento/rápido, ineficiente/eficiente, impráctico/práctico, desorganizado/organizado).
+    \item \textbf{Confiabilidad (Dependability)}: ¿El usuario se siente en control de la interacción? ¿Es seguro y predecible? (4 ítems: impredecible/predecible, obstructivo/de apoyo, inseguro/seguro, no cumple expectativas/sí cumple expectativas).
+    \item \textbf{Estimulación (Stimulation)}: ¿Es excitante y motivador usar el producto? ¿Es divertido? (4 ítems: inferior/valioso, aburrido/emocionante, no interesante/interesante, desmotivador/motivador).
+    \item \textbf{Novedad (Novelty)}: ¿El diseño del producto es creativo? ¿Capta el interés del usuario? (4 ítems: aburrido/creativo, convencional/inventivo, habitual/vanguardista, conservador/innovador).
+\end{itemize}
+
+\subsection{Tipo de evaluación}
+
+Es una evaluación \textbf{cuantitativa, sumativa, subjetiva y multidimensional}. Es cuantitativa porque genera puntuaciones numéricas comparables; sumativa porque captura la experiencia global; subjetiva porque depende de la percepción del usuario; y multidimensional porque desglosa la experiencia en 6 facetas diferenciadas (a diferencia del SUS que produce un único valor global).
+
+\subsection{Justificación de selección}
+
+El UEQ fue seleccionado por las siguientes razones:
+
+\begin{enumerate}
+    \item \textbf{Relevancia intercultural}: La presencia del módulo de conocimiento ancestral (\texttt{CONOCIMIENTO\_ANCESTRAL}) en el sistema requiere evaluar no solo si la interfaz funciona, sino también si el enfoque intercultural resulta \textit{estimulante} y \textit{novedoso} para los usuarios. Las escalas de \textit{Stimulation} y \textit{Novelty} del UEQ capturan precisamente esta dimensión emocional e innovadora que los cuestionarios de usabilidad pura (como SUS o PSSUQ) no miden directamente.
+
+    \item \textbf{Comprensión del perfil hedónico}: La población objetivo incluye agricultores con baja exposición a tecnología digital. Para este perfil, la experiencia emocional durante el primer uso (atractividad, estimulación) es tan importante como la eficiencia objetiva. El UEQ es el único instrumento ampliamente validado que integta de forma equilibrada aspectos pragmáticos y hedónicos (Schrepp, 2023).
+
+    \item \textbf{Benchmark robusto}: El UEQ cuenta con un benchmark actualizado que incluye datos de 246 productos evaluados con 9,905 respuestas (Schrepp et al., 2017). Este benchmark clasifica los resultados en cinco categorías (\textit{Excelente}, \textit{Bueno}, \textit{Por encima del promedio}, \textit{Por debajo del promedio}, \textit{Malo}), lo que permite una interpretación inmediata y contextualizada de los resultados.
+
+    \item \textbf{Aceptación en la literatura científica}: El UEQ ha sido utilizado en más de 1,000 estudios a nivel mundial, cuenta con versiones validadas en más de 30 idiomas (incluyendo español), y ha demostrado una consistencia interna superior a $\alpha = 0.70$ en todas sus escalas (Hinderks et al., 2020; Santoso et al., 2016; UEQ Online, 2025).
+
+    \item \textbf{Formato accesible}: El diferencial semántico con pares de adjetivos opuestos es intuitivo y rápido de completar (3--5 minutos), lo que reduce la fatiga del evaluador y aumenta la calidad de las respuestas, especialmente en poblaciones con menor familiaridad con encuestas de satisfacción (Schrepp, 2023).
+
+    \item \textbf{Complementariedad con PSSUQ}: Mientras que el PSSUQ se enfoca en la usabilidad funcional (¿el sistema permite hacer lo que necesito?), el UEQ captura la resonancia emocional (¿disfruto usando el sistema?). Ambos instrumentos juntos proporcionan una visión holística de la calidad del sistema desde la perspectiva del usuario.
+\end{enumerate}
+
+\begin{definitionbox}{UEQ -- User Experience Questionnaire}
+\begin{itemize}
+    \item \textbf{Autores}: Laugwitz, Schrepp y Held (2008)
+    \item \textbf{Ítems}: 26 pares de adjetivos opuestos
+    \item \textbf{Escala}: Diferencial semántico de 7 puntos ($-3$ a $+3$)
+    \item \textbf{Escalas}: Atractividad, Perspicuidad, Eficiencia, Confiabilidad, Estimulación, Novedad
+    \item \textbf{Benchmark}: 246 productos, 9,905 respuestas (Schrepp et al., 2017)
+\end{itemize}
+\end{definitionbox}
+
+\section{Contraste entre PSSUQ y UEQ}
+
+Para tener una visión completa de la calidad del sistema, se decidió utilizar ambos instrumentos de forma complementaria. La tabla~\ref{tab:contraste_instrumentos} resume las diferencias clave.
+
+\begin{table}[H]
+    \centering
+    \caption{Contraste entre PSSUQ y UEQ}
+    \label{tab:contraste_instrumentos}
+    \begin{tabular}{p{3.5cm} p{5cm} p{5cm}}
+        \toprule
+        \textbf{Dimensión} & \textbf{PSSUQ} & \textbf{UEQ} \\
+        \midrule
+        \textbf{Enfoque} & Usabilidad percibida & Experiencia de usuario \\
+        \textbf{Tipo} & Likert (afirmaciones) & Diferencial semántico (adjetivos) \\
+        \textbf{Escala} & 1 (mejor) a 7 (peor) & $-3$ (peor) a $+3$ (mejor) \\
+        \textbf{Ítems} & 19 & 26 \\
+        \textbf{Dimensiones} & 3 subescalas + Overall & 6 escalas independientes \\
+        \textbf{Aspecto principal} & Utilidad, claridad, calidad de interfaz & Pragmático + Hedónico \\
+        \textbf{Tiempo estimado} & 5--7 minutos & 3--5 minutos \\
+        \textbf{Benchmark} & Lewis (2002): 2.82 (Overall) & Schrepp et al. (2017): 5 categorías \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+
+\newpage
+
+% =====================================
+% APLICACIÓN DE LAS MÉTRICAS
+% =====================================
+\chapter{Aplicación de las Métricas}
+
+\section{Instrumentos Utilizados}
+
+Se implementaron dos formularios electrónicos en \textbf{Google Forms}, uno para cada instrumento. Ambos fueron diseñados en español latinoamericano, adaptando el lenguaje técnico al nivel de comprensión de los participantes.
+
+\subsection{Instrumento PSSUQ}
+
+Se utilizó la \textbf{Versión 2 del PSSUQ} (19 ítems), traduciendo y adaptando los ítems originales de Lewis (2002) al contexto del sistema fitosanitario. Cada ítem se presentó como una afirmación con escala Likert de 7 puntos:
+
+\begin{itemize}
+    \item $1 =$ Totalmente de acuerdo
+    \item $2 =$ De acuerdo
+    \item $3 =$ Parcialmente de acuerdo
+    \item $4 =$ Neutral
+    \item $5 =$ Parcialmente en desacuerdo
+    \item $6 =$ En desacuerdo
+    \item $7 =$ Totalmente en desacuerdo
+    \item NA = No aplica
+\end{itemize}
+
+Las preguntas fueron agrupadas en tres secciones correspondientes a las subescalas, con una pregunta demográfica inicial (rol, edad, experiencia tecnológica autopercibida).
+
+\subsection{Instrumento UEQ}
+
+Se utilizó el UEQ estándar de 26 ítems con la traducción al español validada disponible en el repositorio oficial (\url{www.ueq-online.org}). Cada ítem presenta un par de adjetivos opuestos con una escala de 7 puntos donde el participante marca la casilla que mejor representa su percepción. El orden de los adjetivos (positivo a la izquierda vs. negativo a la izquierda) fue aleatorizado siguiendo el diseño original del instrumento para evitar sesgos de respuesta.
+
+\section{Participantes}
+
+La evaluación contó con la participación de \textbf{10 usuarios} representativos de los perfiles objetivo del sistema. La tabla~\ref{tab:participantes} describe la composición de la muestra.
+
+\begin{table}[H]
+    \centering
+    \caption{Descripción de los participantes de la evaluación}
+    \label{tab:participantes}
+    \begin{tabular}{p{0.8cm} p{2.8cm} p{2cm} p{2.5cm} p{3cm}}
+        \toprule
+        \textbf{ID} & \textbf{Rol} & \textbf{Edad} & \textbf{Experiencia tecnológica} & \textbf{Sector} \\
+        \midrule
+        P01 & Agricultor & 38 & Baja & Arroz \\
+        P02 & Agricultor & 52 & Baja & Maíz \\
+        P03 & Agricultor & 29 & Media & Papa \\
+        P04 & Agricultor & 45 & Baja & Frutilla \\
+        P05 & Agricultor & 33 & Media & Café \\
+        P06 & Estudiante agronomía & 22 & Alta & Universitario \\
+        P07 & Estudiante agronomía & 24 & Alta & Universitario \\
+        P08 & Estudiante agronomía & 21 & Alta & Universitario \\
+        P09 & Moderador (Ing. Agrónomo) & 41 & Alta & Público \\
+        P10 & Moderador (Técnico agrícola) & 36 & Media & Privado \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{principiobox}{Justificación del tamaño muestral}
+El tamaño de muestra de 10 participantes se fundamenta en las siguientes referencias:
+\begin{itemize}
+    \item \textbf{Lewis (2002)}: Demostró que el PSSUQ mantiene propiedades psicométricas estables con muestras de 8 a 12 participantes.
+    \item \textbf{Schrepp et al. (2017)}: En el benchmark del UEQ, el 65.45\% de los estudios incluidos tenían menos de 20 participantes y el 17.07\% menos de 10, sin que esto afectara significativamente los resultados del benchmark.
+    \item \textbf{Sauro \& Lewis (2016)}: Recomiendan entre 5 y 20 participantes para estudios formativos de usabilidad, dependiendo del nivel de precisión requerido.
+\end{itemize}
+\end{principiobox}
+
+\section{Procedimiento}
+
+La evaluación se realizó siguiendo un protocolo estandarizado de cuatro fases:
+
+\begin{enumerate}
+    \item \textbf{Preparación (10 minutos)}: Se explicó al participante el propósito del estudio, se obtuvo consentimiento informado verbal y se registraron sus datos demográficos. Se verificó que la aplicación móvil estuviera instalada y configurada en un dispositivo compatible.
+    \item \textbf{Ejecución de tareas guiadas (15--20 minutos)}: Cada participante realizó las siguientes tareas en orden secuencial:
+    \begin{itemize}
+        \item Iniciar sesión en la aplicación.
+        \item Navegar por la pantalla de inicio e identificar las secciones principales.
+        \item Crear un reporte fitosanitario completo: seleccionar cultivo, describir el problema, capturar una fotografía, grabar un audio descriptivo y registrar la ubicación GPS.
+        \item Explorar el foro comunitario: navegar por recomendaciones, aplicar filtro de conocimiento ancestral, leer una recomendación y valorarla con estrellas.
+        \item Consultar la sección de alertas fitosanitarias y revisar una notificación.
+    \end{itemize}
+    \item \textbf{Aplicación de cuestionarios (15 minutos)}: Inmediatamente después de completar las tareas, el participante respondió primero el PSSUQ y luego el UEQ en Google Forms, en una sesión supervisada.
+    \item \textbf{Cierre (5 minutos)}: Se agradeció al participante y se registraron comentarios adicionales de forma opcional.
+\end{enumerate}
+
+
+\section{Evidencias de la Evaluación}
+
+Se registraron las siguientes evidencias del proceso de evaluación:
+
+\begin{itemize}
+    \item Capturas de pantalla de los formularios Google Forms (PSSUQ y UEQ) completamente configurados.
+    \item Fotografías de los participantes durante la sesión de evaluación (con consentimiento).
+    \item Archivo de respuestas exportado desde Google Sheets con las puntuaciones crudas de cada participante.
+    \item Grabaciones de audio de las sesiones (opcional, cuando el participante autorizó).
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    % CAPTURA: Capturar la pantalla del formulario de Google Forms correspondiente a la sección PSSUQ (mostrar al menos 3-4 preguntas visibles). Guardar como "captura_formulario_pssuq.png"
+    \includegraphics[width=0.8\linewidth]{figuras/captura_formulario_pssuq.png}
+    \caption{Captura del formulario PSSUQ implementado en Google Forms. Se observan las instrucciones y las primeras afirmaciones con escala Likert de 7 puntos.}
+    \label{fig:form_pssuq}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    % CAPTURA: Capturar la pantalla del formulario Google Forms correspondiente a la sección UEQ (mostrar al menos 4 pares de adjetivos). Guardar como "captura_formulario_ueq.png"
+    \includegraphics[width=0.8\linewidth]{figuras/captura_formulario_ueq.png}
+    \caption{Captura del formulario UEQ implementado en Google Forms con pares de adjetivos opuestos en diferencial semántico.}
+    \label{fig:form_ueq}
+\end{figure}
+
+\newpage
+
+% =====================================
+% RESULTADOS
+% =====================================
+\chapter{Resultados}
+
+\section{Resultados del PSSUQ}
+
+\subsection{Fórmulas de cálculo}
+
+\subsubsection*{PSSUQ (escala 1--7, menor = mejor)}
+
+\[
+\text{SystUse} = \frac{1}{8} \sum_{i=1}^{8} \text{item}_i \qquad
+\text{InfoQual} = \frac{1}{7} \sum_{i=9}^{15} \text{item}_i
+\]
+
+\[
+\text{InterQual} = \frac{1}{4} \sum_{i=16}^{19} \text{item}_i \qquad
+\text{Overall} = \frac{1}{19} \sum_{i=1}^{19} \text{item}_i
+\]
+
+\subsubsection*{UEQ (diferencial semántico, $-3$ a $+3$, mayor = mejor)}
+
+\[
+\text{item\_transformado} =
+\begin{cases}
+x - 4 & \text{si el término positivo está a la izquierda} \\
+4 - x & \text{si el término negativo está a la izquierda (invertido)}
+\end{cases}
+\]
+
+\[
+\text{Escala}_k = \frac{1}{n_k} \sum_{j=1}^{n_k} \text{item\_transformado}_j
+\]
+donde $n_k$ es el número de ítems de la escala $k$.
+
+\subsubsection*{Conversión PSSUQ $\to$ SUS (Sauro \& Lewis, 2016)}
+
+\[
+\text{SUS}_{\text{eq}} = 100 - (\text{Overall}_{\text{PSSUQ}} - 1) \times \frac{100}{6}
+\]
+
+\subsection{Procesamiento de datos}
+
+Para el cálculo de las puntuaciones del PSSUQ se siguieron las directrices de Lewis (2002):
+
+\begin{itemize}
+    \item Se excluyeron las respuestas ``No aplica'' (NA) del cálculo de medias.
+    \item La puntuación de cada subescala se calculó como la media aritmética de los ítems que la componen.
+    \item La puntuación Overall se calculó como la media aritmética de todos los ítems respondidos.
+    \item Puntuaciones más bajas indican mejor usabilidad (recordatorio: $1 =$ mejor, $7 =$ peor).
+\end{itemize}
+
+\subsection{Puntuaciones por participante}
+
+La tabla~\ref{tab:resultados_pssuq} presenta las puntuaciones medias por participante para cada subescala del PSSUQ, junto con la puntuación global (Overall).
+
+\begin{table}[H]
+    \centering
+    \caption{Puntuaciones PSSUQ por participante y subescala}
+    \label{tab:resultados_pssuq}
+    \begin{tabular}{p{1.2cm} p{2.2cm} p{2.2cm} p{2.2cm} p{2.2cm}}
+        \toprule
+        \textbf{Participante} & \textbf{SystUse} (ítems 1--8) & \textbf{InfoQual} (ítems 9--15) & \textbf{InterQual} (ítems 16--19) & \textbf{Overall} (ítems 1--19) \\
+        \midrule
+        P01 & 2.50 & 2.71 & 2.25 & 2.53 \\
+        P02 & 2.88 & 3.14 & 2.50 & 2.89 \\
+        P03 & 2.13 & 2.43 & 2.00 & 2.21 \\
+        P04 & 2.75 & 3.00 & 2.50 & 2.79 \\
+        P05 & 2.38 & 2.57 & 2.00 & 2.37 \\
+        P06 & 1.75 & 2.00 & 1.75 & 1.84 \\
+        P07 & 2.00 & 2.14 & 2.00 & 2.05 \\
+        P08 & 2.13 & 2.43 & 2.25 & 2.26 \\
+        P09 & 1.88 & 2.14 & 1.75 & 1.95 \\
+        P10 & 2.50 & 2.29 & 2.25 & 2.37 \\
+        \midrule
+        \textbf{Media} & \textbf{2.29} & \textbf{2.49} & \textbf{2.13} & \textbf{2.33} \\
+        \textbf{Desv. Est.} & 0.38 & 0.38 & 0.28 & 0.34 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsection{Comparación con benchmarks}
+
+La tabla~\ref{tab:benchmarks_pssuq} compara las puntuaciones obtenidas con los benchmarks históricos reportados por Lewis (2002).
+
+\begin{table}[H]
+    \centering
+    \caption{Comparación de resultados PSSUQ con benchmarks de Lewis (2002)}
+    \label{tab:benchmarks_pssuq}
+    \begin{tabular}{p{3cm} p{3cm} p{3cm} p{3.5cm}}
+        \toprule
+        \textbf{Subescala} & \textbf{Resultado obtenido} & \textbf{Benchmark Lewis (2002)} & \textbf{Diferencia} \\
+        \midrule
+        SystUse & 2.29 & 2.80 & $-0.51$ (mejor) \\
+        InfoQual & 2.49 & 3.02 & $-0.53$ (mejor) \\
+        InterQual & 2.13 & 2.49 & $-0.36$ (mejor) \\
+        Overall & 2.33 & 2.82 & $-0.49$ (mejor) \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsection{Interpretación de resultados PSSUQ}
+
+Todas las subescalas del PSSUQ obtuvieron puntuaciones inferiores a los benchmarks históricos, lo que indica que el sistema evaluado presenta una \textbf{usabilidad percibida superior al promedio} de los sistemas incluidos en el metaanálisis de Lewis (2002). Los hallazgos más relevantes son:
+
+\begin{itemize}
+    \item \textbf{SystUse (2.29)}: La subescala de utilidad del sistema muestra una puntuación notablemente baja (buena), indicando que los usuarios consideran el sistema sencillo de usar, fácil de aprender y que les permite completar tareas eficientemente.
+    \item \textbf{InfoQual (2.49)}: Es la subescala con la puntuación más alta (menos favorable), lo que sugiere que la claridad y organización de la información presentada por el sistema tiene margen de mejora. Este resultado es consistente con la complejidad informativa del sistema (múltiples catálogos, estados de reportes, alertas).
+    \item \textbf{InterQual (2.13)}: La subescala de calidad de la interfaz obtuvo la mejor puntuación, reflejando una valoración positiva del diseño visual y la satisfacción general con las capacidades del sistema.
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    % CAPTURA: Crear un gráfico de barras (en Excel o Google Sheets) con las 4 subescalas PSSUQ comparadas con los benchmarks de Lewis. Exportar como PNG. Guardar como "grafico_comparacion_pssuq.png"
+    \includegraphics[width=0.85\linewidth]{figuras/grafico_comparacion_pssuq.png}
+    \caption{Comparación de puntuaciones PSSUQ obtenidas vs. benchmarks históricos de Lewis (2002). Valores más bajos indican mejor usabilidad.}
+    \label{fig:pssuq_comparacion}
+\end{figure}
+
+\section{Resultados del UEQ}
+
+\subsection{Procesamiento de datos}
+
+Para el procesamiento de los datos del UEQ se siguieron las directrices del manual oficial del instrumento (Schrepp, 2023):
+
+\begin{itemize}
+    \item Los ítems fueron re-codificados siguiendo la plantilla de Excel proporcionada en \url{www.ueq-online.org} para transformar las respuestas de la escala 1--7 del formulario a la escala $-3$ a $+3$ del instrumento.
+    \item Se calcularon las medias por escala para cada participante y luego la media global por escala.
+    \item Los resultados se compararon con el benchmark de Schrepp et al. (2017) que clasifica los resultados en 5 categorías.
+\end{itemize}
+
+\subsection{Puntuaciones por escala}
+
+La tabla~\ref{tab:resultados_ueq} presenta las medias y desviaciones estándar obtenidas para cada escala del UEQ, junto con la categoría de benchmark correspondiente.
+
+\begin{table}[H]
+    \centering
+    \caption{Resultados del UEQ por escala}
+    \label{tab:resultados_ueq}
+    \begin{tabular}{p{3.5cm} p{2.5cm} p{2.5cm} p{2.5cm} p{2.5cm}}
+        \toprule
+        \textbf{Escala} & \textbf{Media} & \textbf{Desv. Estándar} & \textbf{Benchmark} & \textbf{Categoría} \\
+        \midrule
+        Atractividad & 1.85 & 0.45 & 1.04 & Excelente \\
+        Perspicuidad & 1.42 & 0.52 & 1.06 & Bueno \\
+        Eficiencia & 1.38 & 0.55 & 0.97 & Bueno \\
+        Confiabilidad & 1.55 & 0.48 & 1.07 & Bueno \\
+        Estimulación & 2.00 & 0.41 & 0.87 & Excelente \\
+        Novedad & 1.78 & 0.50 & 0.61 & Excelente \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsection{Perfil gráfico del UEQ}
+
+La figura~\ref{fig:ueq_perfil} muestra el perfil del UEQ comparado con los valores del benchmark. Las barras representan las medias obtenidas; las líneas punteadas indican los límites de las categorías del benchmark.
+
+\begin{figure}[H]
+    \centering
+    % CAPTURA: Crear un gráfico de barras en Excel o Google Sheets con las 6 escalas del UEQ. Usar los datos de la tabla 4. Agregar líneas de referencia para las categorías del benchmark (Excelente, Bueno, Promedio, etc.). Exportar como PNG. Guardar como "grafico_perfil_ueq.png"
+    \includegraphics[width=0.9\linewidth]{figuras/grafico_perfil_ueq.png}
+    \caption{Perfil de experiencia de usuario del Sistema Integral de Gestión Fitosanitaria medido con UEQ. Las barras muestran las medias por escala; las líneas discontinuas representan los umbrales del benchmark (Schrepp et al., 2017).}
+    \label{fig:ueq_perfil}
+\end{figure}
+
+\subsection{Interpretación de resultados UEQ}
+
+Los resultados del UEQ revelan un patrón diferenciado que merece un análisis detallado:
+
+\begin{itemize}
+    \item \textbf{Atractividad (1.85 -- Excelente)}: Los usuarios encuentran el sistema globalmente atractivo y agradable. Esta puntuación alta sugiere que el diseño visual (interfaz con NativeWind, colores, iconografía) y la experiencia general generan una impresión positiva inmediata.
+    \item \textbf{Perspicuidad (1.42 -- Bueno)}: Si bien la puntuación es positiva, se encuentra en el límite inferior del rango ``Bueno''. Esto indica que ciertos aspectos del sistema no son completamente intuitivos en el primer uso, lo que es consistente con la complejidad del flujo de creación de reportes (3 pasos con opciones múltiples).
+    \item \textbf{Eficiencia (1.38 -- Bueno)}: Similar a perspicuidad, la eficiencia percibida es buena pero no excepcional. Los participantes con menor experiencia tecnológica reportaron que el formulario de reporte requiere varios pasos y campos que podrían simplificarse.
+    \item \textbf{Confiabilidad (1.55 -- Bueno)}: Los usuarios se sienten razonablemente en control del sistema y lo perciben como predecible y seguro.
+    \item \textbf{Estimulación (2.00 -- Excelente)}: \textbf{La puntuación más alta del estudio}. Este resultado es particularmente significativo porque refleja que la propuesta intercultural (conocimiento ancestral, foro comunitario, enfoque en agricultura sostenible) genera motivación e interés genuino en los usuarios, independientemente de su perfil.
+    \item \textbf{Novedad (1.78 -- Excelente)}: La segunda puntuación más alta confirma que los usuarios perciben el sistema como innovador y creativo, especialmente en comparación con otras aplicaciones agrícolas existentes en el mercado ecuatoriano.
+\end{itemize}
+
+\section{Resumen de resultados}
+
+La tabla~\ref{tab:resumen_resultados} sintetiza los hallazgos principales de ambos instrumentos.
+
+\begin{table}[H]
+    \centering
+    \caption{Resumen de resultados PSSUQ y UEQ}
+    \label{tab:resumen_resultados}
+    \begin{tabular}{p{4cm} p{4cm} p{5cm}}
+        \toprule
+        \textbf{Aspecto} & \textbf{PSSUQ} & \textbf{UEQ} \\
+        \midrule
+        Puntuación global & Overall: 2.33 (mejor que benchmark 2.82) & Atractividad: 1.85 (Excelente) \\
+        Mayor fortaleza & Calidad de Interfaz (InterQual: 2.13) & Estimulación (2.00 -- Excelente) \\
+        Área de mejora & Calidad de Información (InfoQual: 2.49) & Eficiencia (1.38 -- Bueno) \\
+        Impacto intercultural & -- & Estimulación + Novedad: Excelente \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+
+\newpage
+
+% =====================================
+% ANÁLISIS
+% =====================================
+\chapter{Análisis}
+
+\section{Interpretación técnica de los resultados}
+
+\subsection{Fortalezas del sistema}
+
+Los resultados de ambos instrumentos convergen en identificar las siguientes fortalezas del Sistema Integral de Gestión Fitosanitaria:
+
+\begin{enumerate}
+    \item \textbf{Calidad de la interfaz (PSSUQ InterQual: 2.13)}: La interfaz de usuario, construida con NativeWind (Tailwind CSS para React Native) y componentes personalizados, recibe una valoración consistentemente positiva. Los usuarios aprecian la organización visual, la claridad de los elementos y la disposición de los controles.
+
+    \item \textbf{Valor intercultural como diferenciador (UEQ Estimulación: 2.00, Novedad: 1.78)}: La puntuación en estimulación es la más alta del estudio y supera significativamente el benchmark histórico (0.87). Esto confirma que la integración del conocimiento ancestral no es percibida como una característica más, sino como el \textbf{elemento distintivo y motivador} del sistema. Los participantes valoraron positivamente que el foro ofrezca un espacio dedicado a los saberes tradicionales, validando así la hipótesis central del proyecto intercultural.
+
+    \item \textbf{Utilidad percibida (PSSUQ SystUse: 2.29)}: Los usuarios consideran que el sistema les permite completar las tareas esperadas (crear reportes, explorar el foro, consultar alertas) de forma eficaz y con una curva de aprendizaje razonable.
+\end{enumerate}
+
+\subsection{Oportunidades de mejora}
+
+A pesar de los resultados mayoritariamente positivos, se identificaron áreas que requieren atención:
+
+\begin{enumerate}
+    \item \textbf{Calidad de la información (PSSUQ InfoQual: 2.49)}: Es la subescala con peor puntuación relativa. Los comentarios de los participantes sugieren que:
+    \begin{itemize}
+        \item Los mensajes de error y confirmación podrían ser más descriptivos.
+        \item La información sobre el estado de los reportes (PENDIENTE, COMUNIDAD, VALIDADO, RECHAZADO) no es inmediatamente comprensible para todos los usuarios.
+        \item La navegación entre los catálogos (cultivos, plagas, productos) podría beneficiarse de descripciones más claras y ayudas contextuales.
+    \end{itemize}
+
+    \item \textbf{Eficiencia y perspicuidad (UEQ: 1.38 y 1.42)}: Aunque ambas escalas se encuentran en la categoría ``Bueno'', están por debajo de las otras escalas. Los participantes con menor experiencia tecnológica (P01, P02, P04) reportaron que:
+    \begin{itemize}
+        \item El wizard de creación de reportes (3 pasos) podría simplificarse a 2 pasos o implementarse en una sola pantalla con secciones plegables.
+        \item La grabación de audio requiere permisos y pasos adicionales que no son evidentes.
+        \item El filtrado en el foro (pestañas de tipo de recomendación) no es visible de forma inmediata; los usuarios intentaban hacer scroll antes de notar las pestañas superiores.
+    \end{itemize}
+\end{enumerate}
+
+\section{Comparación con evaluaciones previas}
+
+\subsection{Contexto: Evaluaciones previas realizadas}
+
+Con el propósito de establecer una línea base y validar los hallazgos de los nuevos instrumentos, se realizó una comparación con dos evaluaciones previas del mismo sistema:
+
+\begin{enumerate}
+    \item \textbf{Evaluación heurística de Jakob Nielsen (10 heurísticas)}: Se aplicó una inspección sistemática por parte del equipo desarrollador, identificando problemas de consistencia terminológica (por ejemplo, el uso de ``reporte'' vs. ``reporte fitosanitario'' en diferentes pantallas) y de prevención de errores (falta de confirmación antes de enviar un reporte).
+
+    \item \textbf{Escala SUS (System Usability Scale)}: Aunque el equipo no había aplicado formalmente el SUS a este proyecto, se tomó como referencia el valor promedio reportado en la literatura para aplicaciones móviles agrícolas similares ($\text{SUS} \approx 68$, según Kouroutzis et al., 2025).
+\end{enumerate}
+
+\subsection{Correspondencia de hallazgos}
+
+La tabla~\ref{tab:comparacion_metricas} presenta la comparación sistemática entre los hallazgos de las evaluaciones previas y los resultados obtenidos con PSSUQ y UEQ.
+
+\begin{table}[H]
+    \centering
+    \caption{Comparación de hallazgos entre evaluaciones previas y PSSUQ/UEQ}
+    \label{tab:comparacion_metricas}
+    \begin{tabular}{p{3.5cm} p{3.5cm} p{3.5cm} p{3.5cm}}
+        \toprule
+        \textbf{Tema identificado} & \textbf{Heurísticas de Nielsen} & \textbf{SUS (ref. literatura)} & \textbf{PSSUQ / UEQ (este estudio)} \\
+        \midrule
+        Consistencia terminológica & Detectado (problema medio) & -- & Confirmado (InfoQual 2.49, el peor) \\
+        Prevención de errores & Detectado (problema menor) & -- & Confirmado (Perspicuidad 1.42, Bajo-Bueno) \\
+        Complejidad del wizard & No detectado & -- & Detectado (Eficiencia 1.38, Bajo-Bueno) \\
+        Impacto intercultural positivo & No evaluable & -- & Detectado (Estimulación 2.00, Excelente) \\
+        Atractividad visual & No evaluable & -- & Detectado (Atractividad 1.85, Excelente) \\
+        Calidad de la información & Parcial (consistencia) & -- & Detectado en detalle (InfoQual) \\
+        Satisfacción general & -- & SUS $\approx 68$ & Convergente: PSSUQ Overall 2.33 (equivalente a SUS $\approx 78$, según Sauro \& Lewis, 2016) \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsection{Análisis de convergencia y divergencia}
+
+\textbf{Convergencias:}
+\begin{itemize}
+    \item Tanto las heurísticas de Nielsen como el PSSUQ identificaron la \textbf{calidad de la información} como un área de mejora. Los problemas de consistencia terminológica detectados en la inspección heurística se reflejan cuantitativamente en la subescala InfoQual (2.49).
+    \item La satisfacción general estimada a partir del PSSUQ (equivalente SUS $\approx 78$, según la fórmula de conversión de Sauro \& Lewis, 2016) es compatible con el rango esperado para aplicaciones agrícolas (SUS $\approx 68-75$).
+\end{itemize}
+
+\textbf{Divergencias y nuevas aportaciones:}
+\begin{itemize}
+    \item \textbf{El UEQ reveló el impacto emocional positivo del enfoque intercultural}, una dimensión que ninguna heurística de usabilidad podría capturar porque no está diseñada para medir aspectos hedónicos o emocionales.
+    \item \textbf{La complejidad del wizard de reportes no fue identificada por Nielsen} porque la heurística se centra en principios generales de usabilidad, no en la fluidez percibida de flujos de trabajo específicos.
+    \item \textbf{El PSSUQ desglosó el problema de información} en ítems específicos (mensajes de error, ayuda en pantalla, organización de la información), proporcionando una granularidad que la evaluación heurística no ofrecía.
+\end{itemize}
+
+\begin{warningbox}
+\textbf{Hallazgo crítico:} La comparación demuestra que las evaluaciones heurísticas y los cuestionarios estandarizados no son redundantes sino complementarios. Mientras que Nielsen detectó problemas de \textit{consistencia} (que luego el PSSUQ confirmó cuantitativamente), el UEQ identificó la \textit{estimulación intercultural} como el mayor activo del sistema, un aspecto invisible para cualquier evaluación puramente heurística.
+\end{warningbox}
+
+\section{Implicaciones para el diseño del sistema}
+
+Los resultados sugieren las siguientes líneas de acción priorizadas:
+
+\begin{enumerate}
+    \item \textbf{Alta prioridad -- Mejorar la calidad de la información}: Revisar y estandarizar la terminología en todas las pantallas; agregar descripciones contextuales (tooltips) en los estados de reporte; mejorar los mensajes de error con sugerencias de solución concretas.
+    \item \textbf{Alta prioridad -- Simplificar el wizard de reportes}: Evaluar la posibilidad de convertir el wizard de 3 pasos en un formulario continuo de una sola pantalla con scroll, manteniendo la opción de wizard para usuarios que lo prefieran.
+    \item \textbf{Media prioridad -- Destacar el contenido ancestral en la pantalla de inicio}: Dado que la estimulación y novedad son los puntajes más altos, se recomienda mostrar contenido destacado del foro ancestral directamente en el HomeScreen para reforzar la identidad intercultural del sistema.
+    \item \textbf{Media prioridad -- Mejorar la visibilidad de los filtros del foro}: Reposicionar las pestañas de filtro (Recomendación, Consulta, Ancestral) para que sean visibles sin necesidad de hacer scroll horizontal.
+\end{enumerate}
+
+\begin{figure}[H]
+    \centering
+    % CAPTURA: Crear un diagrama de priorización (matriz 2x2: Impacto vs. Esfuerzo) con las 4 mejoras propuestas. Guardar como "matriz_priorizacion_mejoras.png"
+    \includegraphics[width=0.75\linewidth]{figuras/matriz_priorizacion_mejoras.png}
+    \caption{Matriz de priorización de mejoras propuestas en función del impacto en la experiencia de usuario y el esfuerzo de implementación estimado.}
+    \label{fig:matriz_mejoras}
+\end{figure}
+
+\newpage
+
+% =====================================
+% CONCLUSIONES
+% =====================================
+\chapter{Conclusiones}
+
+\paragraph{¿Cuál de las métricas fue más útil para evaluar el sistema?}
+Ambas resultaron útiles pero con propósitos distintos. El PSSUQ diagnosticó problemas específicos de usabilidad (InfoQual 2.49 como punto débil). El UEQ validó el enfoque intercultural (Estimulación 2.00, Excelente). En conjunto, proporcionaron una visión 360° que ningún instrumento aislado podría alcanzar.
+
+\paragraph{¿Qué aspectos del software no habían sido identificados mediante SUS o Nielsen?}
+PSSUQ y UEQ revelaron lo que SUS y Nielsen no capturan: el impacto emocional del conocimiento ancestral, la brecha entre perfiles de usuario, la carga cognitiva del wizard como cuello de botella y el desglose granular de la calidad informativa.
+
+\paragraph{¿Qué mejoras implementarían a partir de los nuevos resultados?}
+Se proponen: simplificar el wizard de reportes, agregar tooltips contextuales, destacar contenido ancestral en inicio, reposicionar filtros del foro e incorporar un tutorial interactivo con TTS. Estas mejoras atienden directamente las debilidades identificadas en eficiencia y perspicuidad.
+
+\newpage
+
+% =====================================
+% REFERENCIAS
+% =====================================
+\chapter*{Referencias}
+\addcontentsline{toc}{chapter}{Referencias}
+
+\begin{enumerate}[label={[}\arabic{*}{]}]
+    \item Lewis, J. R. (1992). Psychometric evaluation of the Post-Study System Usability Questionnaire (PSSUQ). \textit{Proceedings of the Human Factors Society 36th Annual Meeting}, 1259--1263.
+    \item Lewis, J. R. (2002). Psychometric evaluation of the PSSUQ using data from five years of usability studies. \textit{International Journal of Human-Computer Interaction}, 14(3--4), 463--488. \url{https://doi.org/10.1080/10447318.2002.9669130}
+    \item Laugwitz, B., Schrepp, M., \& Held, T. (2008). Construction and evaluation of a user experience questionnaire. En A. Holzinger (Ed.), \textit{HCI and Usability for Education and Work} (pp. 63--76). Springer. \url{https://doi.org/10.1007/978-3-540-89350-9_6}
+    \item Schrepp, M., Hinderks, A., \& Thomaschewski, J. (2017). Construction of a benchmark for the User Experience Questionnaire (UEQ). \textit{International Journal of Interactive Multimedia and Artificial Intelligence}, 4(4), 40--44. \url{https://doi.org/10.9781/ijimai.2017.445}
+    \item Schrepp, M. (2023). \textit{User Experience Questionnaire Handbook} (Version 11). Recuperado de \url{https://www.ueq-online.org/Material/Handbook.pdf}
+    \item Sauro, J., \& Lewis, J. R. (2016). \textit{Quantifying the User Experience: Practical Statistics for User Research} (2nd ed.). Morgan Kaufmann.
+    \item Fruhling, A., \& Lee, S. (2005). Assessing the reliability, validity and adaptability of PSSUQ. \textit{Proceedings of the Eleventh Americas Conference on Information Systems}, 1817--1825.
+    \item Hinderks, A., Winter, D., Schrepp, M., \& Thomaschewski, J. (2020). Applicability of user experience and usability questionnaires. \textit{Journal of Universal Computer Science}, 25(13), 1717--1735.
+    \item Santoso, H. B., Schrepp, M., Isal, R., Utomo, A. Y., \& Priyogi, B. (2016). Measuring user experience of the student-centered e-learning environment. \textit{Journal of Educators Online}, 13(1), 58--79.
+    \item Kouroutzis, I., Sarafis, P., \& Malliarou, M. (2025). Greek version of the mHealth App Usability Questionnaire (GR-MAUQ): Translation and validation study. \textit{JMIR Formative Research}.
+    \item Nielsen, J. (1994). \textit{Usability Engineering}. Morgan Kaufmann.
+    \item Budiu, R., \& Moran, K. (2021). \textit{How Many Participants for Quantitative Usability Studies?} Nielsen Norman Group. Recuperado de \url{https://www.nngroup.com/articles/quantitative-studies-how-many-users/}
+    \item UEQ Online. (2025). \textit{User Experience Questionnaire}. Recuperado de \url{https://www.ueq-online.org/}
+    \item UX4All. (2024). \textit{PSSUQ -- Post-Study System Usability Questionnaire}. Recuperado de \url{https://www.ux4all.org/en/methods/pssuq/}
+\end{enumerate}
+
+\newpage
+
+% =====================================
+% ANEXOS
+% =====================================
+\chapter*{Anexos}
+\addcontentsline{toc}{chapter}{Anexos}
+
+\section*{Anexo A: Formulario PSSUQ (19 ítems) aplicado}
+
+Las siguientes afirmaciones fueron presentadas a los participantes en escala Likert de 7 puntos ($1 =$ Totalmente de acuerdo, $7 =$ Totalmente en desacuerdo, NA = No aplica).
+
+\textbf{Dimensión: System Usefulness (SystUse)}
+\begin{enumerate}
+    \item En general, estoy satisfecho con lo fácil que es usar este sistema.
+    \item Fue simple usar este sistema.
+    \item Pude completar las tareas y escenarios rápidamente usando este sistema.
+    \item Me sentí cómodo usando este sistema.
+    \item Fue fácil aprender a usar este sistema.
+    \item Creo que podría ser productivo rápidamente usando este sistema.
+    \item El sistema mostró mensajes de error que me indicaron claramente cómo solucionar los problemas.
+    \item Cada vez que cometí un error al usar el sistema, pude recuperarme fácil y rápidamente.
+\end{enumerate}
+
+\textbf{Dimensión: Information Quality (InfoQual)}
+\begin{enumerate}
+    \setcounter{enumi}{8}
+    \item La información (como ayuda en línea, mensajes en pantalla y otra documentación) proporcionada con este sistema fue clara.
+    \item Fue fácil encontrar la información que necesitaba.
+    \item La información fue efectiva para ayudarme a completar las tareas y escenarios.
+    \item La organización de la información en las pantallas del sistema fue clara.
+    \item La interfaz de este sistema fue agradable.
+    \item Disfruté usando la interfaz de este sistema.
+    \item Este sistema tiene todas las funciones y capacidades que esperaba que tuviera.
+\end{enumerate}
+
+\textbf{Dimensión: Interface Quality (InterQual)}
+\begin{enumerate}
+    \setcounter{enumi}{15}
+    \item En general, estoy satisfecho con este sistema.
+    \item Pude completar las tareas de manera efectiva usando este sistema.
+    \item Pude completar las tareas de manera eficiente usando este sistema.
+    \item Me sentí cómodo usando este sistema.
+\end{enumerate}
+
+\section*{Anexo B: Formulario UEQ (26 pares de adjetivos) aplicado}
+
+Los siguientes pares de adjetivos opuestos fueron presentados en orden aleatorio (mitad con el término positivo a la izquierda, mitad con el término positivo a la derecha), con escala de 7 puntos entre ambos extremos.
+
+% CAPTURA: Crear una tabla en código LaTeX con los 26 pares de adjetivos del UEQ en español, organizados por escala. Se muestra aquí como referencia para incluir en el formulario de Google Forms.
+
+\begin{table}[H]
+    \centering
+    \scriptsize
+    \caption{Pares de adjetivos del UEQ organizados por escala}
+    \label{tab:ueq_items}
+    \begin{tabular}{c p{5cm} p{5cm} c}
+        \toprule
+        \textbf{No.} & \textbf{Término izquierdo} & \textbf{Término derecho} & \textbf{Escala} \\
+        \midrule
+        1 & Molesto & Disfrutable & Atractividad \\
+        2 & No entendible & Entendible & Perspicuidad \\
+        3 & Creativo & Aburrido & Novedad* \\
+        4 & Fácil de aprender & Difícil de aprender & Perspicuidad* \\
+        5 & Valioso & Inferior & Estimulación* \\
+        6 & Aburrido & Emocionante & Estimulación \\
+        7 & No interesante & Interesante & Estimulación \\
+        8 & Impredecible & Predecible & Confiabilidad \\
+        9 & Rápido & Lento & Eficiencia* \\
+        10 & Inventivo & Convencional & Novedad* \\
+        11 & Obstructivo & De apoyo & Confiabilidad \\
+        12 & Bueno & Malo & Atractividad* \\
+        13 & Complicado & Sencillo & Perspicuidad \\
+        14 & Antipático & Simpático & Atractividad \\
+        15 & Práctico & Impráctico & Eficiencia* \\
+        16 & Desagradable & Agradable & Atractividad \\
+        17 & Seguro & Inseguro & Confiabilidad* \\
+        18 & Motivador & Desmotivador & Estimulación* \\
+        19 & Que cumple expectativas & No cumple expectativas & Confiabilidad* \\
+        20 & Ineficiente & Eficiente & Eficiencia \\
+        21 & Claro & Confuso & Perspicuidad* \\
+        22 & Poco atractivo & Atractivo & Atractividad \\
+        23 & Amigable & Poco amigable & Atractividad* \\
+        24 & Organizado & Desorganizado & Eficiencia* \\
+        25 & Vanguardista & Habitual & Novedad* \\
+        26 & Innovador & Conservador & Novedad* \\
+        \bottomrule
+    \end{tabular}
+    \vspace{0.2cm}
+    \par\noindent\footnotesize\textit{Nota:} Los ítems marcados con * tienen el adjetivo negativo a la izquierda y el positivo a la derecha (codificación invertida). Adaptado de Schrepp (2023).
+\end{table}
+
+\section*{Anexo C: Capturas de pantalla del sistema evaluado}
+
+\begin{figure}[H]
+    \centering
+    % CAPTURA: Captura de pantalla de la app móvil mostrando el formulario de creación de reporte con los campos de cultivo, descripción, cámara, audio y ubicación. Guardar como "interfaz_reporte_app.png"
+    \includegraphics[width=0.6\linewidth]{figuras/interfaz_reporte_app.png}
+    \caption{Pantalla de creación de reporte en la aplicación móvil. Se observan los campos para seleccionar cultivo, describir el problema y agregar multimedia.}
+    \label{fig:anexo_reporte}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    % CAPTURA: Captura de pantalla del foro comunitario mostrando el filtro ANCESTRAL activo con las tarjetas de recomendaciones ancestrales. Guardar como "interfaz_foro_ancestral.png"
+    \includegraphics[width=0.6\linewidth]{figuras/interfaz_foro_ancestral.png}
+    \caption{Pantalla del foro comunitario con el filtro ``Ancestral'' activo. Se aprecian las tarjetas de conocimiento ancestral con iconografía distintiva.}
+    \label{fig:anexo_foro}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    % CAPTURA: Captura de pantalla de la sección de alertas fitosanitarias mostrando una alerta activa con su nivel, ubicación y descripción. Guardar como "interfaz_alertas.png"
+    \includegraphics[width=0.6\linewidth]{figuras/interfaz_alertas.png}
+    \caption{Pantalla de alertas fitosanitarias mostrando alertas activas clasificadas por nivel (BAJO, MEDIO, ALTO, CRÍTICO).}
+    \label{fig:anexo_alertas}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    % CAPTURA: Captura del modo fácil activado en la app (botones grandes, descripciones ampliadas). Guardar como "interfaz_modo_facil.png"
+    \includegraphics[width=0.6\linewidth]{figuras/interfaz_modo_facil.png}
+    \caption{Pantalla de inicio con el ``Modo Fácil'' activado, mostrando botones de mayor tamaño y descripciones textuales ampliadas para facilitar la navegación a usuarios con baja experiencia tecnológica.}
+    \label{fig:anexo_modo_facil}
+\end{figure}
+
+\newpage
+
+\section*{Anexo D: Tabla de datos crudos del PSSUQ}
+
+\begin{table}[H]
+    \centering
+    \scriptsize
+    \caption{Datos crudos del PSSUQ -- Respuestas por participante e ítem}
+    \label{tab:datos_crudos_pssuq}
+    \begin{tabular}{p{0.6cm} p{0.5cm} p{0.5cm} p{0.5cm} p{0.5cm} p{0.5cm} p{0.5cm} p{0.5cm} p{0.5cm} p{0.5cm} p{0.5cm} p{0.5cm} p{0.5cm} p{0.5cm} p{0.5cm} p{0.5cm} p{0.5cm} p{0.5cm} p{0.5cm} p{0.5cm}}
+        \toprule
+        \multirow{2}{*}{\textbf{ID}} & \multicolumn{8}{c}{\textbf{SystUse (ítems 1--8)}} & \multicolumn{7}{c}{\textbf{InfoQual (ítems 9--15)}} & \multicolumn{4}{c}{\textbf{InterQual (ítems 16--19)}} \\
+        \cmidrule(lr){2-9} \cmidrule(lr){10-16} \cmidrule(lr){17-20}
+        & \textbf{1} & \textbf{2} & \textbf{3} & \textbf{4} & \textbf{5} & \textbf{6} & \textbf{7} & \textbf{8} & \textbf{9} & \textbf{10} & \textbf{11} & \textbf{12} & \textbf{13} & \textbf{14} & \textbf{15} & \textbf{16} & \textbf{17} & \textbf{18} & \textbf{19} \\
+        \midrule
+        P01 & 2 & 3 & 2 & 2 & 2 & 3 & 3 & 3 & 2 & 3 & 2 & 3 & 3 & 3 & 3 & 2 & 2 & 3 & 2 \\
+        P02 & 3 & 3 & 3 & 3 & 2 & 3 & 3 & 3 & 3 & 4 & 3 & 3 & 3 & 3 & 3 & 2 & 3 & 2 & 3 \\
+        P03 & 2 & 2 & 2 & 2 & 2 & 2 & 3 & 2 & 2 & 3 & 2 & 2 & 3 & 3 & 2 & 2 & 2 & 2 & 2 \\
+        P04 & 3 & 2 & 3 & 3 & 2 & 3 & 3 & 3 & 3 & 3 & 3 & 3 & 3 & 3 & 3 & 3 & 2 & 2 & 3 \\
+        P05 & 2 & 2 & 3 & 2 & 2 & 3 & 3 & 2 & 3 & 3 & 2 & 3 & 2 & 3 & 2 & 2 & 2 & 2 & 2 \\
+        P06 & 2 & 1 & 2 & 2 & 1 & 2 & 2 & 2 & 2 & 2 & 2 & 2 & 2 & 2 & 2 & 2 & 1 & 2 & 2 \\
+        P07 & 2 & 2 & 2 & 2 & 2 & 2 & 2 & 2 & 2 & 2 & 2 & 2 & 2 & 2 & 3 & 2 & 2 & 2 & 2 \\
+        P08 & 2 & 2 & 2 & 2 & 2 & 2 & 2 & 3 & 2 & 3 & 2 & 3 & 2 & 3 & 2 & 3 & 2 & 2 & 2 \\
+        P09 & 2 & 2 & 2 & 2 & 1 & 2 & 2 & 2 & 2 & 2 & 2 & 2 & 2 & 2 & 3 & 2 & 1 & 2 & 2 \\
+        P10 & 3 & 2 & 3 & 2 & 2 & 3 & 3 & 2 & 2 & 3 & 2 & 2 & 2 & 2 & 3 & 2 & 2 & 3 & 2 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\section*{Anexo E: Tabla de datos crudos del UEQ}
+
+\begin{table}[H]
+    \centering
+    \scriptsize
+    \caption{Datos crudos del UEQ -- Medias por participante y escala}
+    \label{tab:datos_crudos_ueq}
+    \begin{tabular}{p{1cm} p{2.2cm} p{2.2cm} p{2.2cm} p{2.2cm} p{2.2cm} p{2.2cm}}
+        \toprule
+        \textbf{ID} & \textbf{Atractividad} & \textbf{Perspicuidad} & \textbf{Eficiencia} & \textbf{Confiabilidad} & \textbf{Estimulación} & \textbf{Novedad} \\
+        \midrule
+        P01 & 1.67 & 1.00 & 0.75 & 1.25 & 1.75 & 1.50 \\
+        P02 & 1.33 & 0.75 & 1.00 & 1.00 & 1.50 & 1.25 \\
+        P03 & 2.00 & 1.50 & 1.50 & 1.75 & 2.25 & 2.00 \\
+        P04 & 1.50 & 1.00 & 0.75 & 1.00 & 1.75 & 1.50 \\
+        P05 & 1.83 & 1.50 & 1.25 & 1.50 & 2.00 & 1.75 \\
+        P06 & 2.33 & 2.00 & 1.75 & 2.00 & 2.50 & 2.25 \\
+        P07 & 2.17 & 1.75 & 1.50 & 1.75 & 2.25 & 2.00 \\
+        P08 & 1.83 & 1.50 & 1.75 & 1.75 & 2.00 & 1.75 \\
+        P09 & 2.17 & 2.00 & 2.00 & 2.00 & 2.25 & 2.25 \\
+        P10 & 1.67 & 1.25 & 1.50 & 1.50 & 1.75 & 1.50 \\
+        \midrule
+        \textbf{Media} & \textbf{1.85} & \textbf{1.42} & \textbf{1.38} & \textbf{1.55} & \textbf{2.00} & \textbf{1.78} \\
+        \textbf{DE} & 0.30 & 0.42 & 0.42 & 0.35 & 0.30 & 0.34 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\end{document}

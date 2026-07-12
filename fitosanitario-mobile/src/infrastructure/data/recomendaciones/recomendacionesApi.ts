@@ -11,6 +11,11 @@ export const recomendacionesApi = {
     return data;
   },
 
+  getMisRecomendaciones: async (): Promise<Recomendacion[]> => {
+    const { data } = await apiClient.get<Recomendacion[]>('/recomendaciones/mis-recomendaciones');
+    return data;
+  },
+
   getById: async (id: number): Promise<Recomendacion> => {
     const { data } = await apiClient.get<Recomendacion>(`/recomendaciones/${id}`);
     return data;
@@ -47,6 +52,17 @@ export const recomendacionesApi = {
     const { data } = await apiClient.post<ComentarioForo>(`/recomendaciones/${recomendacionId}/comentarios`, {
       contenido,
       comentarioPadreId: comentarioPadreId || undefined,
+    });
+    return data;
+  },
+
+  createComentarioWithAudio: async (recomendacionId: number, contenido: string, audioUri: string, comentarioPadreId?: number): Promise<ComentarioForo> => {
+    const formData = new FormData();
+    formData.append('contenido', contenido);
+    if (comentarioPadreId) formData.append('comentarioPadreId', String(comentarioPadreId));
+    formData.append('audio', { uri: audioUri, type: 'audio/m4a', name: 'comentario.m4a' } as any);
+    const { data } = await apiClient.post<ComentarioForo>(`/recomendaciones/${recomendacionId}/comentarios/with-audio`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
     });
     return data;
   },

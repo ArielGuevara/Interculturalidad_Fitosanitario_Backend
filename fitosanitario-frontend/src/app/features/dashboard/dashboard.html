@@ -1,104 +1,104 @@
 <header class="dashboard-header">
-    <h2 class="dashboard-title">Resumen de Actividad</h2>
-    <p class="dashboard-subtitle">Panel de control integral del sistema fitosanitario.</p>
+    <div>
+        <h2 class="dashboard-title">Resumen de Actividad</h2>
+        <p class="dashboard-subtitle">Panel de control integral del sistema fitosanitario.</p>
+    </div>
 </header>
 
 <div class="stats-grid">
-    <div class="new-stat-card cursor-pointer" *ngFor="let stat of stats()" (click)="navigateTo(stat.route)">
-        <span class="card-label">{{stat.label}}</span>
-        <div class="flex justify-content-between align-items-end">
-            <div class="card-value">{{stat.value}}</div>
-            <div class="icon-box" [ngClass]="stat.color">
-                <i [class]="stat.icon + ' text-3xl'"></i>
+    <div class="stat-card cursor-pointer" *ngFor="let stat of stats()" (click)="navigateTo(stat.route)">
+        <div class="stat-card-top">
+            <span class="stat-card-label">{{stat.label}}</span>
+            <div class="stat-card-icon-box" [ngClass]="stat.color">
+                <i [class]="stat.icon"></i>
             </div>
         </div>
-        <div class="mt-4 font-bold text-green-600 text-sm tracking-wide">
-            {{stat.trend}}
-        </div>
+        <div class="stat-card-value">{{stat.value}}</div>
+        <span class="stat-card-trend">{{stat.trend}}</span>
     </div>
 </div>
 
-<div class="main-grid">
-    <div class="white-section">
-        <h3 class="font-black text-2xl mb-4">Estado de Reportes</h3>
-        <div style="height: 220px;">
+<div class="charts-grid">
+    <div class="content-card">
+        <h3 class="section-title">Estado de Reportes</h3>
+        <div class="chart-area" style="height: 220px;">
             <canvas id="reportes-chart"></canvas>
         </div>
-        <div class="flex gap-4 mt-4 justify-content-center text-sm font-bold">
-            <span class="flex align-items-center gap-1"><span class="w-3 h-3 border-circle bg-yellow-500 inline-block"></span> Pendientes: {{reportesStats().pendientes}}</span>
-            <span class="flex align-items-center gap-1"><span class="w-3 h-3 border-circle bg-green-500 inline-block"></span> Validados: {{reportesStats().validados}}</span>
-            <span class="flex align-items-center gap-1"><span class="w-3 h-3 border-circle bg-red-500 inline-block"></span> Rechazados: {{reportesStats().rechazados}}</span>
+        <div class="chart-legend">
+            <span class="legend-chip"><span class="legend-dot" style="background: #f59e0b"></span> Pendientes: {{reportesStats().pendientes}}</span>
+            <span class="legend-chip"><span class="legend-dot" style="background: #10b981"></span> Validados: {{reportesStats().validados}}</span>
+            <span class="legend-chip"><span class="legend-dot" style="background: #ef4444"></span> Rechazados: {{reportesStats().rechazados}}</span>
         </div>
     </div>
 
-    <div class="white-section" *ngIf="plagasChartData().length > 0">
-        <h3 class="font-black text-2xl mb-4">Plagas Más Reportadas</h3>
-        <div style="height: 250px;">
+    <div class="content-card" *ngIf="plagasChartData().length > 0">
+        <h3 class="section-title">Plagas Más Reportadas</h3>
+        <div class="chart-area" style="height: 250px;">
             <canvas id="plagas-chart"></canvas>
         </div>
     </div>
 </div>
 
-<div class="main-grid mt-5">
-    <div class="white-section">
-        <h3 class="font-black text-2xl mb-5">Actividad del Sistema</h3>
-        <div class="flex flex-column gap-4">
-            <div class="flex align-items-center p-3 border-round-2xl hover:bg-slate-50 transition-all border-1" style="border-color: #e2e8f0;">
-                <div class="w-4rem h-4rem bg-green-100 border-round-xl flex align-items-center justify-content-center mr-4 shadow-sm">
-                    <i class="pi pi-check-circle text-2xl" style="color: #000000;"></i>
+<div class="bottom-grid">
+    <div class="content-card activity-card">
+        <h3 class="section-title">Actividad del Sistema</h3>
+        <div class="activity-list">
+            <div class="activity-item">
+                <div class="activity-icon bg-green-100 text-green-700">
+                    <i class="pi pi-check-circle"></i>
                 </div>
-                <div class="flex flex-column">
-                    <span class="font-black text-lg">Catálogos Actualizados</span>
-                    <span class="font-bold text-sm text-slate-500">Cultivos, plagas y productos sincronizados.</span>
-                </div>
-            </div>
-            <div class="flex align-items-center p-3 border-round-2xl hover:bg-slate-50 transition-all border-1" style="border-color: #e2e8f0;">
-                <div class="w-4rem h-4rem bg-blue-100 border-round-xl flex align-items-center justify-content-center mr-4 shadow-sm">
-                    <i class="pi pi-shield text-2xl" style="color: #000000;"></i>
-                </div>
-                <div class="flex flex-column">
-                    <span class="font-black text-lg">Reportes en Seguimiento</span>
-                    <span class="font-bold text-sm text-slate-500">{{reportesStats().total}} reportes procesados, {{reportesStats().pendientes}} pendientes de revisión.</span>
+                <div class="activity-info">
+                    <span class="activity-title">Catálogos Actualizados</span>
+                    <span class="activity-desc">Cultivos, plagas y productos sincronizados.</span>
                 </div>
             </div>
-            <div class="flex align-items-center p-3 border-round-2xl hover:bg-slate-50 transition-all border-1" style="border-color: #e2e8f0;">
-                <div class="w-4rem h-4rem bg-purple-100 border-round-xl flex align-items-center justify-content-center mr-4 shadow-sm">
-                    <i class="pi pi-bell text-2xl" style="color: #000000;"></i>
+            <div class="activity-item">
+                <div class="activity-icon bg-blue-100 text-blue-700">
+                    <i class="pi pi-shield"></i>
                 </div>
-                <div class="flex flex-column">
-                    <span class="font-black text-lg">Alertas Activas</span>
-                    <span class="font-bold text-sm text-slate-500">Monitoreo automático cada hora. Zonas y parámetros configurados.</span>
+                <div class="activity-info">
+                    <span class="activity-title">Reportes en Seguimiento</span>
+                    <span class="activity-desc">{{reportesStats().total}} reportes procesados, {{reportesStats().pendientes}} pendientes de revisión.</span>
+                </div>
+            </div>
+            <div class="activity-item">
+                <div class="activity-icon bg-purple-100 text-purple-700">
+                    <i class="pi pi-bell"></i>
+                </div>
+                <div class="activity-info">
+                    <span class="activity-title">Alertas Activas</span>
+                    <span class="activity-desc">Monitoreo automático cada hora. Zonas y parámetros configurados.</span>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="dark-section">
-        <h3 class="font-black text-2xl mb-2 text-white">Acciones Rápidas</h3>
-        <p class="text-slate-400 mb-5 font-medium">Gestión directa de módulos críticos.</p>
-        
-        <div class="flex flex-column gap-3 relative z-2">
-            <p-button label="Nuevo Cultivo" 
-                      icon="pi pi-plus" 
-                      styleClass="action-btn btn-emerald"
-                      (onClick)="navigateTo('/cultivos')"></p-button>
-            
-            <p-button label="Revisar Reportes" 
-                      icon="pi pi-inbox" 
-                      styleClass="action-btn btn-emerald"
-                      (onClick)="navigateTo('/reportes')"></p-button>
+    <div class="quick-card">
+        <div class="quick-card-content">
+            <h3 class="section-title" style="color: #fff;">Acciones Rápidas</h3>
+            <p class="quick-card-subtitle">Gestión directa de módulos críticos.</p>
+            <div class="quick-card-buttons">
+                <p-button label="Nuevo Cultivo"
+                          icon="pi pi-plus"
+                          styleClass="action-btn glass-btn glass-primary"
+                          (onClick)="navigateTo('/cultivos')"></p-button>
 
-            <p-button label="Alertas y Zonas" 
-                      icon="pi pi-map-marker" 
-                      styleClass="action-btn btn-emerald"
-                      (onClick)="navigateTo('/zonas-alerta')"></p-button>
-            
-            <p-button label="Foro - Moderar" 
-                      icon="pi pi-comments" 
-                      styleClass="action-btn p-button-outlined p-button-plain border-white-alpha-20 text-white"
-                      (onClick)="navigateTo('/comunidad')"></p-button>
+                <p-button label="Revisar Reportes"
+                          icon="pi pi-inbox"
+                          styleClass="action-btn glass-btn glass-primary"
+                          (onClick)="navigateTo('/reportes')"></p-button>
+
+                <p-button label="Alertas y Zonas"
+                          icon="pi pi-map-marker"
+                          styleClass="action-btn glass-btn glass-primary"
+                          (onClick)="navigateTo('/zonas-alerta')"></p-button>
+
+                <p-button label="Foro - Moderar"
+                          icon="pi pi-comments"
+                          styleClass="action-btn glass-btn glass-outlined"
+                          (onClick)="navigateTo('/comunidad')"></p-button>
+            </div>
         </div>
-        
-        <div class="absolute" style="width: 250px; height: 250px; background: radial-gradient(circle, rgba(16, 185, 129, 0.15) 0%, transparent 70%); bottom: -80px; right: -80px; border-radius: 50%; filter: blur(40px)"></div>
+        <div class="quick-card-glow"></div>
     </div>
 </div>

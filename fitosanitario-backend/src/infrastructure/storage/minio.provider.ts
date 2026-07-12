@@ -39,3 +39,11 @@ export function buildMinioPublicUrl(params: {
     .join('/');
   return `${protocol}://${params.endpoint}:${params.port}/${params.bucket}/${encodedKey}`;
 }
+
+export function buildProxyUrl(backendEndpoint: string, objectKey: string) {
+  const encodedKey = objectKey
+    .split('/')
+    .map((segment) => encodeURIComponent(segment))
+    .join('/');
+  return `http://${backendEndpoint}:3000/api/multimedia/images/${encodedKey}`;
+}

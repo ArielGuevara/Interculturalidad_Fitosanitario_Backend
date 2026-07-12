@@ -21,6 +21,7 @@ import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system/legacy';
 import { enqueueReporte } from '../../../infrastructure/offline/pendingReportes';
 import { syncPendingReportes } from '../../../infrastructure/offline/sync';
+import { getCache, setCache } from '../../../infrastructure/offline/cache';
 import { getCultivos } from '../../../infrastructure/data/catalogos/cultivosApi';
 import type { Cultivo } from '../../../domain/catalogos/types';
 import { ImageViewerModal } from '../../../presentation/components/ImageViewerModal';
@@ -241,8 +242,12 @@ export function CreateReporteScreen() {
       try {
         const data = await getCultivos();
         setCultivos(data);
+        await setCache('cultivos.list', data);
       } catch {
-        // silently fail, user can still type
+        const cached = await getCache<Cultivo[]>('cultivos.list');
+        if (cached) {
+          setCultivos(cached);
+        }
       } finally {
         setCultivosLoading(false);
       }

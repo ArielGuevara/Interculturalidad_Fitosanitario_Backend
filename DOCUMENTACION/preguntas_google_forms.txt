@@ -1,0 +1,195 @@
+================================================================================
+  FORMULARIO GOOGLE FORMS — EVALUACIÓN DE USABILIDAD Y EXPERIENCIA DE USUARIO
+  Sistema Integral de Gestión Fitosanitaria (App Móvil)
+================================================================================
+
+INSTRUCCIONES GENERALES:
+Copiar todo el contenido de cada sección en Google Forms.
+Usar escala lineal para las preguntas Likert (PSSUQ) y de opción múltiple (UEQ).
+
+================================================================================
+  SECCIÓN 1: DATOS DEMOGRÁFICOS
+================================================================================
+
+Título de la sección: "Información del participante"
+
+Pregunta 1 — Rol (Opción múltiple)
+"Seleccione su rol principal:"
+  a) Agricultor / Productor agrícola
+  b) Estudiante de agronomía o afín
+  c) Moderador / Técnico agrícola / Ingeniero agrónomo
+  d) Administrador del sistema
+  e) Otro
+
+Pregunta 2 — Edad (Respuesta corta)
+"Ingrese su edad:"
+
+Pregunta 3 — Experiencia tecnológica (Opción múltiple)
+"¿Cómo calificaría su experiencia usando aplicaciones móviles?"
+  a) Baja: Uso solo aplicaciones básicas (WhatsApp, llamadas)
+  b) Media: Uso aplicaciones variadas con frecuencia (redes sociales, bancos)
+  c) Alta: Uso aplicaciones especializadas y me siento cómodo con tecnología nueva
+
+Pregunta 4 — Frecuencia de uso (Opción múltiple)
+"¿Con qué frecuencia planea usar esta aplicación?"
+  a) Diariamente
+  b) Semanalmente
+  c) Mensualmente
+  d) Ocasionalmente
+  e) Solo para pruebas
+
+================================================================================
+  SECCIÓN 2: PSSUQ — POST-STUDY SYSTEM USABILITY QUESTIONNAIRE
+================================================================================
+
+Título de la sección: "Cuestionario de Usabilidad PSSUQ"
+
+Instrucción:
+"A continuación encontrará 19 afirmaciones sobre el sistema que acaba de usar.
+Por favor, indique su grado de acuerdo con cada afirmación usando la siguiente escala:
+
+1 = Totalmente de acuerdo (mejor)
+2 = De acuerdo
+3 = Parcialmente de acuerdo
+4 = Neutral
+5 = Parcialmente en desacuerdo
+6 = En desacuerdo
+7 = Totalmente en desacuerdo (peor)
+NA = No aplica"
+
+Usar escala lineal (1-7) con opción "NA" en cada pregunta.
+
+--- SUBESCALA: SYSTEM USEFULNESS (SystUse) - Ítems 1 a 8 ---
+
+1. En general, estoy satisfecho con lo fácil que es usar este sistema.
+   [1] [2] [3] [4] [5] [6] [7] [NA]
+
+2. Fue simple usar este sistema.
+   [1] [2] [3] [4] [5] [6] [7] [NA]
+
+3. Pude completar las tareas rápidamente usando este sistema.
+   [1] [2] [3] [4] [5] [6] [7] [NA]
+
+4. Me sentí cómodo usando este sistema.
+   [1] [2] [3] [4] [5] [6] [7] [NA]
+
+5. Fue fácil aprender a usar este sistema.
+   [1] [2] [3] [4] [5] [6] [7] [NA]
+
+6. Creo que podría ser productivo rápidamente usando este sistema.
+   [1] [2] [3] [4] [5] [6] [7] [NA]
+
+7. El sistema mostró mensajes de error que me indicaron claramente cómo solucionar
+   los problemas.
+   [1] [2] [3] [4] [5] [6] [7] [NA]
+
+8. Cada vez que cometí un error al usar el sistema, pude recuperarme fácil y
+   rápidamente.
+   [1] [2] [3] [4] [5] [6] [7] [NA]
+
+--- SUBESCALA: INFORMATION QUALITY (InfoQual) - Ítems 9 a 15 ---
+
+9. La información (como ayuda en línea, mensajes en pantalla y otra documentación)
+   proporcionada con este sistema fue clara.
+   [1] [2] [3] [4] [5] [6] [7] [NA]
+
+10. Fue fácil encontrar la información que necesitaba.
+    [1] [2] [3] [4] [5] [6] [7] [NA]
+
+11. La información fue efectiva para ayudarme a completar las tareas.
+    [1] [2] [3] [4] [5] [6] [7] [NA]
+
+12. La organización de la información en las pantallas del sistema fue clara.
+    [1] [2] [3] [4] [5] [6] [7] [NA]
+
+13. La interfaz de este sistema fue agradable.
+    [1] [2] [3] [4] [5] [6] [7] [NA]
+
+14. Disfruté usando la interfaz de este sistema.
+    [1] [2] [3] [4] [5] [6] [7] [NA]
+
+15. Este sistema tiene todas las funciones y capacidades que esperaba que tuviera.
+    [1] [2] [3] [4] [5] [6] [7] [NA]
+
+--- SUBESCALA: INTERFACE QUALITY (InterQual) - Ítems 16 a 19 ---
+
+16. En general, estoy satisfecho con este sistema.
+    [1] [2] [3] [4] [5] [6] [7] [NA]
+
+17. Pude completar las tareas de manera efectiva usando este sistema.
+    [1] [2] [3] [4] [5] [6] [7] [NA]
+
+18. Pude completar las tareas de manera eficiente usando este sistema.
+    [1] [2] [3] [4] [5] [6] [7] [NA]
+
+19. Me sentí cómodo usando este sistema.
+    [1] [2] [3] [4] [5] [6] [7] [NA]
+
+
+================================================================================
+  SECCIÓN 3: UEQ — USER EXPERIENCE QUESTIONNAIRE
+================================================================================
+
+Título de la sección: "Cuestionario de Experiencia de Usuario (UEQ)"
+
+Instrucción:
+"A continuación encontrará 26 pares de palabras con significados opuestos.
+Para cada par, marque la casilla que mejor describa su percepción del sistema.
+
+Por ejemplo:
+  Atractivo  ○  ○  ○  ●  ○  ○  ○  Poco atractivo
+Significa que el sistema le parece algo poco atractivo.
+
+Trabaje rápidamente; no piense demasiado cada par. No hay respuestas correctas
+o incorrectas."
+
+Usar escala de opción múltiple con 7 círculos (formato de diferencial semántico).
+
+Nota: En la tabla siguiente, (P) = Término positivo a la izquierda.
+      (N) = Término negativo a la izquierda (codificación invertida).
+
+ORDEN DE PRESENTACIÓN (el orden está aleatorizado para evitar sesgos):
+
+1.  (P)  Molesto       ○ ○ ○ ○ ○ ○ ○  Disfrutable
+2.  (N)  No entendible ○ ○ ○ ○ ○ ○ ○  Entendible
+3.  (N)  Creativo      ○ ○ ○ ○ ○ ○ ○  Aburrido
+4.  (N)  Fácil de aprender  ○ ○ ○ ○ ○ ○ ○  Difícil de aprender
+5.  (N)  Valioso       ○ ○ ○ ○ ○ ○ ○  Inferior
+6.  (P)  Aburrido      ○ ○ ○ ○ ○ ○ ○  Emocionante
+7.  (P)  No interesante ○ ○ ○ ○ ○ ○ ○  Interesante
+8.  (P)  Impredecible  ○ ○ ○ ○ ○ ○ ○  Predecible
+9.  (N)  Rápido        ○ ○ ○ ○ ○ ○ ○  Lento
+10. (N)  Inventivo     ○ ○ ○ ○ ○ ○ ○  Convencional
+11. (P)  Obstructivo   ○ ○ ○ ○ ○ ○ ○  De apoyo
+12. (N)  Bueno         ○ ○ ○ ○ ○ ○ ○  Malo
+13. (P)  Complicado    ○ ○ ○ ○ ○ ○ ○  Sencillo
+14. (P)  Antipático    ○ ○ ○ ○ ○ ○ ○  Simpático
+15. (N)  Práctico      ○ ○ ○ ○ ○ ○ ○  Impráctico
+16. (P)  Desagradable  ○ ○ ○ ○ ○ ○ ○  Agradable
+17. (N)  Seguro        ○ ○ ○ ○ ○ ○ ○  Inseguro
+18. (N)  Motivador     ○ ○ ○ ○ ○ ○ ○  Desmotivador
+19. (N)  Cumple expectativas  ○ ○ ○ ○ ○ ○ ○  No cumple expectativas
+20. (P)  Ineficiente   ○ ○ ○ ○ ○ ○ ○  Eficiente
+21. (N)  Claro         ○ ○ ○ ○ ○ ○ ○  Confuso
+22. (P)  Poco atractivo ○ ○ ○ ○ ○ ○ ○  Atractivo
+23. (N)  Amigable      ○ ○ ○ ○ ○ ○ ○  Poco amigable
+24. (N)  Organizado    ○ ○ ○ ○ ○ ○ ○  Desorganizado
+25. (N)  Vanguardista  ○ ○ ○ ○ ○ ○ ○  Habitual
+26. (N)  Innovador     ○ ○ ○ ○ ○ ○ ○  Conservador
+
+
+================================================================================
+  SECCIÓN 4: COMENTARIOS ADICIONALES
+================================================================================
+
+Título de la sección: "Comentarios (opcional)"
+
+Pregunta (Párrafo):
+"¿Hay algún comentario adicional que desee compartir sobre su experiencia usando
+el sistema? ¿Algo que le haya gustado especialmente o que considere que podría
+mejorar?"
+
+
+================================================================================
+  FIN DEL FORMULARIO
+================================================================================

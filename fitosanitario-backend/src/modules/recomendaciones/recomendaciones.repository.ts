@@ -141,6 +141,55 @@ export class RecomendacionesRepository {
     return result[0] ?? null;
   }
 
+  async findByUsuario(usuarioId: number) {
+    return this.db
+      .select({
+        id: schema.recomendacionesComunidad.id,
+        titulo: schema.recomendacionesComunidad.titulo,
+        descripcion: schema.recomendacionesComunidad.descripcion,
+        tipo: schema.recomendacionesComunidad.tipo,
+        valoracionPromedio: schema.recomendacionesComunidad.valoracionPromedio,
+        totalValoraciones: schema.recomendacionesComunidad.totalValoraciones,
+        moderado: schema.recomendacionesComunidad.moderado,
+        createdAt: schema.recomendacionesComunidad.createdAt,
+        usuario: {
+          id: schema.usuarios.id,
+          nombre: schema.usuarios.nombre,
+        },
+        cultivo: {
+          id: schema.cultivos.id,
+          nombre: schema.cultivos.nombre,
+        },
+        plaga: {
+          id: schema.plagasEnfermedades.id,
+          nombre: schema.plagasEnfermedades.nombre,
+        },
+      })
+      .from(schema.recomendacionesComunidad)
+      .leftJoin(
+        schema.usuarios,
+        eq(schema.recomendacionesComunidad.usuarioId, schema.usuarios.id),
+      )
+      .leftJoin(
+        schema.cultivos,
+        eq(schema.recomendacionesComunidad.cultivoId, schema.cultivos.id),
+      )
+      .leftJoin(
+        schema.plagasEnfermedades,
+        eq(
+          schema.recomendacionesComunidad.plagaId,
+          schema.plagasEnfermedades.id,
+        ),
+      )
+      .where(
+        and(
+          eq(schema.recomendacionesComunidad.usuarioId, usuarioId),
+          eq(schema.recomendacionesComunidad.activo, true),
+        ),
+      )
+      .orderBy(desc(schema.recomendacionesComunidad.createdAt));
+  }
+
   async update(
     id: number,
     data: {

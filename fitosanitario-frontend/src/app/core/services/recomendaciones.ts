@@ -32,6 +32,10 @@ export class RecomendacionesService {
     return this.http.delete<RecomendacionComunidad>(`${this.apiUrl}/${id}`);
   }
 
+  toggle(id: number): Observable<RecomendacionComunidad> {
+    return this.http.patch<RecomendacionComunidad>(`${this.apiUrl}/${id}/toggle`, {});
+  }
+
   getComentarios(recomendacionId: number): Observable<ComentarioForo[]> {
     return this.http.get<ComentarioForo[]>(`${this.apiUrl}/${recomendacionId}/comentarios`);
   }
