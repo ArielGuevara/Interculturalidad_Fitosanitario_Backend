@@ -4,8 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
-import { IconFieldModule } from 'primeng/iconfield';
-import { InputIconModule } from 'primeng/inputicon';
 import { DialogModule } from 'primeng/dialog';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -23,8 +21,6 @@ import { Producto, CreateProductoDto } from '../../../core/models/producto.model
     TableModule,
     ButtonModule,
     InputTextModule,
-    IconFieldModule,
-    InputIconModule,
     DialogModule,
     ToastModule,
     ConfirmDialogModule,

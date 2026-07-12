@@ -6,8 +6,6 @@ import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 import { InputTextModule } from 'primeng/inputtext';
-import { IconFieldModule } from 'primeng/iconfield';
-import { InputIconModule } from 'primeng/inputicon';
 import { MessageService } from 'primeng/api';
 import { TratamientosService } from '../../../core/services/tratamientos';
 import { MetodoAplicacion, TratamientoOficial } from '../../../core/models/tratamiento.model';
@@ -15,7 +13,7 @@ import { MetodoAplicacion, TratamientoOficial } from '../../../core/models/trata
 @Component({
   selector: 'app-tratamiento-list',
   standalone: true,
-  imports: [CommonModule, DatePipe, ButtonModule, DialogModule, TableModule, TagModule, ToastModule, InputTextModule, IconFieldModule, InputIconModule],
+  imports: [CommonModule, DatePipe, ButtonModule, DialogModule, TableModule, TagModule, ToastModule, InputTextModule],
   providers: [MessageService],
   templateUrl: './tratamiento-list.html',
   styleUrl: './tratamiento-list.css'
