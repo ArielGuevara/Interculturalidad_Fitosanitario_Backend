@@ -24,8 +24,11 @@ export class TratamientosController {
 
   // Listado general — cualquier usuario autenticado
   @Get()
-  findAll(@Query('search') search?: string) {
-    return this.tratamientosService.findAll(search);
+  findAll(
+    @Query('search') search?: string,
+    @Query('cultivoId', new ParseIntPipe({ optional: true })) cultivoId?: number,
+  ) {
+    return this.tratamientosService.findAll(search, cultivoId);
   }
 
   // Enciclopedia completa para descarga offline (RF-04)

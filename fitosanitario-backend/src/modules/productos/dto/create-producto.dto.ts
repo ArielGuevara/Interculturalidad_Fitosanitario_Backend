@@ -4,6 +4,8 @@ import {
   IsOptional,
   IsEnum,
   MaxLength,
+  IsArray,
+  IsNumber,
 } from 'class-validator';
 
 export class CreateProductoDto {
@@ -24,4 +26,9 @@ export class CreateProductoDto {
   @IsOptional()
   @MaxLength(50)
   unidadBase?: string;
+
+  @IsArray()
+  @IsOptional()
+  @IsNumber({}, { each: true })
+  cultivoIds?: number[];
 }

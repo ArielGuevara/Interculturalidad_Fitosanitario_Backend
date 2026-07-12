@@ -4,6 +4,8 @@ import {
   IsOptional,
   IsEnum,
   MaxLength,
+  IsArray,
+  IsNumber,
 } from 'class-validator';
 
 export class CreatePlagaDto {
@@ -22,4 +24,9 @@ export class CreatePlagaDto {
   @IsString()
   @IsOptional()
   imagenUrl?: string;
+
+  @IsArray()
+  @IsOptional()
+  @IsNumber({}, { each: true })
+  cultivoIds?: number[];
 }

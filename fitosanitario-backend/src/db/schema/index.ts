@@ -119,6 +119,28 @@ export const reporteHistorialEstado = pgTable('reporte_historial_estado', {
   fechaCambio: timestamp('fecha_cambio').notNull().defaultNow(),
 });
 
+// ── Tabla: PLAGA_CULTIVO (N:N) ─────────────────────────────
+export const plagasCultivos = pgTable('plagas_cultivos', {
+  id: serial('id').primaryKey(),
+  plagaId: integer('plaga_id')
+    .notNull()
+    .references(() => plagasEnfermedades.id, { onDelete: 'cascade' }),
+  cultivoId: integer('cultivo_id')
+    .notNull()
+    .references(() => cultivos.id, { onDelete: 'cascade' }),
+});
+
+// ── Tabla: PRODUCTO_CULTIVO (N:N) ──────────────────────────
+export const productosCultivos = pgTable('productos_cultivos', {
+  id: serial('id').primaryKey(),
+  productoId: integer('producto_id')
+    .notNull()
+    .references(() => productosFitosanitarios.id, { onDelete: 'cascade' }),
+  cultivoId: integer('cultivo_id')
+    .notNull()
+    .references(() => cultivos.id, { onDelete: 'cascade' }),
+});
+
 // ── Tabla: TRATAMIENTO_OFICIAL ─────────────────────────────
 export const tratamientosOficiales = pgTable('tratamientos_oficiales', {
   id: serial('id').primaryKey(),

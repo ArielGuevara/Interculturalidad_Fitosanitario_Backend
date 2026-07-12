@@ -9,6 +9,8 @@ import {
   ParseIntPipe,
   UseGuards,
   Query,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { PlagasService } from './plagas.service';
 import { CreatePlagaDto } from './dto/create-plaga.dto';
@@ -23,8 +25,16 @@ export class PlagasController {
   constructor(private readonly plagasService: PlagasService) {}
 
   @Get()
-  findAll(@Query('search') search?: string) {
-    return this.plagasService.findAll(search);
+  findAll(
+    @Query('search') search?: string,
+    @Query('cultivoId', new ParseIntPipe({ optional: true })) cultivoId?: number,
+  ) {
+    return this.plagasService.findAll(search, cultivoId);
+  }
+
+  @Get(':id/cultivos')
+  findCultivos(@Param('id', ParseIntPipe) id: number) {
+    return this.plagasService.findCultivos(id);
   }
 
   @Get(':id')
@@ -42,6 +52,16 @@ export class PlagasController {
   @Roles('MODERADOR')
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdatePlagaDto) {
     return this.plagasService.update(id, dto);
+  }
+
+  @Post(':id/cultivos')
+  @Roles('MODERADOR')
+  @HttpCode(HttpStatus.OK)
+  setCultivos(
+    @Param('id', ParseIntPipe) id: number,
+    @Body('cultivoIds') cultivoIds: number[],
+  ) {
+    return this.plagasService.setCultivos(id, cultivoIds);
   }
 
   @Delete(':id')

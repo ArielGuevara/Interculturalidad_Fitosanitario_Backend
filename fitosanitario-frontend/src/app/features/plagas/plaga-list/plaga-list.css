@@ -93,3 +93,12 @@
     border-color: var(--primary) !important;
     color: white !important;
 }
+
+:host ::ng-deep .cultivo-filter {
+    min-width: 220px;
+}
+
+:host ::ng-deep .cultivo-filter .p-select-label {
+    font-weight: 500;
+    color: var(--slate-600);
+}

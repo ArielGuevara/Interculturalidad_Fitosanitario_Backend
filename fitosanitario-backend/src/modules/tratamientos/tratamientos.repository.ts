@@ -41,7 +41,19 @@ export class TratamientosRepository {
     return result[0];
   }
 
-  async findAll(search?: string) {
+  async findAll(search?: string, cultivoId?: number) {
+    const conditions = [];
+    if (search) {
+      const pattern = `%${search}%`;
+      conditions.push(or(
+        ilike(schema.productosFitosanitarios.nombreComercial, pattern),
+        ilike(schema.cultivos.nombre, pattern),
+        ilike(schema.plagasEnfermedades.nombre, pattern),
+      ));
+    }
+    if (cultivoId) {
+      conditions.push(eq(schema.tratamientosOficiales.cultivoId, cultivoId));
+    }
     const query = this.db
       .select({
         id: schema.tratamientosOficiales.id,
@@ -93,13 +105,8 @@ export class TratamientosRepository {
         schema.usuarios,
         eq(schema.tratamientosOficiales.moderadorId, schema.usuarios.id),
       );
-    if (search) {
-      const pattern = `%${search}%`;
-      query.where(or(
-        ilike(schema.productosFitosanitarios.nombreComercial, pattern),
-        ilike(schema.cultivos.nombre, pattern),
-        ilike(schema.plagasEnfermedades.nombre, pattern),
-      ));
+    if (conditions.length > 0) {
+      query.where(and(...conditions));
     }
     return query.orderBy(desc(schema.tratamientosOficiales.fechaValidacion));
   }

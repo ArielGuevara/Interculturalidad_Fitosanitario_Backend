@@ -1,8 +1,13 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { Plaga, CreatePlagaDto, UpdatePlagaDto } from '../models/plaga.model';
 import { Observable } from 'rxjs';
+
+export interface CultivoRef {
+  id: number;
+  nombre: string;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -12,12 +17,23 @@ export class PlagasService {
 
   constructor(private http: HttpClient) {}
 
-  findAll(): Observable<Plaga[]> {
-    return this.http.get<Plaga[]>(this.apiUrl);
+  findAll(search?: string, cultivoId?: number): Observable<Plaga[]> {
+    let params = new HttpParams();
+    if (search) params = params.set('search', search);
+    if (cultivoId) params = params.set('cultivoId', cultivoId);
+    return this.http.get<Plaga[]>(this.apiUrl, { params });
   }
 
   findById(id: number): Observable<Plaga> {
     return this.http.get<Plaga>(`${this.apiUrl}/${id}`);
+  }
+
+  findCultivos(id: number): Observable<CultivoRef[]> {
+    return this.http.get<CultivoRef[]>(`${this.apiUrl}/${id}/cultivos`);
+  }
+
+  setCultivos(id: number, cultivoIds: number[]): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/${id}/cultivos`, { cultivoIds });
   }
 
   create(dto: CreatePlagaDto): Observable<Plaga> {

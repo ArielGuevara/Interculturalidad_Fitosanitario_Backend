@@ -2,7 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../../db/schema';
 import { DB_CONNECTION } from '../../db/db.module';
-import { eq, ilike, or } from 'drizzle-orm';
+import { eq, ilike, or, and, sql } from 'drizzle-orm';
 import { CreatePlagaDto } from './dto/create-plaga.dto';
 import { UpdatePlagaDto } from './dto/update-plaga.dto';
 
@@ -12,16 +12,39 @@ export class PlagasRepository {
     @Inject(DB_CONNECTION) private db: NodePgDatabase<typeof schema>,
   ) {}
 
-  findAll(search?: string) {
-    const query = this.db.select().from(schema.plagasEnfermedades);
+  async findAll(search?: string, cultivoId?: number) {
+    const conditions = [];
     if (search) {
-      const pattern = `%${search}%`;
-      return this.db
-        .select()
-        .from(schema.plagasEnfermedades)
-        .where(ilike(schema.plagasEnfermedades.nombre, pattern));
+      conditions.push(ilike(schema.plagasEnfermedades.nombre, `%${search}%`));
+    }
+    if (cultivoId) {
+      conditions.push(sql`${schema.plagasEnfermedades.id} IN (SELECT plaga_id FROM plagas_cultivos WHERE cultivo_id = ${cultivoId})`);
+    }
+    const query = this.db.select().from(schema.plagasEnfermedades);
+    if (conditions.length > 0) {
+      return query.where(and(...conditions));
     }
     return query;
+  }
+
+  async findCultivosByPlaga(plagaId: number) {
+    return this.db
+      .select({
+        id: schema.cultivos.id,
+        nombre: schema.cultivos.nombre,
+      })
+      .from(schema.plagasCultivos)
+      .innerJoin(schema.cultivos, eq(schema.plagasCultivos.cultivoId, schema.cultivos.id))
+      .where(eq(schema.plagasCultivos.plagaId, plagaId));
+  }
+
+  async setCultivos(plagaId: number, cultivoIds: number[]) {
+    await this.db.delete(schema.plagasCultivos).where(eq(schema.plagasCultivos.plagaId, plagaId));
+    if (cultivoIds.length > 0) {
+      await this.db.insert(schema.plagasCultivos).values(
+        cultivoIds.map(cultivoId => ({ plagaId, cultivoId }))
+      );
+    }
   }
 
   async findById(id: number) {

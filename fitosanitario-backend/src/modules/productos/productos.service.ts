@@ -7,8 +7,13 @@ import { UpdateProductoDto } from './dto/update-producto.dto';
 export class ProductosService {
   constructor(private readonly productosRepo: ProductosRepository) {}
 
-  findAll(search?: string) {
-    return this.productosRepo.findAll(search);
+  findAll(search?: string, cultivoId?: number) {
+    return this.productosRepo.findAll(search, cultivoId);
+  }
+
+  async findCultivos(productoId: number) {
+    await this.findById(productoId);
+    return this.productosRepo.findCultivosByProducto(productoId);
   }
 
   async findById(id: number) {
@@ -17,13 +22,28 @@ export class ProductosService {
     return producto;
   }
 
-  create(dto: CreateProductoDto) {
-    return this.productosRepo.create(dto);
+  async create(dto: CreateProductoDto) {
+    const { cultivoIds, ...productoData } = dto;
+    const producto = await this.productosRepo.create(productoData);
+    if (cultivoIds && cultivoIds.length > 0) {
+      await this.productosRepo.setCultivos(producto.id, cultivoIds);
+    }
+    return producto;
   }
 
   async update(id: number, dto: UpdateProductoDto) {
     await this.findById(id);
-    return this.productosRepo.update(id, dto);
+    const { cultivoIds, ...productoData } = dto as any;
+    const producto = await this.productosRepo.update(id, productoData);
+    if (cultivoIds && Array.isArray(cultivoIds)) {
+      await this.productosRepo.setCultivos(id, cultivoIds);
+    }
+    return producto;
+  }
+
+  async setCultivos(id: number, cultivoIds: number[]) {
+    await this.findById(id);
+    return this.productosRepo.setCultivos(id, cultivoIds);
   }
 
   async remove(id: number) {

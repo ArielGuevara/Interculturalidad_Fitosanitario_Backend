@@ -15,8 +15,8 @@ export class TratamientosService {
     private readonly reportesService: ReportesService,
   ) {}
 
-  findAll(search?: string) {
-    return this.tratamientosRepo.findAll(search);
+  findAll(search?: string, cultivoId?: number) {
+    return this.tratamientosRepo.findAll(search, cultivoId);
   }
 
   async findById(id: number) {

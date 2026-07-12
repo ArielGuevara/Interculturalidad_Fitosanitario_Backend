@@ -9,6 +9,8 @@ import {
   ParseIntPipe,
   UseGuards,
   Query,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { ProductosService } from './productos.service';
 import { CreateProductoDto } from './dto/create-producto.dto';
@@ -23,8 +25,16 @@ export class ProductosController {
   constructor(private readonly productosService: ProductosService) {}
 
   @Get()
-  findAll(@Query('search') search?: string) {
-    return this.productosService.findAll(search);
+  findAll(
+    @Query('search') search?: string,
+    @Query('cultivoId', new ParseIntPipe({ optional: true })) cultivoId?: number,
+  ) {
+    return this.productosService.findAll(search, cultivoId);
+  }
+
+  @Get(':id/cultivos')
+  findCultivos(@Param('id', ParseIntPipe) id: number) {
+    return this.productosService.findCultivos(id);
   }
 
   @Get(':id')
@@ -45,6 +55,16 @@ export class ProductosController {
     @Body() dto: UpdateProductoDto,
   ) {
     return this.productosService.update(id, dto);
+  }
+
+  @Post(':id/cultivos')
+  @Roles('MODERADOR')
+  @HttpCode(HttpStatus.OK)
+  setCultivos(
+    @Param('id', ParseIntPipe) id: number,
+    @Body('cultivoIds') cultivoIds: number[],
+  ) {
+    return this.productosService.setCultivos(id, cultivoIds);
   }
 
   @Delete(':id')

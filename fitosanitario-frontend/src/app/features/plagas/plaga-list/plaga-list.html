@@ -10,15 +10,17 @@
               styleClass="p-button-success border-round-2xl py-3 px-5 shadow-3 ml-auto"></p-button>
 </div>
 
-<div class="search-wrapper">
-    <i class="pi pi-search search-icon"></i>
-    <input pInputText type="text" (input)="dt.filterGlobal($any($event.target).value, 'contains')" placeholder="Buscar plagas..." class="search-input" />
-    <i class="pi pi-sliders-h filter-icon"></i>
+<div class="flex flex-column sm:flex-row gap-3 mb-3">
+    <div class="search-wrapper flex-1">
+        <i class="pi pi-search search-icon"></i>
+        <input pInputText type="text" (input)="onSearchInput($event)" [value]="searchQuery()" placeholder="Buscar plagas..." class="search-input" />
+    </div>
+    <p-select [options]="cultivos()" optionLabel="nombre" optionValue="id" placeholder="Filtrar por cultivo..." 
+              class="cultivo-filter" [showClear]="true" (onChange)="onCultivoFilterChange()" [(ngModel)]="selectedCultivoFilter"></p-select>
 </div>
 
 <p-table #dt [value]="plagas()" [loading]="loading()" [rows]="10" [paginator]="true" 
          responsiveLayout="stack" [breakpoint]="'960px'"
-         [globalFilterFields]="['nombre','descripcion','tipo']"
          styleClass="premium-table">
     <ng-template pTemplate="header">
         <tr>
@@ -105,6 +107,14 @@
             <textarea pInputText [(ngModel)]="selectedPlaga.descripcion" 
                       rows="4" placeholder="Sintomatología y medidas..." 
                       class="p-4 text-900 font-medium w-full" style="resize: none"></textarea>
+        </div>
+
+        <div class="field w-full">
+            <label class="font-black text-slate-800 ml-1 mb-2 block uppercase text-xs tracking-widest">Cultivos que afecta</label>
+            <p-multiSelect [options]="cultivos()" optionLabel="nombre" optionValue="id" 
+                          [(ngModel)]="selectedPlaga.cultivoIds" placeholder="Seleccionar cultivos..."
+                          styleClass="w-full p-3" [showClear]="true" [maxSelectedLabels]="3">
+            </p-multiSelect>
         </div>
         
         <!-- DROP ZONE PARA PLAGAS -->

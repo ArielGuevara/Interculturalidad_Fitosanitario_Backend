@@ -2,7 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../../db/schema';
 import { DB_CONNECTION } from '../../db/db.module';
-import { eq, ilike, or } from 'drizzle-orm';
+import { eq, ilike, or, and, sql } from 'drizzle-orm';
 import { CreateProductoDto } from './dto/create-producto.dto';
 import { UpdateProductoDto } from './dto/update-producto.dto';
 
@@ -12,18 +12,42 @@ export class ProductosRepository {
     @Inject(DB_CONNECTION) private db: NodePgDatabase<typeof schema>,
   ) {}
 
-  findAll(search?: string) {
+  async findAll(search?: string, cultivoId?: number) {
+    const conditions = [];
     if (search) {
-      const pattern = `%${search}%`;
-      return this.db
-        .select()
-        .from(schema.productosFitosanitarios)
-        .where(or(
-          ilike(schema.productosFitosanitarios.nombreComercial, pattern),
-          ilike(schema.productosFitosanitarios.ingredienteActivo, pattern),
-        ));
+      conditions.push(or(
+        ilike(schema.productosFitosanitarios.nombreComercial, `%${search}%`),
+        ilike(schema.productosFitosanitarios.ingredienteActivo, `%${search}%`),
+      ));
     }
-    return this.db.select().from(schema.productosFitosanitarios);
+    if (cultivoId) {
+      conditions.push(sql`${schema.productosFitosanitarios.id} IN (SELECT producto_id FROM productos_cultivos WHERE cultivo_id = ${cultivoId})`);
+    }
+    const query = this.db.select().from(schema.productosFitosanitarios);
+    if (conditions.length > 0) {
+      return query.where(and(...conditions));
+    }
+    return query;
+  }
+
+  async findCultivosByProducto(productoId: number) {
+    return this.db
+      .select({
+        id: schema.cultivos.id,
+        nombre: schema.cultivos.nombre,
+      })
+      .from(schema.productosCultivos)
+      .innerJoin(schema.cultivos, eq(schema.productosCultivos.cultivoId, schema.cultivos.id))
+      .where(eq(schema.productosCultivos.productoId, productoId));
+  }
+
+  async setCultivos(productoId: number, cultivoIds: number[]) {
+    await this.db.delete(schema.productosCultivos).where(eq(schema.productosCultivos.productoId, productoId));
+    if (cultivoIds.length > 0) {
+      await this.db.insert(schema.productosCultivos).values(
+        cultivoIds.map(cultivoId => ({ productoId, cultivoId }))
+      );
+    }
   }
 
   async findById(id: number) {
