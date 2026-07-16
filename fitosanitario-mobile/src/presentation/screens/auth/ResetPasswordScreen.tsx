@@ -13,14 +13,14 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { AuthStackParamList } from '../../navigation/RootNavigator';
 import { useAuthStore } from '../../../infrastructure/auth/authStore';
 import * as authApi from '../../../infrastructure/data/auth/authApi';
 
-type RouteParams = { ResetPassword: { telefono: string; codigo: string } };
-
 export function ResetPasswordScreen() {
-  const navigation = useNavigation();
-  const route = useRoute<RouteProp<RouteParams, 'ResetPassword'>>();
+  const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
+  const route = useRoute<RouteProp<AuthStackParamList, 'ResetPassword'>>();
   const { telefono, codigo } = route.params || { telefono: '', codigo: '' };
   const login = useAuthStore((s) => s.login);
 
@@ -54,7 +54,7 @@ export function ResetPasswordScreen() {
     try {
       await authApi.resetPassword(telefono, codigo, newPassword);
       Alert.alert('Éxito', 'Contraseña actualizada. Inicia sesión con tu nueva contraseña.', [
-        { text: 'OK', onPress: () => navigation.navigate('Login' as never) },
+        { text: 'OK', onPress: () => navigation.navigate('Login') },
       ]);
     } catch (err: any) {
       Alert.alert('Error', err?.response?.data?.message || 'Error al restablecer contraseña');

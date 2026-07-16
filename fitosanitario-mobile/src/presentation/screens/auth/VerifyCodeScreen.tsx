@@ -13,13 +13,13 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { AuthStackParamList } from '../../navigation/RootNavigator';
 import * as authApi from '../../../infrastructure/data/auth/authApi';
 
-type RouteParams = { VerifyCode: { telefono: string } };
-
 export function VerifyCodeScreen() {
-  const navigation = useNavigation();
-  const route = useRoute<RouteProp<RouteParams, 'VerifyCode'>>();
+  const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
+  const route = useRoute<RouteProp<AuthStackParamList, 'VerifyCode'>>();
   const telefono = route.params?.telefono || '';
   const [codigo, setCodigo] = useState('');
   const [loading, setLoading] = useState(false);
@@ -42,7 +42,7 @@ export function VerifyCodeScreen() {
     setLoading(true);
     try {
       await authApi.verifyReset(telefono, codigo);
-      navigation.navigate('ResetPassword' as never, { telefono, codigo } as never);
+      navigation.navigate('ResetPassword', { telefono, codigo });
     } catch (err: any) {
       Alert.alert('Error', err?.response?.data?.message || 'Código inválido');
     } finally {

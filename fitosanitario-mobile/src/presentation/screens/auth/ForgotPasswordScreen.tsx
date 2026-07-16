@@ -13,10 +13,12 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { AuthStackParamList } from '../../navigation/RootNavigator';
 import * as authApi from '../../../infrastructure/data/auth/authApi';
 
 export function ForgotPasswordScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
   const [telefono, setTelefono] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -48,7 +50,7 @@ export function ForgotPasswordScreen() {
     setLoading(true);
     try {
       await authApi.requestReset(telefonoFinal);
-      navigation.navigate('VerifyCode' as never, { telefono: telefonoFinal } as never);
+      navigation.navigate('VerifyCode', { telefono: telefonoFinal });
     } catch (err: any) {
       Alert.alert('Error', err?.response?.data?.message || 'Error al enviar código');
     } finally {
