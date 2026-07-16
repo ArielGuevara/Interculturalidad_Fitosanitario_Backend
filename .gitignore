@@ -24,6 +24,12 @@ build/
 .env
 .env.local
 
+# Firebase service account (contains private key)
+fitosanitario-backend/firebase-service-account.json
+
+# NPM
+fitosanitario-mobile/.npmrc
+
 # Project specific
 fitosanitario-backend/dist/
 fitosanitario-backend/node_modules/

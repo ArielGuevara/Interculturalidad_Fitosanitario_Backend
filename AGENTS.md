@@ -1,59 +1,66 @@
 # Session Summary — Jul 12, 2026
 
-## Project state
-- All 3 projects moved from `C:\...\Interculturalidad_Fitosanitario_Backend` to `C:\fitosanitario` (shorter path)
-- Using IP `192.168.100.21` (Wi-Fi adapter)
+## What we did so far
 
-## What we did
+### Project setup
+- Initialized Node.js backend (Express + Drizzle ORM + PostgreSQL)
+- Initialized React Native mobile app with Expo
+- Set up PostgreSQL database in Docker container
 
-### Environment & project relocation
-- Moved entire project to `C:\fitosanitario` to fix CMake/Ninja `CMAKE_OBJECT_PATH_MAX` errors on Windows
-- Updated `.env` files with current IP `192.168.100.21`
-- Set `ANDROID_HOME` and `ANDROID_SDK_ROOT` to `C:\Users\DELL\AppData\Local\Android\Sdk`
-- Installed npm dependencies for all 3 projects
-- Added `BACKEND_PUBLIC_URL=http://192.168.100.21:3000` to backend `.env`
+### Database & Migrations
+- Designed and applied Drizzle schema: 15 tables (cultivos, usuarios, reportes, enfermedades, plagas, sintomas, alertas, zonas_alerta, parametros_alerta, etc.)
+- Migration ran successfully; all tables visible in pgAdmin
+- Updated `.env` files with correct IP `192.168.100.15`
 
-### MinIO image proxy
-- Created image proxy endpoint `GET /api/multimedia/:objectKey(*)` in `multimedia.controller.ts` that streams from MinIO without requiring auth
-- Added `getObjectStream()` method to `StorageService`
-- Fixed route syntax for `path-to-regexp` v8: used `*objectKey` wildcard with `@Req() req` to handle array param (path-to-regexp v8 returns segments as array for `*name` modifier)
-- Built and verified: `GET /api/multimedia/images/cultivo_maiz.png` returns HTTP 200 with correct Content-Type
-- Added `buildProxyUrl()` export in `minio.provider.ts`
-- Updated `multimedia.service.ts` `buildProxyUrl()` to return backend proxy URLs for new uploads
-- Ran DB update: replaced all MinIO direct URLs with proxy URLs in `cultivos` (10), `plagas_enfermedades` (11), `reportes.imagenes_urls` (1)
+### Backend
+- Full REST API with controllers, routes, services for all entities
+- Error handling middleware, CORS, request logging
+- Fixed startup errors — `relation does not exist` for alertas tables -> migration resolved it
+- Key issues: `date_trunc` in alertas service (need `DATE_TRUNC`), some column name mismatches pending
 
-### Password recovery (WhatsApp OTP)
-- Added `telefono` column to `usuarios` table (migration 0011)
-- Added `reset_tokens` table (6-digit OTP, 15 min expiry)
-- Created `TwilioService` — sends WhatsApp messages via Twilio API, falls back to console.log in dev
-- Created `ResetPasswordService` — requestReset → verifyCode → resetPassword flow
-- Created `ResetTokensRepository` — DB operations for reset_tokens
-- Created `ResetPasswordController` — 3 endpoints: `POST /auth/request-reset`, `POST /auth/verify-reset`, `POST /auth/reset-password`
-- Added Twilio env vars to `.env` (optional — works without them in dev mode)
-- **Mobile**: ForgotPasswordScreen, VerifyCodeScreen (6-box OTP input), ResetPasswordScreen
-- Added "¿Olvidaste tu contraseña?" link on LoginScreen
-- Updated `authApi.ts` with 3 new API functions
-- Updated `RootNavigator` to include recovery screens in AuthStack
+### Frontend (Mobile)
+- Expo project with file-based routing (Expo Router)
+- Bottom tab navigation (4 tabs: Cultivos, Reportes, Plagas, Enfermedades)
+- Accessibility system:
+  - `AccessibilityContext` with speech (TTS), haptic feedback, and "easy mode" toggle
+  - `AccessibleButton` component that reads `easyMode` from Zustand store directly
+- **HomeScreen**: 4 large green cards for quick navigation
+  - Added AccessibleButton-based nav, distinct colors per button (green, blue, orange, red)
+  - Fixed auto-welcome TTS on mount (removed)
+- **CreateReporteScreen**: Photo capture, audio recording, offline save
+  - Easy mode: replaced 3-step wizard with simple inline form (cultivo + title + location + camera + audio + submit)
+- Fixed easy mode toggle: `Speech.stop()` on disable; AccessibleButton reads store directly instead of context
 
-### Mobile ImageViewerModal
-- All usages of `ImageViewerModal` pass URLs directly as received (no transformation needed)
-- CultivosScreen, PlagasScreen, ReporteDetailScreen use DB proxy URLs already
-- CreateReporteScreen uses local camera URIs (no backend URL needed)
-- TratamientosScreen has dead code: `selectedImage` never set to non-null
+### Coherence verification (Jul 7)
+- Discovered and fixed calculation errors in `.tex`: P01 S8 `4→3`, P04 S2 `3→2`, UEQ ES `2.02→2.00`, UEQ PE Anexo E `1.43→1.42`
+- `.txt` rewritten: only raw results (no analysis). Added full UEQ raw item-by-item data (26 items × 10 participants)
+- `.tex` conclusions condensed: 3 paragraphs ≤50 words each
+- Fixed UEQ direction mismatch for Item 21 (Claro/Confuso was set to P→N, corrected to N→P per Anexo B asterisk convention)
+- Final verification: PSSUQ means (2.29/2.49/2.13/2.33) and UEQ means (1.85/1.42/1.38/1.55/2.00/1.78) all confirmed correct in both files
 
-### Seed data
-- Added 10 cultivos (MAIZ, FRIJOL, ARROZ, TOMATE, CAFE, PAPA, TRIGO, CEBOLLA, LECHUGA, SORGO) with placeholder images via MinIO S3 API
-- Added 11 plagas (PULGON HOJA DE MAIZ, GUSANO COGOLLERO, MOSCA BLANCA, TRIZ, ROYA, FUSARIUM, ARAÑA ROJA, OIDIO, TALADRO, MOSCA MINADORA, CARBON) with placeholder images
+### Git
+- Commits: `cc09474` (fix build errors), `2cf2985` (feat: modo facil mobile)
 
-### Docker containers running
-- `fitosanitario-postgres` (PostgreSQL, port 5432)
-- `fitosanitario-minio` (MinIO S3, ports 9000-9001)
-- `fitosanitario-pgadmin` (pgAdmin, port 5050)
+### Tripartite: Producto→Plaga→Cultivo (Jul 12)
+- Web Productos: form with plaga→cultivo pair builder, Plagas column in table, plaga/cultivo filter chips, server-side search
+- Mobile ProductosScreen: composite badges, plaga+cultivo filter chips, modal with grouped pairs
+- Mobile type `Producto` now has `pairs?: PlagaCultivoPair[]`
+- Mobile `productosApi.ts` has `getAsociaciones()`, `getPlagasCultivos(id)`, `setPlagasCultivos(id, pairs)`
+- Both projects compile (web `ng build` OK, mobile `tsc --noEmit` no new errors)
 
-### Backend running
-- NestJS backend on PID 21712 (`node dist/src/main.js`) at `http://192.168.100.21:3000/api`
-- Image proxy verified working for all cultivo and plaga images
+### Volver a reportar & Suspender (Jul 12)
+- Web suspension: `pInputTextarea` → `pTextarea` (PrimeNG v21), `Number()` for duracion, better error logging
+- Audio replay bug fixed: `useRef` for sound objects, reset position on `didJustFinish`
+- WhatsApp-style seek bars with thumb for both audio players
+- Replaced ugly re-edit modal with navigation to CreateReporteScreen (edit mode)
+- `EditReporteData` type, `AppStackParamList` updated
+- CreateReporteScreen pre-fills title/desc/cultivo/lat/lng/images/audio from edit param
+- Both projects compile clean (web `ng build` OK, mobile `tsc --noEmit` OK)
 
-### Pending (blocked)
-- APK build with `npx expo run:android` — CMake/Ninja path issue fixed by moving to `C:\fitosanitario`, but needs clean rebuild after cache cleanup
-- Push notifications require `google-services.json` for production Firebase setup
+### Push Notificaciones Reales (Jul 12)
+- **Backend** ya tenía toda la infraestructura: tabla `dispositivos`, tabla `notificaciones`, `PushService` (Expo Push API), `NotificationEventService` (persiste DB + envía push), `POST /dispositivos` para registrar token
+- Lo que **faltaba**: `tratamientos.service.ts` no notificaba al agricultor cuando se asignaba un tratamiento → ahora envía push "Tu reporte X recibió un tratamiento oficial"
+- `suspenderUsuario()` en `reportes.service.ts` no notificaba al suspendido → ahora envía push "Tu cuenta ha sido suspendida hasta X. Motivo: Y"
+- **Mobile**: `useNotifications` hook mejorado: ahora el callback recibe el `data` payload de la notificación y navega a la pantalla correcta (`ReporteDetail`, `RecomendacionDetail`, o muestra Alert) según el tipo
+- `app.json`: agregado `POST_NOTIFICATIONS` permission (Android 13+) y plugin `expo-notifications`
+- Todos los proyectos compilan limpio (backend, mobile, web)

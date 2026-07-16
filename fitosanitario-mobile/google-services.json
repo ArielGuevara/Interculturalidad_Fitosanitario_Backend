@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "289151505629",
+    "project_id": "fitosanitario-29a92",
+    "storage_bucket": "fitosanitario-29a92.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:289151505629:android:0a3ddce0a89739a648f734",
+        "android_client_info": {
+          "package_name": "com.anonymous.fitosanitariomobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAPHdIiC1bUIxQuzyeWeNCjrKwuZU0kyo4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
