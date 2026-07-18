@@ -26,7 +26,7 @@ export class PushService {
           const resolvedPath = require('path').resolve(process.cwd(), path);
           const serviceAccount = require(resolvedPath);
           admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount),
+            credential: admin.cert(serviceAccount),
           });
           this.logger.log('Firebase Admin initialized for FCM v1');
         }
@@ -71,7 +71,20 @@ export class PushService {
   ): Promise<void> {
     if (tokens.length === 0) return;
 
-    if (this.firebaseApp) {
+    const expoTokens = tokens.filter((t) => t.startsWith('ExponentPushToken'));
+    const fcmTokens = tokens.filter((t) => !t.startsWith('ExponentPushToken'));
+
+    if (expoTokens.length > 0) {
+      const messages: PushMessage[] = expoTokens.map((token) => ({
+        to: token,
+        title,
+        body,
+        data,
+      }));
+      await this.sendViaExpo(messages);
+    }
+
+    if (fcmTokens.length > 0 && this.firebaseApp) {
       try {
         const { getMessaging } = require('firebase-admin/messaging');
         const fcmData: Record<string, string> = {};
@@ -82,7 +95,7 @@ export class PushService {
         }
 
         const response = await getMessaging().sendEachForMulticast({
-          tokens,
+          tokens: fcmTokens,
           notification: { title, body },
           data: fcmData,
         });
@@ -90,21 +103,9 @@ export class PushService {
         this.logger.log(
           `FCM v1 enviados: ${response.successCount} OK, ${response.failureCount} fallaron`,
         );
-        return;
       } catch (err: any) {
-        this.logger.error('FCM v1 error, falling back to Expo:', err?.message ?? err);
+        this.logger.error('FCM v1 error:', err?.message ?? err);
       }
-    }
-
-    const expoTokens = tokens.filter((t) => t.startsWith('ExponentPushToken'));
-    if (expoTokens.length > 0) {
-      const messages: PushMessage[] = expoTokens.map((token) => ({
-        to: token,
-        title,
-        body,
-        data,
-      }));
-      await this.sendViaExpo(messages);
     }
   }
 }
