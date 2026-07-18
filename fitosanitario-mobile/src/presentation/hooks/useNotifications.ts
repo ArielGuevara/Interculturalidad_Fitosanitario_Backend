@@ -44,16 +44,6 @@ async function registerForPushNotificationsAsync(): Promise<string | null> {
       return null;
     }
 
-    if (Platform.OS === 'android') {
-      await Notifications.setNotificationChannelAsync('fitosanitario', {
-        name: 'Notificaciones Fitosanitario',
-        importance: Notifications.AndroidImportance?.HIGH ?? 4,
-        vibrationPattern: [0, 250, 250, 250],
-        lightColor: '#10b981',
-        sound: 'default',
-      });
-    }
-
     const projectId =
       (Constants.expoConfig as any)?.extra?.eas?.projectId ??
       (Constants as any).easConfig?.projectId;
@@ -98,7 +88,21 @@ export function useNotifications(onNotificationTap?: (data?: NotificationPayload
   const usuario = useAuthStore((s) => s.usuario);
 
   useEffect(() => {
-    if (!Notifications || !Device || !usuario || tokenRegistered.current) return;
+    if (!Notifications || !Device || !usuario) return;
+
+    if (Platform.OS === 'android') {
+      try {
+        Notifications.setNotificationChannelAsync('fitosanitario', {
+          name: 'Notificaciones Fitosanitario',
+          importance: Notifications.AndroidImportance?.HIGH ?? 4,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: '#10b981',
+          sound: 'default',
+        });
+      } catch {}
+    }
+
+    if (tokenRegistered.current) return;
 
     (async () => {
       try {
