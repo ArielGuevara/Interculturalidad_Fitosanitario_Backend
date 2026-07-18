@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { CreateTratamientoDto, TratamientoOficial } from '../models/tratamiento.model';
@@ -12,8 +12,11 @@ export class TratamientosService {
 
   constructor(private http: HttpClient) {}
 
-  findAll(): Observable<TratamientoOficial[]> {
-    return this.http.get<TratamientoOficial[]>(this.apiUrl);
+  findAll(search?: string, cultivoId?: number): Observable<TratamientoOficial[]> {
+    let params = new HttpParams();
+    if (search) params = params.set('search', search);
+    if (cultivoId) params = params.set('cultivoId', cultivoId);
+    return this.http.get<TratamientoOficial[]>(this.apiUrl, { params });
   }
 
   create(dto: CreateTratamientoDto): Observable<TratamientoOficial> {

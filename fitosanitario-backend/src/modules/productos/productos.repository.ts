@@ -12,16 +12,19 @@ export class ProductosRepository {
     @Inject(DB_CONNECTION) private db: NodePgDatabase<typeof schema>,
   ) {}
 
-  async findAll(search?: string, cultivoId?: number) {
-    const conditions = [];
+  async findAll(search?: string, cultivoId?: number, plagaId?: number) {
+    const conditions: any[] = [];
     if (search) {
       conditions.push(or(
-        ilike(schema.productosFitosanitarios.nombreComercial, `%${search}%`),
-        ilike(schema.productosFitosanitarios.ingredienteActivo, `%${search}%`),
+        sql`unaccent(${schema.productosFitosanitarios.nombreComercial}) ILIKE unaccent(${'%' + search + '%'})`,
+        sql`unaccent(${schema.productosFitosanitarios.ingredienteActivo}) ILIKE unaccent(${'%' + search + '%'})`,
       ));
     }
     if (cultivoId) {
       conditions.push(sql`${schema.productosFitosanitarios.id} IN (SELECT producto_id FROM productos_cultivos WHERE cultivo_id = ${cultivoId})`);
+    }
+    if (plagaId) {
+      conditions.push(sql`${schema.productosFitosanitarios.id} IN (SELECT producto_id FROM productos_plagas_cultivos WHERE plaga_id = ${plagaId})`);
     }
     const query = this.db.select().from(schema.productosFitosanitarios);
     if (conditions.length > 0) {
@@ -48,6 +51,43 @@ export class ProductosRepository {
         cultivoIds.map(cultivoId => ({ productoId, cultivoId }))
       );
     }
+  }
+
+  async findPlagasCultivos(productoId: number) {
+    return this.db
+      .select({
+        plagaId: schema.productosPlagasCultivos.plagaId,
+        plagaNombre: schema.plagasEnfermedades.nombre,
+        cultivoId: schema.productosPlagasCultivos.cultivoId,
+        cultivoNombre: schema.cultivos.nombre,
+      })
+      .from(schema.productosPlagasCultivos)
+      .innerJoin(schema.plagasEnfermedades, eq(schema.productosPlagasCultivos.plagaId, schema.plagasEnfermedades.id))
+      .innerJoin(schema.cultivos, eq(schema.productosPlagasCultivos.cultivoId, schema.cultivos.id))
+      .where(eq(schema.productosPlagasCultivos.productoId, productoId));
+  }
+
+  async setPlagasCultivos(productoId: number, pairs: { plagaId: number; cultivoId: number }[]) {
+    await this.db.delete(schema.productosPlagasCultivos).where(eq(schema.productosPlagasCultivos.productoId, productoId));
+    if (pairs.length > 0) {
+      await this.db.insert(schema.productosPlagasCultivos).values(
+        pairs.map(p => ({ productoId, plagaId: p.plagaId, cultivoId: p.cultivoId }))
+      );
+    }
+  }
+
+  async findAllAsociaciones() {
+    return this.db
+      .select({
+        productoId: schema.productosPlagasCultivos.productoId,
+        plagaId: schema.productosPlagasCultivos.plagaId,
+        plagaNombre: schema.plagasEnfermedades.nombre,
+        cultivoId: schema.productosPlagasCultivos.cultivoId,
+        cultivoNombre: schema.cultivos.nombre,
+      })
+      .from(schema.productosPlagasCultivos)
+      .innerJoin(schema.plagasEnfermedades, eq(schema.productosPlagasCultivos.plagaId, schema.plagasEnfermedades.id))
+      .innerJoin(schema.cultivos, eq(schema.productosPlagasCultivos.cultivoId, schema.cultivos.id));
   }
 
   async findById(id: number) {

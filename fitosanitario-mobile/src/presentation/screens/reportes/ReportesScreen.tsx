@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState, useRef } from 'react';
+﻿import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { 
   Alert, 
   FlatList, 
@@ -12,7 +12,7 @@ import {
   Animated
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { Reporte } from '../../../domain/reportes/types';
 import { getReportes } from '../../../infrastructure/data/reportes/reportesApi';
 import { getCache, setCache } from '../../../infrastructure/offline/cache';
@@ -112,9 +112,11 @@ export function ReportesScreen() {
     }
   };
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [])
+  );
 
   const renderEmptyComponent = () => {
     if (loading) return null;

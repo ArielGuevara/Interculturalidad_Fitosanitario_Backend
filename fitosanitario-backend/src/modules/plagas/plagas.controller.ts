@@ -32,6 +32,11 @@ export class PlagasController {
     return this.plagasService.findAll(search, cultivoId);
   }
 
+  @Get('asociaciones')
+  findAllAsociaciones() {
+    return this.plagasService.findAllAsociaciones();
+  }
+
   @Get(':id/cultivos')
   findCultivos(@Param('id', ParseIntPipe) id: number) {
     return this.plagasService.findCultivos(id);

@@ -28,6 +28,10 @@ export class PlagasService {
     return this.http.get<Plaga>(`${this.apiUrl}/${id}`);
   }
 
+  findAllAsociaciones(): Observable<{ plagaId: number; id: number; nombre: string }[]> {
+    return this.http.get<{ plagaId: number; id: number; nombre: string }[]>(`${this.apiUrl}/asociaciones`);
+  }
+
   findCultivos(id: number): Observable<CultivoRef[]> {
     return this.http.get<CultivoRef[]>(`${this.apiUrl}/${id}/cultivos`);
   }

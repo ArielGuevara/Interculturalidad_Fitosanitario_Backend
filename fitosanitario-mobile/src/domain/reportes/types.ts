@@ -10,8 +10,10 @@ export type Reporte = {
   audioUrl: string | null;
   latitud: number;
   longitud: number;
-  estado: 'PENDIENTE' | 'COMUNIDAD' | 'VALIDADO' | 'RECHAZADO';
+  estado: 'PENDIENTE' | 'COMUNIDAD' | 'VALIDADO' | 'RECHAZADO' | 'VOLVER_A_REPORTAR';
   sincronizado: boolean;
+  motivoRechazo?: string | null;
+  audioRechazoUrl?: string | null;
   createdAt: string;
   cultivo?: { id: number; nombre: string } | null;
   plaga?: { id: number; nombre: string; tipo: string } | null;

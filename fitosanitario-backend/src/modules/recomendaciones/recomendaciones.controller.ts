@@ -17,6 +17,7 @@ import {
 } from './dto/create-recomendacion.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
+import { SuspensionGuard } from '../../common/guards/suspension.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
@@ -54,6 +55,7 @@ export class RecomendacionesController {
   }
 
   @Post()
+  @UseGuards(SuspensionGuard)
   create(
     @Body() dto: CreateRecomendacionDto,
     @CurrentUser() user: { id: number },

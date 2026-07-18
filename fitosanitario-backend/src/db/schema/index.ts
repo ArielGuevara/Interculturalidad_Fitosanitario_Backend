@@ -43,6 +43,12 @@ export const estadoReporteEnum = pgEnum('estado_reporte', [
   'COMUNIDAD',
   'VALIDADO',
   'RECHAZADO',
+  'VOLVER_A_REPORTAR',
+]);
+
+export const tipoDuracionSuspensionEnum = pgEnum('tipo_duracion_suspension', [
+  'TIEMPO',
+  'DIAS',
 ]);
 
 // ── Tabla: USUARIO ─────────────────────────────────────────
@@ -101,6 +107,8 @@ export const reportes = pgTable('reportes', {
   longitud: doublePrecision('longitud').notNull(),
   estado: estadoReporteEnum('estado').notNull().default('PENDIENTE'),
   sincronizado: boolean('sincronizado').notNull().default(true),
+  motivoRechazo: text('motivo_rechazo'),
+  audioRechazoUrl: varchar('audio_rechazo_url', { length: 500 }),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
@@ -117,6 +125,24 @@ export const reporteHistorialEstado = pgTable('reporte_historial_estado', {
   estadoNuevo: estadoReporteEnum('estado_nuevo').notNull(),
   motivo: text('motivo'),
   fechaCambio: timestamp('fecha_cambio').notNull().defaultNow(),
+});
+
+// ── Tabla: SUSPENSIONES_USUARIOS ───────────────────────────
+export const suspensionesUsuarios = pgTable('suspensiones_usuarios', {
+  id: serial('id').primaryKey(),
+  usuarioId: integer('usuario_id')
+    .notNull()
+    .references(() => usuarios.id),
+  reporteId: integer('reporte_id')
+    .notNull()
+    .references(() => reportes.id),
+  motivo: text('motivo').notNull(),
+  tipoDuracion: tipoDuracionSuspensionEnum('tipo_duracion').notNull(),
+  duracion: integer('duracion').notNull(),
+  fechaInicio: timestamp('fecha_inicio').notNull().defaultNow(),
+  fechaFin: timestamp('fecha_fin').notNull(),
+  activa: boolean('activa').notNull().default(true),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
 // ── Tabla: PLAGA_CULTIVO (N:N) ─────────────────────────────
@@ -136,6 +162,20 @@ export const productosCultivos = pgTable('productos_cultivos', {
   productoId: integer('producto_id')
     .notNull()
     .references(() => productosFitosanitarios.id, { onDelete: 'cascade' }),
+  cultivoId: integer('cultivo_id')
+    .notNull()
+    .references(() => cultivos.id, { onDelete: 'cascade' }),
+});
+
+// ── Tabla: PRODUCTO_PLAGA_CULTIVO (tripartita) ─────────────
+export const productosPlagasCultivos = pgTable('productos_plagas_cultivos', {
+  id: serial('id').primaryKey(),
+  productoId: integer('producto_id')
+    .notNull()
+    .references(() => productosFitosanitarios.id, { onDelete: 'cascade' }),
+  plagaId: integer('plaga_id')
+    .notNull()
+    .references(() => plagasEnfermedades.id, { onDelete: 'cascade' }),
   cultivoId: integer('cultivo_id')
     .notNull()
     .references(() => cultivos.id, { onDelete: 'cascade' }),

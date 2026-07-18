@@ -1,10 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ConfigService } from '@nestjs/config';
 import { PushService } from './push.service';
 
 describe('PushService', () => {
   let service: PushService;
   let mockFetch: jest.Mock;
   let mockJson: jest.Mock;
+
+  const mockConfigService = {
+    get: jest.fn().mockReturnValue(undefined), // no firebase configured
+  };
 
   beforeEach(async () => {
     mockJson = jest.fn().mockResolvedValue({ data: 'ok' });
@@ -16,7 +21,10 @@ describe('PushService', () => {
     (global as any).fetch = mockFetch;
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [PushService],
+      providers: [
+        PushService,
+        { provide: ConfigService, useValue: mockConfigService },
+      ],
     }).compile();
 
     service = module.get<PushService>(PushService);

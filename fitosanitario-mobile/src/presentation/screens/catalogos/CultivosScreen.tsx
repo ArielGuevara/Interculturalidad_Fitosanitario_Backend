@@ -30,12 +30,13 @@ export function CultivosScreen() {
   const [selectedItem, setSelectedItem] = useState<Cultivo | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
+  const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   const filteredItems = useMemo(() => {
     if (!searchQuery.trim()) return items;
-    const q = searchQuery.toLowerCase();
+    const q = normalize(searchQuery.toLowerCase());
     return items.filter(i =>
-      i.nombre.toLowerCase().includes(q) ||
-      (i.descripcion && i.descripcion.toLowerCase().includes(q))
+      normalize(i.nombre.toLowerCase()).includes(q) ||
+      (i.descripcion && normalize(i.descripcion.toLowerCase()).includes(q))
     );
   }, [items, searchQuery]);
 

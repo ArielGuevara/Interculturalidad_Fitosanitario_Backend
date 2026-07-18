@@ -28,13 +28,24 @@ export class ProductosController {
   findAll(
     @Query('search') search?: string,
     @Query('cultivoId', new ParseIntPipe({ optional: true })) cultivoId?: number,
+    @Query('plagaId', new ParseIntPipe({ optional: true })) plagaId?: number,
   ) {
-    return this.productosService.findAll(search, cultivoId);
+    return this.productosService.findAll(search, cultivoId, plagaId);
+  }
+
+  @Get('asociaciones')
+  findAllAsociaciones() {
+    return this.productosService.findAllAsociaciones();
   }
 
   @Get(':id/cultivos')
   findCultivos(@Param('id', ParseIntPipe) id: number) {
     return this.productosService.findCultivos(id);
+  }
+
+  @Get(':id/plagas-cultivos')
+  findPlagasCultivos(@Param('id', ParseIntPipe) id: number) {
+    return this.productosService.findPlagasCultivos(id);
   }
 
   @Get(':id')
@@ -65,6 +76,16 @@ export class ProductosController {
     @Body('cultivoIds') cultivoIds: number[],
   ) {
     return this.productosService.setCultivos(id, cultivoIds);
+  }
+
+  @Post(':id/plagas-cultivos')
+  @Roles('MODERADOR')
+  @HttpCode(HttpStatus.OK)
+  setPlagasCultivos(
+    @Param('id', ParseIntPipe) id: number,
+    @Body('pairs') pairs: { plagaId: number; cultivoId: number }[],
+  ) {
+    return this.productosService.setPlagasCultivos(id, pairs);
   }
 
   @Delete(':id')

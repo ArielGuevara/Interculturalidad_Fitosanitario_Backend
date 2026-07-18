@@ -10,24 +10,25 @@
               styleClass="p-button-success border-round-2xl py-3 px-5 shadow-3 ml-auto"></p-button>
 </div>
 
-<div class="flex flex-column sm:flex-row gap-3 mb-3">
-    <div class="search-wrapper flex-1">
+<div class="filter-bar">
+    <div class="search-wrapper">
         <i class="pi pi-search search-icon"></i>
         <input pInputText type="text" (input)="onSearchInput($event)" [value]="searchQuery()" placeholder="Buscar plagas..." class="search-input" />
     </div>
-    <p-select [options]="cultivos()" optionLabel="nombre" optionValue="id" placeholder="Filtrar por cultivo..." 
+    <p-select [options]="cultivos()" optionLabel="nombre" optionValue="id" placeholder="Todos los cultivos" 
               class="cultivo-filter" [showClear]="true" (onChange)="onCultivoFilterChange()" [(ngModel)]="selectedCultivoFilter"></p-select>
 </div>
 
 <p-table #dt [value]="plagas()" [loading]="loading()" [rows]="10" [paginator]="true" 
          responsiveLayout="stack" [breakpoint]="'960px'"
-         styleClass="premium-table">
+         styleClass="premium-table" [globalFilterFields]="[]">
     <ng-template pTemplate="header">
         <tr>
             <th style="width: 100px">ID</th>
             <th style="width: 120px">Muestra</th>
             <th>Nombre</th>
             <th style="width: 150px">Clasificación</th>
+            <th style="width: 180px">Cultivos</th>
             <th>Sintomatología</th>
             <th style="width: 150px" class="text-center">Gestión</th>
         </tr>
@@ -50,6 +51,13 @@
                 <span class="p-column-title">Clasificación</span>
                 <p-tag [value]="plaga.tipo" [severity]="getSeverity(plaga.tipo)" 
                        styleClass="px-3 py-2 border-round-lg font-black text-xs uppercase tracking-wider"></p-tag>
+            </td>
+            <td>
+                <span class="p-column-title">Cultivos</span>
+                <div class="cultivo-badges">
+                    <span *ngFor="let c of plagaCultivosMap()[plaga.id!] || []" class="cultivo-badge">{{c.nombre}}</span>
+                    <span *ngIf="!(plagaCultivosMap()[plaga.id!] || []).length" class="text-slate-400 text-sm">—</span>
+                </div>
             </td>
             <td>
                 <span class="p-column-title">Sintomatología</span>

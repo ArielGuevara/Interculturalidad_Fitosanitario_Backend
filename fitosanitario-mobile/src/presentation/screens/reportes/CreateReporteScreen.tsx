@@ -1,4 +1,5 @@
 ﻿import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import * as Speech from 'expo-speech';
 import {
   Alert,
   Animated,
@@ -17,7 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import * as Location from 'expo-location';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { Audio } from 'expo-av';
+import { Audio, AVPlaybackSource } from 'expo-av';
 import * as FileSystem from 'expo-file-system/legacy';
 import { enqueueReporte } from '../../../infrastructure/offline/pendingReportes';
 import { syncPendingReportes } from '../../../infrastructure/offline/sync';
@@ -27,8 +28,14 @@ import type { Cultivo } from '../../../domain/catalogos/types';
 import { ImageViewerModal } from '../../../presentation/components/ImageViewerModal';
 import { useAccessibility } from '../../../shared/contexts/AccessibilityContext';
 import { AccessibleButton } from '../../../shared/components/AccessibleButton';
+import { reportesApi } from '../../../infrastructure/data/reportes/reportesApi';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { AppStackParamList, EditReporteData } from '../../navigation/RootNavigator';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const CULTIVO_CARD_GAP = 10;
+const CULTIVO_CARD_WIDTH = (SCREEN_WIDTH - 32 - CULTIVO_CARD_GAP) / 2; // 32 = padding 16*2
 
 function ensureDocDir() {
   return FileSystem.documentDirectory ?? FileSystem.cacheDirectory ?? '';
@@ -189,24 +196,33 @@ function useRecordingTimer(active: boolean) {
 }
 
 // ─── Main Screen ─────────────────────────────────────────────────────────────
+type Props = NativeStackScreenProps<AppStackParamList, 'CreateReporte'>;
+
 export function CreateReporteScreen() {
+  const route = useRoute<Props['route']>();
+  const navigation = useNavigation<any>();
+  const editData = route.params?.edit;
+  const isEditing = !!editData;
+
   const { easyMode, speak, haptic } = useAccessibility();
   const [wizardStep, setWizardStep] = useState(1);
 
-  const [titulo, setTitulo] = useState('');
-  const [descripcion, setDescripcion] = useState('');
-  const [cultivoId, setCultivoId] = useState<number>(0);
+  const [titulo, setTitulo] = useState(editData?.titulo ?? '');
+  const [descripcion, setDescripcion] = useState(editData?.descripcion ?? editData?.descripcionProblema ?? '');
+  const [cultivoId, setCultivoId] = useState<number>(editData?.cultivoId ?? 0);
   const [cultivos, setCultivos] = useState<Cultivo[]>([]);
   const [cultivosLoading, setCultivosLoading] = useState(true);
+  const [cultivoStep, setCultivoStep] = useState<'selecting' | 'confirmed'>('selecting');
+  const lastSpokenCultivo = useRef(-1);
 
-  const [latitud, setLatitud] = useState<number | null>(null);
-  const [longitud, setLongitud] = useState<number | null>(null);
+  const [latitud, setLatitud] = useState<number | null>(editData?.latitud ?? null);
+  const [longitud, setLongitud] = useState<number | null>(editData?.longitud ?? null);
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationError, setLocationError] = useState(false);
 
-  const [imageUris, setImageUris] = useState<string[]>([]);
+  const [imageUris, setImageUris] = useState<string[]>(editData?.imagenesUrls ?? []);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [audioUri, setAudioUri] = useState<string | null>(null);
+  const [audioUri, setAudioUri] = useState<string | null>(editData?.audioUrl ?? null);
 
   const [cameraMode, setCameraMode] = useState(false);
   const [pendingPhotoUri, setPendingPhotoUri] = useState<string | null>(null);
@@ -297,6 +313,10 @@ export function CreateReporteScreen() {
 
   useEffect(() => {
     getLocation();
+  }, []);
+
+  useEffect(() => {
+    return () => { Speech.stop().catch(() => {}); };
   }, []);
 
   const openCamera = async () => {
@@ -399,7 +419,34 @@ export function CreateReporteScreen() {
     ]);
   };
 
+  const uploadFileToServer = async (uri: string, type: 'image' | 'audio'): Promise<string> => {
+    const { getAccessToken } = await import('../../../infrastructure/auth/authStore');
+    const { apiClient } = await import('../../../infrastructure/http/apiClient');
+    const token = getAccessToken();
+    const form = new FormData();
+    const field = type === 'image' ? 'images' : 'audio';
+    const mime = type === 'image' ? 'image/jpeg' : 'audio/m4a';
+    const name = type === 'image' ? 'photo.jpg' : 'audio.m4a';
+    form.append(field, { uri, name, type: mime } as any);
+    const baseUrl = String(apiClient.defaults.baseURL ?? '').replace(/\/$/, '');
+    const endpoint = type === 'image' ? '/multimedia/upload-image' : '/multimedia/upload-audio';
+    const res = await fetch(`${baseUrl}${endpoint}`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: form,
+    });
+    if (!res.ok) throw new Error(`Upload ${type} failed: ${await res.text()}`);
+    const data = await res.json();
+    return type === 'image' ? data.urls[0] : data.url;
+  };
+
   const saveOfflineAndSync = async () => {
+    const suspension = await reportesApi.getSuspensionActiva();
+    if (suspension) {
+      const fin = new Date(suspension.fechaFin).toLocaleDateString();
+      Alert.alert('Cuenta suspendida', `Tu cuenta está suspendida hasta el ${fin}. Motivo: ${suspension.motivo}`);
+      return;
+    }
     if (!titulo.trim()) {
       if (easyMode) { speak('Escriba un título para el reporte'); }
       Alert.alert('Falta información', 'El título es obligatorio.');
@@ -417,6 +464,36 @@ export function CreateReporteScreen() {
     }
     setIsSaving(true);
     try {
+      if (isEditing && editData) {
+        // Upload new images and audio, then PATCH
+        const finalUrls: string[] = [];
+        for (const uri of imageUris) {
+          if (uri.startsWith('file://') || uri.startsWith(FileSystem.documentDirectory ?? '')) {
+            finalUrls.push(await uploadFileToServer(uri, 'image'));
+          } else {
+            finalUrls.push(uri);
+          }
+        }
+        let finalAudio: string | undefined;
+        if (audioUri) {
+          if (audioUri.startsWith('file://') || audioUri.startsWith(FileSystem.documentDirectory ?? '')) {
+            finalAudio = await uploadFileToServer(audioUri, 'audio');
+          } else {
+            finalAudio = audioUri;
+          }
+        }
+        await reportesApi.reEditarReporte(editData.id, {
+          titulo: titulo.trim(),
+          descripcion: descripcion.trim() || undefined,
+          cultivoId,
+          imagenesUrls: finalUrls,
+          audioUrl: finalAudio,
+        });
+        if (easyMode) speak('Reporte actualizado');
+        Alert.alert('Actualizado', 'El reporte ha sido actualizado.');
+        navigation.goBack();
+        return;
+      }
       await enqueueReporte({
         titulo: titulo.trim(),
         descripcion: descripcion.trim() || undefined,
@@ -435,7 +512,10 @@ export function CreateReporteScreen() {
         );
       } catch {
         if (easyMode) { speak('Reporte guardado sin conexión'); }
-        Alert.alert('Guardado offline', `El reporte se sincronizará cuando haya conexión.`);
+        Alert.alert(
+          '📡 Sin conexión',
+          'El reporte se guardó en tu dispositivo.\n\nSe enviará automáticamente cuando tengas conexión a internet o WiFi.'
+        );
       }
       setTitulo('');
       setDescripcion('');
@@ -484,92 +564,169 @@ export function CreateReporteScreen() {
 
   // ── Easy Mode Form ───────────────────────────────────────────────────────
   if (easyMode) {
+    const selectedCultivo = cultivos.find((c) => c.id === cultivoId);
+
+    const handleSelectCultivo = (c: Cultivo) => {
+      if (c.id === cultivoId) return;
+      setCultivoId(c.id);
+      if (c.id !== lastSpokenCultivo.current) {
+        lastSpokenCultivo.current = c.id;
+        speak(`Seleccionaste ${c.nombre}`);
+      }
+    };
+
     return (
       <ScrollView style={{ flex: 1, backgroundColor: '#f1f5f9' }} contentContainerStyle={{ padding: 16 }}>
-        <Text style={{ fontSize: 22, fontWeight: '800', color: '#0f172a', marginBottom: 16 }}>Nuevo reporte</Text>
+        <Text style={{ fontSize: 22, fontWeight: '800', color: '#0f172a', marginBottom: cultivoStep === 'selecting' ? 4 : 16 }}>
+          Nuevo reporte
+        </Text>
 
-        {/* Cultivo selector */}
-        {cultivosLoading ? (
-          <ActivityIndicator size="large" color="#10b981" style={{ marginBottom: 12 }} />
+        {cultivoStep === 'selecting' ? (
+          <>
+            <Text style={{ fontSize: 14, color: '#475569', marginBottom: 14, fontWeight: '600' }}>
+              Selecciona un cultivo
+            </Text>
+
+            {cultivosLoading ? (
+              <ActivityIndicator size="large" color="#10b981" style={{ marginTop: 40 }} />
+            ) : (
+              <>
+                <View style={styles.cultivoGrid}>
+                  {cultivos.map((c) => {
+                    const isSelected = c.id === cultivoId;
+                    return (
+                      <Pressable
+                        key={c.id}
+                        style={[
+                          styles.cultivoCard,
+                          { width: CULTIVO_CARD_WIDTH },
+                          isSelected && styles.cultivoCardSelected,
+                        ]}
+                        onPress={() => handleSelectCultivo(c)}
+                      >
+                        {c.imagenUrl ? (
+                          <Image source={{ uri: c.imagenUrl }} style={styles.cultivoImage} resizeMode="cover" />
+                        ) : (
+                          <View style={styles.cultivoImageFallback}>
+                            <Ionicons name="leaf" size={36} color="#15803d" />
+                          </View>
+                        )}
+                        <Text style={[styles.cultivoNombre, isSelected && styles.cultivoNombreSelected]} numberOfLines={2}>
+                          {c.nombre}
+                        </Text>
+                        {isSelected && (
+                          <View style={styles.cultivoCheck}>
+                            <Ionicons name="checkmark-circle" size={24} color="#15803d" />
+                          </View>
+                        )}
+                      </Pressable>
+                    );
+                  })}
+                </View>
+
+                <Pressable
+                  style={[styles.continueBtn, !cultivoId && styles.continueBtnDisabled]}
+                  disabled={!cultivoId}
+                  onPress={() => {
+                    if (cultivoId) {
+                      const c = cultivos.find(c => c.id === cultivoId);
+                      if (c) speak(`Continuar con ${c.nombre}`);
+                      setCultivoStep('confirmed');
+                    }
+                  }}
+                >
+                  <Text style={[styles.continueBtnText, !cultivoId && styles.continueBtnTextDisabled]}>
+                    Continuar
+                  </Text>
+                  <Ionicons name="arrow-forward" size={20} color={cultivoId ? '#fff' : '#94a3b8'} />
+                </Pressable>
+              </>
+            )}
+          </>
         ) : (
-          <AccessibleButton
-            icon="leaf"
-            label={cultivos.find((c) => c.id === cultivoId)?.nombre ?? 'Seleccionar cultivo'}
-            onPress={() => {
-              const nextIdx = cultivos.findIndex((c) => c.id === cultivoId);
-              const next = cultivos[(nextIdx + 1) % cultivos.length];
-              setCultivoId(next.id);
-            }}
-            color={cultivoId ? '#15803d' : '#94a3b8'}
-            style={{ marginBottom: 12 }}
-          />
-        )}
-
-        {/* Title */}
-        <View style={styles.card}>
-          <TextInput
-            style={styles.input}
-            value={titulo}
-            onChangeText={setTitulo}
-            placeholder="Título del reporte"
-            placeholderTextColor="#94a3b8"
-          />
-        </View>
-
-        {/* Location + Camera row */}
-        <View style={{ flexDirection: 'row', gap: 12, marginBottom: 12 }}>
-          <AccessibleButton
-            icon={locationReady ? 'checkmark-circle' : 'time-outline'}
-            label="Ubicación"
-            onPress={getLocation}
-            color={locationReady ? '#10b981' : '#f59e0b'}
-            style={{ flex: 1 }}
-          />
-          <AccessibleButton
-            icon="camera"
-            label={canTakeMore ? `Foto ${imageUris.length + 1}` : 'Límite'}
-            onPress={openCamera}
-            color="#2563eb"
-            disabled={!canTakeMore}
-            style={{ flex: 1 }}
-          />
-        </View>
-
-        {/* Photo gallery */}
-        <ImageGallery uris={imageUris} onDelete={deleteImage} onPress={(i) => setSelectedImage(imageUris[i])} />
-
-        {/* Audio */}
-        <View style={[styles.card, { marginTop: 12 }]}>
-          <RecordingWave isRecording={isRecording} />
-          <View style={{ alignItems: 'center', gap: 4, marginBottom: 8 }}>
-            {isRecording ? (
-              <Text style={{ color: '#ef4444', fontWeight: '600' }}>Grabando... {timer}</Text>
-            ) : audioUri ? (
-              <Text style={{ color: '#10b981', fontWeight: '600' }}>Audio listo</Text>
-            ) : null}
-          </View>
-          <AccessibleButton
-            icon={isRecording ? 'stop' : 'mic'}
-            label={isRecording ? 'Detener' : audioUri ? 'Volver a grabar' : 'Grabar audio'}
-            onPress={isRecording ? stopRecording : startRecording}
-            color={isRecording ? '#ef4444' : '#10b981'}
-          />
-          {audioUri && (
-            <Pressable onPress={deleteAudio} style={{ alignItems: 'center', marginTop: 8 }}>
-              <Text style={{ color: '#ef4444', fontWeight: '600' }}>Eliminar audio</Text>
+          <>
+            {/* Cultivo summary */}
+            <Pressable
+              style={styles.cultivoSummary}
+              onPress={() => setCultivoStep('selecting')}
+            >
+              <View style={styles.cultivoSummaryLeft}>
+                <Ionicons name="leaf" size={18} color="#15803d" />
+                <Text style={styles.cultivoSummaryText}>
+                  Cultivo: <Text style={{ fontWeight: '800' }}>{selectedCultivo?.nombre}</Text>
+                </Text>
+                <Ionicons name="checkmark-circle" size={18} color="#15803d" />
+              </View>
+              <Text style={styles.cultivoCambiar}>Cambiar</Text>
             </Pressable>
-          )}
-        </View>
 
-        {/* Submit */}
-        <AccessibleButton
-          icon="checkmark"
-          label={isSaving ? 'Guardando...' : 'Guardar reporte'}
-          onPress={saveOfflineAndSync}
-          color="#15803d"
-          style={{ marginTop: 8 }}
-          disabled={isSaving}
-        />
+            {/* Title */}
+            <View style={styles.card}>
+              <TextInput
+                style={styles.input}
+                value={titulo}
+                onChangeText={setTitulo}
+                placeholder="Título del reporte"
+                placeholderTextColor="#94a3b8"
+              />
+            </View>
+
+            {/* Location + Camera row */}
+            <View style={{ flexDirection: 'row', gap: 12, marginBottom: 12 }}>
+              <AccessibleButton
+                icon={locationReady ? 'checkmark-circle' : 'time-outline'}
+                label="Ubicación"
+                onPress={getLocation}
+                color={locationReady ? '#10b981' : '#f59e0b'}
+                style={{ flex: 1 }}
+              />
+              <AccessibleButton
+                icon="camera"
+                label={canTakeMore ? `Foto ${imageUris.length + 1}` : 'Límite'}
+                onPress={openCamera}
+                color="#2563eb"
+                disabled={!canTakeMore}
+                style={{ flex: 1 }}
+              />
+            </View>
+
+            {/* Photo gallery */}
+            <ImageGallery uris={imageUris} onDelete={deleteImage} onPress={(i) => setSelectedImage(imageUris[i])} />
+
+            {/* Audio */}
+            <View style={[styles.card, { marginTop: 12 }]}>
+              <RecordingWave isRecording={isRecording} />
+              <View style={{ alignItems: 'center', gap: 4, marginBottom: 8 }}>
+                {isRecording ? (
+                  <Text style={{ color: '#ef4444', fontWeight: '600' }}>Grabando... {timer}</Text>
+                ) : audioUri ? (
+                  <Text style={{ color: '#10b981', fontWeight: '600' }}>Audio listo</Text>
+                ) : null}
+              </View>
+              <AccessibleButton
+                icon={isRecording ? 'stop' : 'mic'}
+                label={isRecording ? 'Detener' : audioUri ? 'Volver a grabar' : 'Grabar audio'}
+                onPress={isRecording ? stopRecording : startRecording}
+                color={isRecording ? '#ef4444' : '#10b981'}
+              />
+              {audioUri && (
+                <Pressable onPress={deleteAudio} style={{ alignItems: 'center', marginTop: 8 }}>
+                  <Text style={{ color: '#ef4444', fontWeight: '600' }}>Eliminar audio</Text>
+                </Pressable>
+              )}
+            </View>
+
+            {/* Submit */}
+            <AccessibleButton
+              icon="checkmark"
+              label={isSaving ? 'Guardando...' : isEditing ? 'Actualizar reporte' : 'Guardar reporte'}
+              onPress={saveOfflineAndSync}
+              color="#15803d"
+              style={{ marginTop: 8 }}
+              disabled={isSaving}
+            />
+          </>
+        )}
 
         <ImageViewerModal
           visible={selectedImage !== null}
@@ -741,7 +898,7 @@ export function CreateReporteScreen() {
         disabled={isSaving}
       >
         <Text style={styles.btnSubmitText}>
-          {isSaving ? 'Guardando…' : '  Guardar y enviar reporte'}
+          {isSaving ? 'Guardando…' : isEditing ? '  Actualizar reporte' : '  Guardar y enviar reporte'}
         </Text>
       </Pressable>
 
@@ -935,5 +1092,108 @@ const styles = StyleSheet.create({
   previewBtnSecondary: { backgroundColor: 'rgba(255,255,255,0.15)', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.4)' },
   previewBtnTextPrimary: { color: '#fff', fontWeight: '700', fontSize: 16 },
   previewBtnTextSecondary: { color: '#fff', fontWeight: '600', fontSize: 16 },
+
+  // Cultivo grid (easy mode)
+  cultivoGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: CULTIVO_CARD_GAP,
+    marginBottom: 20,
+  },
+  cultivoCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: '#e2e8f0',
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  cultivoCardSelected: {
+    borderColor: '#15803d',
+    backgroundColor: '#f0fdf4',
+  },
+  cultivoImage: {
+    width: '100%',
+    height: CULTIVO_CARD_WIDTH * 0.7,
+  },
+  cultivoImageFallback: {
+    width: '100%',
+    height: CULTIVO_CARD_WIDTH * 0.7,
+    backgroundColor: '#f0fdf4',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cultivoNombre: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#334155',
+    padding: 10,
+    textAlign: 'center',
+  },
+  cultivoNombreSelected: {
+    color: '#15803d',
+  },
+  cultivoCheck: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+  },
+  continueBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#15803d',
+    borderRadius: 16,
+    paddingVertical: 18,
+    shadowColor: '#15803d',
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+  },
+  continueBtnDisabled: {
+    backgroundColor: '#f1f5f9',
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  continueBtnText: {
+    color: '#fff',
+    fontWeight: '800',
+    fontSize: 18,
+  },
+  continueBtnTextDisabled: {
+    color: '#94a3b8',
+  },
+  cultivoSummary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#f0fdf4',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 16,
+    borderWidth: 1.5,
+    borderColor: '#bbf7d0',
+  },
+  cultivoSummaryLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  cultivoSummaryText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#166534',
+  },
+  cultivoCambiar: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#15803d',
+  },
 });
 

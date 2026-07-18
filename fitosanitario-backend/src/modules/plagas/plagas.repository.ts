@@ -13,9 +13,9 @@ export class PlagasRepository {
   ) {}
 
   async findAll(search?: string, cultivoId?: number) {
-    const conditions = [];
+    const conditions: any[] = [];
     if (search) {
-      conditions.push(ilike(schema.plagasEnfermedades.nombre, `%${search}%`));
+      conditions.push(sql`unaccent(${schema.plagasEnfermedades.nombre}) ILIKE unaccent(${'%' + search + '%'})`);
     }
     if (cultivoId) {
       conditions.push(sql`${schema.plagasEnfermedades.id} IN (SELECT plaga_id FROM plagas_cultivos WHERE cultivo_id = ${cultivoId})`);
@@ -36,6 +36,17 @@ export class PlagasRepository {
       .from(schema.plagasCultivos)
       .innerJoin(schema.cultivos, eq(schema.plagasCultivos.cultivoId, schema.cultivos.id))
       .where(eq(schema.plagasCultivos.plagaId, plagaId));
+  }
+
+  async findAllAsociaciones(): Promise<{ plagaId: number; id: number; nombre: string }[]> {
+    return this.db
+      .select({
+        plagaId: schema.plagasCultivos.plagaId,
+        id: schema.cultivos.id,
+        nombre: schema.cultivos.nombre,
+      })
+      .from(schema.plagasCultivos)
+      .innerJoin(schema.cultivos, eq(schema.plagasCultivos.cultivoId, schema.cultivos.id));
   }
 
   async setCultivos(plagaId: number, cultivoIds: number[]) {

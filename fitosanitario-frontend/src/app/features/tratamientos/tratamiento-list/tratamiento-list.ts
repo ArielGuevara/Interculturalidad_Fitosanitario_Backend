@@ -26,6 +26,7 @@ export class TratamientoList implements OnInit {
   selectedTratamiento = signal<TratamientoOficial | null>(null);
   loading = signal(false);
   detailDialog = signal(false);
+  searchQuery = signal<string>('');
 
   totalEnciclopedia = computed(() => this.tratamientos().filter(t => t.enEnciclopedia).length);
   totalCarenciaAlta = computed(() => this.tratamientos().filter(t => t.diasCarencia >= 14).length);
@@ -34,9 +35,14 @@ export class TratamientoList implements OnInit {
     this.loadTratamientos();
   }
 
+  onSearchInput(event: Event) {
+    this.searchQuery.set((event.target as HTMLInputElement).value);
+    this.loadTratamientos();
+  }
+
   loadTratamientos() {
     this.loading.set(true);
-    this.tratamientosService.findAll().subscribe({
+    this.tratamientosService.findAll(this.searchQuery() || undefined).subscribe({
       next: data => {
         this.tratamientos.set(data);
         this.loading.set(false);

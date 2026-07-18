@@ -93,40 +93,28 @@ export function HomeScreen() {
 
   const features: FeatureItem[] = [
     {
-      icon: 'clipboard-outline',
-      label: 'Mis Reportes',
-      color: '#10b981',
-      onPress: () => navigation.navigate('Tabs', { screen: 'Reportes' }),
-    },
-    {
-      icon: 'leaf-outline',
-      label: 'Catálogos',
-      color: '#3b82f6',
-      onPress: () => navigation.navigate('Cultivos'),
+      icon: 'bug-outline',
+      label: 'Plagas',
+      color: '#15803d',
+      onPress: () => navigation.navigate('Plagas'),
     },
     {
       icon: 'chatbubbles-outline',
       label: 'Foro',
-      color: '#8b5cf6',
+      color: '#047857',
       onPress: () => navigation.navigate('ForoList'),
     },
     {
       icon: 'notifications-outline',
       label: 'Alertas',
-      color: '#f59e0b',
+      color: '#166534',
       onPress: () => navigation.navigate('Alertas'),
     },
     {
       icon: 'cloud-outline',
       label: 'Sincronizar',
-      color: '#0ea5e9',
+      color: '#14532d',
       onPress: onSync,
-    },
-    {
-      icon: 'person-outline',
-      label: 'Perfil',
-      color: '#64748b',
-      onPress: () => {},
     },
   ];
 
@@ -166,42 +154,35 @@ export function HomeScreen() {
                 icon="cloud-upload-outline"
                 label="Subir pendientes"
                 onPress={onSync}
-                color="#2563eb"
+                color="#166534"
                 style={{ marginBottom: 20 }}
-              />
-              <AccessibleButton
-                icon="leaf"
-                label="Cultivos"
-                onPress={() => navigation.navigate('Cultivos')}
-                color="#14532d"
-                style={{ marginBottom: 12 }}
               />
               <AccessibleButton
                 icon="bug"
                 label="Plagas"
                 onPress={() => navigation.navigate('Plagas')}
-                color="#7f1d1d"
-                style={{ marginBottom: 12 }}
-              />
-              <AccessibleButton
-                icon="medkit"
-                label="Productos"
-                onPress={() => navigation.navigate('Productos')}
-                color="#1e3a5f"
-                style={{ marginBottom: 12 }}
-              />
-              <AccessibleButton
-                icon="notifications"
-                label="Alertas"
-                onPress={() => navigation.navigate('Alertas')}
-                color="#b45309"
+                color="#15803d"
                 style={{ marginBottom: 12 }}
               />
               <AccessibleButton
                 icon="chatbubbles"
                 label={`Foro (${comunidadCount})`}
                 onPress={() => navigation.navigate('ForoList')}
-                color="#7c3aed"
+                color="#047857"
+                style={{ marginBottom: 12 }}
+              />
+              <AccessibleButton
+                icon="notifications"
+                label="Alertas"
+                onPress={() => navigation.navigate('Alertas')}
+                color="#166534"
+                style={{ marginBottom: 12 }}
+              />
+              <AccessibleButton
+                icon="cloud"
+                label="Sincronizar"
+                onPress={onSync}
+                color="#14532d"
               />
             </>
           ) : (

@@ -1,4 +1,4 @@
-﻿import React, { useRef } from 'react';
+﻿import React, { useRef, useState } from 'react';
 import { 
   Pressable, 
   Text, 
@@ -9,11 +9,13 @@ import {
   ScrollView, 
   useWindowDimensions,
   Switch,
+  Alert,
 } from 'react-native';
 import { useAuthStore } from '../../../infrastructure/auth/authStore';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useAccessibilityStore } from '../../../shared/stores/accessibilityStore';
+import { apiClient } from '../../../infrastructure/http/apiClient';
 
 export function ProfileScreen() {
   const usuario = useAuthStore((s) => s.usuario);
@@ -33,6 +35,7 @@ export function ProfileScreen() {
   const avatarSize = width * 0.25;
   const finalAvatarSize = Math.min(avatarSize, 120); 
   const dynamicPadding = width * 0.06;
+  const [testLoading, setTestLoading] = useState(false);
 
   // Componente reutilizable
   const InfoRow = ({ iconName, label, value }: { iconName: string; label: string; value: string }) => (
@@ -121,6 +124,30 @@ export function ProfileScreen() {
             />
           </View>
         </View>
+
+        {/* Botón de prueba de notificaciones */}
+        <Pressable
+          style={styles.testPushButton}
+          onPress={async () => {
+            setTestLoading(true);
+            try {
+              const res = await apiClient.post('/push/test');
+              if (res.data?.enviado) {
+                Alert.alert('Notificación enviada', `Revisa tu bandeja de notificaciones.`);
+              } else {
+                Alert.alert('Error', res.data?.motivo ?? 'No se pudo enviar');
+              }
+            } catch (e: any) {
+              Alert.alert('Error', e?.response?.data?.message ?? e?.message ?? 'Error de conexión');
+            } finally {
+              setTestLoading(false);
+            }
+          }}
+          disabled={testLoading}
+        >
+          <Ionicons name="notifications-outline" size={20} color="#10b981" style={{ marginRight: 10 }} />
+          <Text style={styles.testPushText}>{testLoading ? 'Enviando...' : 'Enviar notificación de prueba'}</Text>
+        </Pressable>
 
         {/* Espaciador flexible */}
         <View style={styles.spacer} />
@@ -250,6 +277,24 @@ const styles = StyleSheet.create({
   spacer: {
     flex: 1,
     minHeight: 40,
+  },
+
+  testPushButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#d1fae5',
+    borderWidth: 1,
+    borderColor: '#a7f3d0',
+    paddingVertical: 16,
+    borderRadius: 20,
+    width: '100%',
+    marginTop: 16,
+  },
+  testPushText: {
+    color: '#059669',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 
   logoutButton: {

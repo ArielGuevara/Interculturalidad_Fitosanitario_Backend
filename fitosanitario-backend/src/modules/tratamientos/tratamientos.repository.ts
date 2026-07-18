@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DB_CONNECTION } from '../../db/db.module';
 import * as schema from '../../db/schema';
-import { eq, desc, and, gte, ilike, or } from 'drizzle-orm';
+import { eq, desc, and, gte, ilike, or, sql } from 'drizzle-orm';
 import { CreateTratamientoDto } from './dto/create-tratamiento.dto';
 import { UpdateTratamientoDto } from './dto/update-tratamiento.dto';
 
@@ -42,13 +42,13 @@ export class TratamientosRepository {
   }
 
   async findAll(search?: string, cultivoId?: number) {
-    const conditions = [];
+    const conditions: any[] = [];
     if (search) {
       const pattern = `%${search}%`;
       conditions.push(or(
-        ilike(schema.productosFitosanitarios.nombreComercial, pattern),
-        ilike(schema.cultivos.nombre, pattern),
-        ilike(schema.plagasEnfermedades.nombre, pattern),
+        sql`unaccent(${schema.productosFitosanitarios.nombreComercial}) ILIKE unaccent(${pattern})`,
+        sql`unaccent(${schema.cultivos.nombre}) ILIKE unaccent(${pattern})`,
+        sql`unaccent(${schema.plagasEnfermedades.nombre}) ILIKE unaccent(${pattern})`,
       ));
     }
     if (cultivoId) {

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { Cultivo, CreateCultivoDto, UpdateCultivoDto } from '../models/cultivo.model';
 import { Observable } from 'rxjs';
@@ -12,8 +12,10 @@ export class CultivosService {
 
   constructor(private http: HttpClient) {}
 
-  findAll(): Observable<Cultivo[]> {
-    return this.http.get<Cultivo[]>(this.apiUrl);
+  findAll(search?: string): Observable<Cultivo[]> {
+    let params = new HttpParams();
+    if (search) params = params.set('search', search);
+    return this.http.get<Cultivo[]>(this.apiUrl, { params });
   }
 
   findById(id: number): Observable<Cultivo> {

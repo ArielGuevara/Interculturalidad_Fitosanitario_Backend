@@ -1,35 +1,35 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="jest tests" tests="13" failures="0" errors="0" time="4.854">
-  <testsuite name="Environment Config" errors="0" failures="0" skipped="0" timestamp="2026-07-05T22:12:45" time="2.527" tests="2">
-    <testcase classname="Environment Config should use default API URL when EXPO_PUBLIC_API_URL is not set" name="Environment Config should use default API URL when EXPO_PUBLIC_API_URL is not set" time="0.033">
+<testsuites name="jest tests" tests="13" failures="0" errors="0" time="11.548">
+  <testsuite name="Environment Config" errors="0" failures="0" skipped="0" timestamp="2026-07-16T14:19:34" time="4.271" tests="2">
+    <testcase classname="Environment Config should use default API URL when EXPO_PUBLIC_API_URL is not set" name="Environment Config should use default API URL when EXPO_PUBLIC_API_URL is not set" time="0.051">
     </testcase>
-    <testcase classname="Environment Config should use EXPO_PUBLIC_API_URL when set" name="Environment Config should use EXPO_PUBLIC_API_URL when set" time="0.006">
+    <testcase classname="Environment Config should use EXPO_PUBLIC_API_URL when set" name="Environment Config should use EXPO_PUBLIC_API_URL when set" time="0.005">
     </testcase>
   </testsuite>
-  <testsuite name="alertasApi" errors="0" failures="0" skipped="0" timestamp="2026-07-05T22:12:45" time="2.561" tests="8">
-    <testcase classname="alertasApi getAlertas should fetch alertas" name="alertasApi getAlertas should fetch alertas" time="0.022">
+  <testsuite name="alertasApi" errors="0" failures="0" skipped="0" timestamp="2026-07-16T14:19:34" time="4.333" tests="8">
+    <testcase classname="alertasApi getAlertas should fetch alertas" name="alertasApi getAlertas should fetch alertas" time="0.014">
     </testcase>
-    <testcase classname="alertasApi getAlertaById should fetch alerta by id" name="alertasApi getAlertaById should fetch alerta by id" time="0.003">
+    <testcase classname="alertasApi getAlertaById should fetch alerta by id" name="alertasApi getAlertaById should fetch alerta by id" time="0.002">
     </testcase>
-    <testcase classname="alertasApi marcarAlertaLeida should mark alerta as read" name="alertasApi marcarAlertaLeida should mark alerta as read" time="0.003">
+    <testcase classname="alertasApi marcarAlertaLeida should mark alerta as read" name="alertasApi marcarAlertaLeida should mark alerta as read" time="0.004">
     </testcase>
-    <testcase classname="alertasApi getNotificaciones should fetch notificaciones by usuarioId" name="alertasApi getNotificaciones should fetch notificaciones by usuarioId" time="0.004">
+    <testcase classname="alertasApi getNotificaciones should fetch notificaciones by usuarioId" name="alertasApi getNotificaciones should fetch notificaciones by usuarioId" time="0.003">
     </testcase>
-    <testcase classname="alertasApi marcarNotificacionLeida should mark notification as read" name="alertasApi marcarNotificacionLeida should mark notification as read" time="0.004">
+    <testcase classname="alertasApi marcarNotificacionLeida should mark notification as read" name="alertasApi marcarNotificacionLeida should mark notification as read" time="0.003">
     </testcase>
-    <testcase classname="alertasApi countNotificacionesNoLeidas should count unread notifications" name="alertasApi countNotificacionesNoLeidas should count unread notifications" time="0.003">
+    <testcase classname="alertasApi countNotificacionesNoLeidas should count unread notifications" name="alertasApi countNotificacionesNoLeidas should count unread notifications" time="0.002">
     </testcase>
     <testcase classname="alertasApi registrarDispositivo should register device token" name="alertasApi registrarDispositivo should register device token" time="0.002">
     </testcase>
-    <testcase classname="alertasApi eliminarDispositivo should unregister device token" name="alertasApi eliminarDispositivo should unregister device token" time="0.002">
+    <testcase classname="alertasApi eliminarDispositivo should unregister device token" name="alertasApi eliminarDispositivo should unregister device token" time="0.001">
     </testcase>
   </testsuite>
-  <testsuite name="AuthStore" errors="0" failures="0" skipped="0" timestamp="2026-07-05T22:12:45" time="2.596" tests="3">
-    <testcase classname="AuthStore hydrate should set authenticated status when token and user exist" name="AuthStore hydrate should set authenticated status when token and user exist" time="0.097">
+  <testsuite name="AuthStore" errors="0" failures="0" skipped="0" timestamp="2026-07-16T14:19:34" time="4.466" tests="3">
+    <testcase classname="AuthStore hydrate should set authenticated status when token and user exist" name="AuthStore hydrate should set authenticated status when token and user exist" time="0.294">
     </testcase>
-    <testcase classname="AuthStore hydrate should set unauthenticated status when no token exists" name="AuthStore hydrate should set unauthenticated status when no token exists" time="0.003">
+    <testcase classname="AuthStore hydrate should set unauthenticated status when no token exists" name="AuthStore hydrate should set unauthenticated status when no token exists" time="0.002">
     </testcase>
-    <testcase classname="AuthStore logout should clear auth state and AsyncStorage" name="AuthStore logout should clear auth state and AsyncStorage" time="0.004">
+    <testcase classname="AuthStore logout should clear auth state and AsyncStorage" name="AuthStore logout should clear auth state and AsyncStorage" time="0.003">
     </testcase>
   </testsuite>
 </testsuites>

@@ -2,7 +2,8 @@ import { Inject, Injectable } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DB_CONNECTION } from '../../db/db.module';
 import * as schema from '../../db/schema';
-import { desc, eq } from 'drizzle-orm';
+import { desc, eq, and, sql } from 'drizzle-orm';
+import { ReEditarReporteDto } from './dto/re-editar-reporte.dto';
 
 @Injectable()
 export class ReportesRepository {
@@ -83,14 +84,12 @@ export class ReportesRepository {
     estadoNuevo: (typeof schema.estadoReporteEnum.enumValues)[number];
     motivo?: string;
   }) {
-    // Actualiza estado del reporte
     const [reporteActualizado] = await this.db
       .update(schema.reportes)
       .set({ estado: params.estadoNuevo })
       .where(eq(schema.reportes.id, params.reporteId))
       .returning();
 
-    // Registra en historial
     await this.db.insert(schema.reporteHistorialEstado).values({
       reporteId: params.reporteId,
       usuarioId: params.usuarioId,
@@ -98,6 +97,36 @@ export class ReportesRepository {
       estadoNuevo: params.estadoNuevo,
       motivo: params.motivo ?? null,
     });
+
+    return reporteActualizado;
+  }
+
+  async setMotivoRechazo(reporteId: number, motivo: string, audioUrl?: string | null) {
+    const [reporteActualizado] = await this.db
+      .update(schema.reportes)
+      .set({
+        motivoRechazo: motivo,
+        audioRechazoUrl: audioUrl ?? null,
+      })
+      .where(eq(schema.reportes.id, reporteId))
+      .returning();
+
+    return reporteActualizado;
+  }
+
+  async reEditar(reporteId: number, dto: ReEditarReporteDto) {
+    const updateData: any = {};
+    if (dto.titulo !== undefined) updateData.titulo = dto.titulo;
+    if (dto.descripcion !== undefined) updateData.descripcion = dto.descripcion;
+    if (dto.cultivoId !== undefined) updateData.cultivoId = dto.cultivoId;
+    if (dto.imagenesUrls !== undefined) updateData.imagenesUrls = dto.imagenesUrls;
+    if (dto.audioUrl !== undefined) updateData.audioUrl = dto.audioUrl;
+
+    const [reporteActualizado] = await this.db
+      .update(schema.reportes)
+      .set(updateData)
+      .where(eq(schema.reportes.id, reporteId))
+      .returning();
 
     return reporteActualizado;
   }
@@ -122,5 +151,56 @@ export class ReportesRepository {
       )
       .where(eq(schema.reporteHistorialEstado.reporteId, reporteId))
       .orderBy(desc(schema.reporteHistorialEstado.fechaCambio));
+  }
+
+  async createSuspension(params: {
+    usuarioId: number;
+    reporteId: number;
+    motivo: string;
+    tipoDuracion: 'TIEMPO' | 'DIAS';
+    duracion: number;
+    fechaFin: Date;
+  }) {
+    const [result] = await this.db
+      .insert(schema.suspensionesUsuarios)
+      .values({
+        usuarioId: params.usuarioId,
+        reporteId: params.reporteId,
+        motivo: params.motivo,
+        tipoDuracion: params.tipoDuracion,
+        duracion: params.duracion,
+        fechaFin: params.fechaFin,
+      })
+      .returning();
+
+    return result;
+  }
+
+  async findSuspensionActiva(usuarioId: number) {
+    const result = await this.db
+      .select()
+      .from(schema.suspensionesUsuarios)
+      .where(
+        and(
+          eq(schema.suspensionesUsuarios.usuarioId, usuarioId),
+          eq(schema.suspensionesUsuarios.activa, true),
+          sql`${schema.suspensionesUsuarios.fechaFin} > NOW()`,
+        ),
+      )
+      .limit(1);
+
+    return result[0] ?? null;
+  }
+
+  async desactivarSuspensionesExpiradas() {
+    await this.db
+      .update(schema.suspensionesUsuarios)
+      .set({ activa: false })
+      .where(
+        and(
+          eq(schema.suspensionesUsuarios.activa, true),
+          sql`${schema.suspensionesUsuarios.fechaFin} <= NOW()`,
+        ),
+      );
   }
 }

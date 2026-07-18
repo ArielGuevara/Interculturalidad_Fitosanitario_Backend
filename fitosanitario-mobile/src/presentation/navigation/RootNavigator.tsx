@@ -3,7 +3,7 @@ import { NavigationContainer, createNavigationContainerRef } from '@react-naviga
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { Text, Alert } from 'react-native';
+import { Text, Alert, Platform } from 'react-native';
 import { useAuthStore } from '../../infrastructure/auth/authStore';
 import { useNotifications } from '../hooks/useNotifications';
 import { LoginScreen } from '../screens/auth/LoginScreen';
@@ -44,6 +44,19 @@ export type AppTabsParamList = {
   Perfil: undefined;
 };
 
+export type EditReporteData = {
+  id: number;
+  titulo: string;
+  descripcion?: string;
+  descripcionProblema?: string;
+  cultivoId: number;
+  plagaId?: number;
+  latitud: number;
+  longitud: number;
+  imagenesUrls?: string[];
+  audioUrl?: string | null;
+};
+
 export type AppStackParamList = {
   Tabs: undefined;
   Cultivos: undefined;
@@ -51,7 +64,7 @@ export type AppStackParamList = {
   Productos: undefined;
   Tratamientos: undefined;
   ReporteDetail: { id: number };
-  CreateReporte: undefined;
+  CreateReporte: { edit?: EditReporteData } | undefined;
   TratamientoDetail: { id: number };
   ForoList: undefined;
   RecomendacionForm: { reporteId?: number; cultivoId?: number; plagaId?: number };
@@ -126,9 +139,25 @@ function TabsNavigator() {
 }
 
 function AppNavigator() {
-  const handleNotificationTap = useCallback(() => {
-    if (navigationRef.isReady()) {
-      navigationRef.navigate('Alertas');
+  const handleNotificationTap = useCallback((data?: { type?: string; reporteId?: number; tratamientoId?: number; recomendacionId?: number }) => {
+    if (!navigationRef.isReady()) return;
+    if (!data?.type) { navigationRef.navigate('Alertas'); return; }
+    switch (data.type) {
+      case 'tratamiento_asignado':
+      case 'cambio_estado':
+      case 'nuevo_reporte':
+        if (data.reporteId) navigationRef.navigate('ReporteDetail', { id: data.reporteId });
+        else navigationRef.navigate('Alertas');
+        break;
+      case 'nuevo_comentario':
+        if (data.recomendacionId) navigationRef.navigate('RecomendacionDetail', { id: data.recomendacionId });
+        else navigationRef.navigate('Alertas');
+        break;
+      case 'cuenta_suspendida':
+        Alert.alert('Cuenta suspendida', 'Tu cuenta ha sido suspendida. Revisa los detalles en tu perfil.');
+        break;
+      default:
+        navigationRef.navigate('Alertas');
     }
   }, []);
 

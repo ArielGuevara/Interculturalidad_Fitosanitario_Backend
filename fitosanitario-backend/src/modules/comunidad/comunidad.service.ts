@@ -56,14 +56,14 @@ export class ComunidadService {
       reporte.usuarioId,
       'Nueva recomendación',
       `Tu reporte "${reporte.titulo}" recibió una recomendación en el foro`,
-      { type: 'nueva_recomendacion', recomendacionId: recomendacion.id, reporteId: reporte.id },
+      { type: 'nuevo_comentario', recomendacionId: recomendacion.id, reporteId: reporte.id },
     );
 
     await this.notificationEvent.notifyRole(
       ['MODERADOR', 'ADMIN'],
       'Nueva recomendación en foro',
       `Se agregó una recomendación al reporte "${reporte.titulo}"`,
-      { type: 'nueva_recomendacion', recomendacionId: recomendacion.id, reporteId: reporte.id },
+      { type: 'nuevo_comentario', recomendacionId: recomendacion.id, reporteId: reporte.id },
     );
 
     return recomendacion;

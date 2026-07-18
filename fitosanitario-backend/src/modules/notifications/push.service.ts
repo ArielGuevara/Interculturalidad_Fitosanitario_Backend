@@ -56,11 +56,19 @@ export class PushService {
         body: JSON.stringify(messages),
       });
       const result = await res.json();
-      if (!res.ok) {
-        this.logger.error('Expo push API error', JSON.stringify(result));
-      } else {
-        this.logger.log(`Expo push enviados: ${messages.length}`);
+      let ok = 0;
+      let fail = 0;
+      if (result?.data) {
+        for (const item of result.data) {
+          if (item.status === 'error') {
+            fail++;
+            this.logger.error(`Expo push error for ${(item.message || 'unknown') as string}: ${JSON.stringify(item.details || {})}`);
+          } else {
+            ok++;
+          }
+        }
       }
+      this.logger.log(`Expo push: ${ok} enviados, ${fail} fallaron`);
     } catch (err) {
       this.logger.error('Error enviando push notifications', err instanceof Error ? err.message : err);
     }
@@ -77,6 +85,7 @@ export class PushService {
     const expoTokens = tokens.filter((t) => t.startsWith('ExponentPushToken'));
     const fcmTokens = tokens.filter((t) => !t.startsWith('ExponentPushToken'));
 
+    // Expo Push API (para ExponentPushToken[...])
     if (expoTokens.length > 0) {
       const messages: PushMessage[] = expoTokens.map((token) => ({
         to: token,
@@ -90,10 +99,15 @@ export class PushService {
       await this.sendViaExpo(messages);
     }
 
+    // FCM v1 (para tokens nativos como los de getDevicePushTokenAsync)
     if (fcmTokens.length > 0 && this.firebaseApp) {
       try {
         const { getMessaging } = require('firebase-admin/messaging');
         const fcmData: Record<string, string> = {};
+        // Expo Notifications en Android necesita channelId y sound en el data payload
+        // para usar el canal correcto y reproducir sonido
+        fcmData.channelId = 'fitosanitario';
+        fcmData.sound = 'default';
         if (data) {
           for (const [key, value] of Object.entries(data)) {
             fcmData[key] = String(value ?? '');

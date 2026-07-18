@@ -1,4 +1,4 @@
-export type EstadoReporte = 'PENDIENTE' | 'COMUNIDAD' | 'VALIDADO' | 'RECHAZADO';
+export type EstadoReporte = 'PENDIENTE' | 'COMUNIDAD' | 'VALIDADO' | 'RECHAZADO' | 'VOLVER_A_REPORTAR';
 
 export interface Reporte {
     id: number;
@@ -14,6 +14,8 @@ export interface Reporte {
     longitud: number;
     estado: EstadoReporte;
     sincronizado: boolean;
+    motivoRechazo?: string | null;
+    audioRechazoUrl?: string | null;
     createdAt: string;
 }
 

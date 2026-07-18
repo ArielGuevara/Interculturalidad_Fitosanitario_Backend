@@ -31,4 +31,20 @@ export class ReportesService {
   cambiarEstado(id: number, dto: CambiarEstadoReporteDto): Observable<Reporte> {
     return this.http.patch<Reporte>(`${this.apiUrl}/${id}/estado`, dto);
   }
+
+  volverAReportar(id: number, formData: FormData): Observable<Reporte> {
+    return this.http.patch<Reporte>(`${this.apiUrl}/${id}/volver-a-reportar`, formData);
+  }
+
+  suspenderUsuario(id: number, dto: { motivo: string; tipoDuracion: 'TIEMPO' | 'DIAS'; duracion: number }): Observable<any> {
+    return this.http.post(`${this.apiUrl}/${id}/suspender-usuario`, dto);
+  }
+
+  reEditar(id: number, dto: { titulo?: string; descripcion?: string; cultivoId?: number; imagenesUrls?: string[]; audioUrl?: string }): Observable<Reporte> {
+    return this.http.patch<Reporte>(`${this.apiUrl}/${id}/re-editar`, dto);
+  }
+
+  getSuspensionActiva(): Observable<{ id: number; motivo: string; tipoDuracion: string; duracion: number; fechaInicio: string; fechaFin: string; activa: boolean } | null> {
+    return this.http.get<any>(`${this.apiUrl}/suspension/activa`);
+  }
 }

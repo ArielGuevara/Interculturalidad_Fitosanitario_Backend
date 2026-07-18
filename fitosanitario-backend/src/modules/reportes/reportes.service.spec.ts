@@ -3,12 +3,18 @@ import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { ReportesService } from './reportes.service';
 import { ReportesRepository } from './reportes.repository';
 import { MultimediaService } from '../multimedia/multimedia.service';
+import { NotificationEventService } from '../notifications/notification-event.service';
 import { CreateReporteDto } from './dto/create-reporte.dto';
 
 describe('ReportesService', () => {
   let service: ReportesService;
   let reportesRepository: jest.Mocked<ReportesRepository>;
   let multimediaService: jest.Mocked<MultimediaService>;
+
+  const mockNotificationEvent = {
+    notifyUser: jest.fn(),
+    notifyRole: jest.fn(),
+  };
 
   const mockReporte = {
     id: 1,
@@ -22,8 +28,10 @@ describe('ReportesService', () => {
     audioUrl: null,
     latitud: -1.23,
     longitud: -78.45,
-    estado: 'PENDIENTE',
+    estado: 'PENDIENTE' as const,
     sincronizado: true,
+    motivoRechazo: null,
+    audioRechazoUrl: null,
     createdAt: new Date(),
   };
 
@@ -41,6 +49,11 @@ describe('ReportesService', () => {
             findById: jest.fn(),
             cambiarEstado: jest.fn(),
             getHistorial: jest.fn(),
+            setMotivoRechazo: jest.fn(),
+            reEditar: jest.fn(),
+            createSuspension: jest.fn(),
+            findSuspensionActiva: jest.fn(),
+            desactivarSuspensionesExpiradas: jest.fn(),
           },
         },
         {
@@ -49,6 +62,10 @@ describe('ReportesService', () => {
             uploadImages: jest.fn(),
             uploadAudio: jest.fn(),
           },
+        },
+        {
+          provide: NotificationEventService,
+          useValue: mockNotificationEvent,
         },
       ],
     }).compile();
@@ -120,7 +137,7 @@ describe('ReportesService', () => {
       };
 
       multimediaService.uploadImages.mockResolvedValue({ count: 0, urls: [] });
-      multimediaService.uploadAudio.mockResolvedValue({ url: null });
+      multimediaService.uploadAudio.mockResolvedValue({ url: 'http://example.com/a' });
       reportesRepository.create.mockResolvedValue(mockReporte);
 
       const result = await service.create({ dto, usuarioId: 1 });
@@ -170,7 +187,7 @@ describe('ReportesService', () => {
 
   describe('findById', () => {
     it('should throw NotFoundException for non-existent reporte', async () => {
-      reportesRepository.findById.mockResolvedValue(null);
+      reportesRepository.findById.mockResolvedValue(null as any);
 
       await expect(service.findById(999)).rejects.toThrow(NotFoundException);
     });

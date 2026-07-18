@@ -7,6 +7,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import type { AppStackParamList } from '../../navigation/RootNavigator';
 import { recomendacionesApi } from '../../../infrastructure/data/recomendaciones/recomendacionesApi';
+import { reportesApi } from '../../../infrastructure/data/reportes/reportesApi';
 import { getCultivos } from '../../../infrastructure/data/catalogos/cultivosApi';
 import { getPlagas } from '../../../infrastructure/data/catalogos/plagasApi';
 import type { Cultivo } from '../../../domain/catalogos/types';
@@ -79,6 +80,12 @@ export function RecomendacionFormScreen({ route, navigation }: Props) {
   };
 
   const onSubmit = async () => {
+    const suspension = await reportesApi.getSuspensionActiva();
+    if (suspension) {
+      const fin = new Date(suspension.fechaFin).toLocaleDateString();
+      Alert.alert('Cuenta suspendida', `Tu cuenta está suspendida hasta el ${fin}. Motivo: ${suspension.motivo}`);
+      return;
+    }
     if (!titulo.trim()) { Alert.alert('Atención', 'El título es obligatorio'); return; }
     if (!descripcion.trim()) { Alert.alert('Atención', 'La descripción es obligatoria'); return; }
 

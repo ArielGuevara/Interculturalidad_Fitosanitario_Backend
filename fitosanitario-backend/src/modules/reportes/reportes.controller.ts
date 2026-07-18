@@ -7,20 +7,25 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  UploadedFile,
   UploadedFiles,
   UseFilters,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import { FileFieldsInterceptor, FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
+import { SuspensionGuard } from '../../common/guards/suspension.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { MulterExceptionFilter } from '../../common/filters/multer-exception.filter';
 import { CreateReporteDto } from './dto/create-reporte.dto';
 import { CambiarEstadoDto } from './dto/cambiar-estado.dto';
+import { VolverAReportarDto } from './dto/volver-a-reportar.dto';
+import { SuspenderUsuarioDto } from './dto/suspender-usuario.dto';
+import { ReEditarReporteDto } from './dto/re-editar-reporte.dto';
 import { BulkSyncInputDto } from './dto/bulk-sync-reporte.dto';
 import { ReportesService } from './reportes.service';
 
@@ -30,7 +35,6 @@ import { ReportesService } from './reportes.service';
 export class ReportesController {
   constructor(private readonly reportesService: ReportesService) {}
 
-  // Agricultor ve los suyos, Moderador ve todos
   @Get()
   findAll(@CurrentUser() user: { id: number; rol: string }) {
     if (user.rol === 'MODERADOR') {
@@ -39,7 +43,6 @@ export class ReportesController {
     return this.reportesService.findByUsuario(user.id);
   }
 
-  // Bandeja del moderador — solo PENDIENTES (RF-08)
   @Get('pendientes')
   @Roles('MODERADOR')
   findPendientes() {
@@ -56,8 +59,13 @@ export class ReportesController {
     return this.reportesService.getHistorial(id);
   }
 
-  // Crear reporte con fotos y audio en una sola petición
+  @Get('suspension/activa')
+  getSuspensionActiva(@CurrentUser() user: { id: number }) {
+    return this.reportesService.getSuspensionActiva(user.id);
+  }
+
   @Post()
+  @UseGuards(SuspensionGuard)
   @UseInterceptors(
     FileFieldsInterceptor(
       [
@@ -97,13 +105,11 @@ export class ReportesController {
     });
   }
 
-  // Sincronización offline — acepta un array de reportes con localId → devuelve mapping
   @Post('sync')
   bulkSync(@CurrentUser() user: { id: number }, @Body() dto: BulkSyncInputDto) {
     return this.reportesService.bulkSync(user.id, dto.reportes);
   }
 
-  // Cambiar estado — solo MODERADOR (RF-09)
   @Patch(':id/estado')
   @Roles('MODERADOR')
   cambiarEstado(
@@ -116,6 +122,61 @@ export class ReportesController {
       usuarioId: user.id,
       estadoNuevo: dto.estado,
       motivo: dto.motivo,
+    });
+  }
+
+  @Patch(':id/volver-a-reportar')
+  @Roles('MODERADOR')
+  @UseInterceptors(
+    FileInterceptor('audio', {
+      storage: memoryStorage(),
+      limits: { fileSize: 25 * 1024 * 1024 },
+      fileFilter: (_req, file, cb) => {
+        if (file.mimetype?.startsWith('audio/')) return cb(null, true);
+        return cb(new BadRequestException('Solo archivos de audio'), false);
+      },
+    }),
+  )
+  volverAReportar(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: VolverAReportarDto,
+    @UploadedFile() audio?: Express.Multer.File,
+    @CurrentUser() user: { id: number } = { id: 0 },
+  ) {
+    return this.reportesService.volverAReportar({
+      reporteId: id,
+      usuarioId: user.id,
+      motivo: dto.motivo,
+      audio,
+    });
+  }
+
+  @Patch(':id/re-editar')
+  reEditar(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: ReEditarReporteDto,
+    @CurrentUser() user: { id: number },
+  ) {
+    return this.reportesService.reEditar({
+      reporteId: id,
+      usuarioId: user.id,
+      dto,
+    });
+  }
+
+  @Post(':id/suspender-usuario')
+  @Roles('MODERADOR')
+  suspenderUsuario(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: SuspenderUsuarioDto,
+    @CurrentUser() user: { id: number },
+  ) {
+    return this.reportesService.suspenderUsuario({
+      reporteId: id,
+      usuarioId: user.id,
+      motivo: dto.motivo,
+      tipoDuracion: dto.tipoDuracion,
+      duracion: dto.duracion,
     });
   }
 }

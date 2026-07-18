@@ -7,13 +7,27 @@ import { UpdateProductoDto } from './dto/update-producto.dto';
 export class ProductosService {
   constructor(private readonly productosRepo: ProductosRepository) {}
 
-  findAll(search?: string, cultivoId?: number) {
-    return this.productosRepo.findAll(search, cultivoId);
+  findAll(search?: string, cultivoId?: number, plagaId?: number) {
+    return this.productosRepo.findAll(search, cultivoId, plagaId);
   }
 
   async findCultivos(productoId: number) {
     await this.findById(productoId);
     return this.productosRepo.findCultivosByProducto(productoId);
+  }
+
+  async findPlagasCultivos(productoId: number) {
+    await this.findById(productoId);
+    return this.productosRepo.findPlagasCultivos(productoId);
+  }
+
+  async setPlagasCultivos(productoId: number, pairs: { plagaId: number; cultivoId: number }[]) {
+    await this.findById(productoId);
+    return this.productosRepo.setPlagasCultivos(productoId, pairs);
+  }
+
+  async findAllAsociaciones() {
+    return this.productosRepo.findAllAsociaciones();
   }
 
   async findById(id: number) {
@@ -23,20 +37,26 @@ export class ProductosService {
   }
 
   async create(dto: CreateProductoDto) {
-    const { cultivoIds, ...productoData } = dto;
+    const { cultivoIds, pairs, ...productoData } = dto;
     const producto = await this.productosRepo.create(productoData);
     if (cultivoIds && cultivoIds.length > 0) {
       await this.productosRepo.setCultivos(producto.id, cultivoIds);
+    }
+    if (pairs && pairs.length > 0) {
+      await this.productosRepo.setPlagasCultivos(producto.id, pairs);
     }
     return producto;
   }
 
   async update(id: number, dto: UpdateProductoDto) {
     await this.findById(id);
-    const { cultivoIds, ...productoData } = dto as any;
+    const { cultivoIds, pairs, ...productoData } = dto as any;
     const producto = await this.productosRepo.update(id, productoData);
     if (cultivoIds && Array.isArray(cultivoIds)) {
       await this.productosRepo.setCultivos(id, cultivoIds);
+    }
+    if (pairs && Array.isArray(pairs)) {
+      await this.productosRepo.setPlagasCultivos(id, pairs);
     }
     return producto;
   }

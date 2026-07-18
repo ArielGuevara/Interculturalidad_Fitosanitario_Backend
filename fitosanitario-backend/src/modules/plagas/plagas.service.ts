@@ -11,6 +11,10 @@ export class PlagasService {
     return this.plagasRepo.findAll(search, cultivoId);
   }
 
+  findAllAsociaciones() {
+    return this.plagasRepo.findAllAsociaciones();
+  }
+
   async findCultivos(plagaId: number) {
     await this.findById(plagaId);
     return this.plagasRepo.findCultivosByPlaga(plagaId);

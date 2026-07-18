@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { TratamientosRepository } from './tratamientos.repository';
 import { ReportesService } from '../reportes/reportes.service';
+import { NotificationEventService } from '../notifications/notification-event.service';
 import { CreateTratamientoDto } from './dto/create-tratamiento.dto';
 import { UpdateTratamientoDto } from './dto/update-tratamiento.dto';
 
@@ -13,6 +14,7 @@ export class TratamientosService {
   constructor(
     private readonly tratamientosRepo: TratamientosRepository,
     private readonly reportesService: ReportesService,
+    private readonly notificationEvent: NotificationEventService,
   ) {}
 
   findAll(search?: string, cultivoId?: number) {
@@ -58,6 +60,13 @@ export class TratamientosService {
         estadoNuevo: 'VALIDADO',
         motivo: 'Tratamiento oficial emitido',
       });
+
+      await this.notificationEvent.notifyUser(
+        reporte.usuarioId,
+        'Tratamiento asignado',
+        `Tu reporte "${reporte.titulo}" recibió un tratamiento oficial (moderador #${moderadorId}). Revisa los detalles.`,
+        { type: 'tratamiento_asignado', reporteId: reporte.id, tratamientoId: tratamiento.id },
+      );
 
       return tratamiento;
     }

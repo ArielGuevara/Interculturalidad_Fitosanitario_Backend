@@ -14,8 +14,9 @@ import {
   ScrollView
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import type { Plaga } from '../../../domain/catalogos/types';
-import { getPlagas } from '../../../infrastructure/data/catalogos/plagasApi';
+import type { Cultivo, Plaga } from '../../../domain/catalogos/types';
+import { getPlagas, getAsociaciones } from '../../../infrastructure/data/catalogos/plagasApi';
+import { getCultivos } from '../../../infrastructure/data/catalogos/cultivosApi';
 import { getCache, setCache } from '../../../infrastructure/offline/cache';
 import { ImageViewerModal } from '../../../presentation/components/ImageViewerModal';
 import { SearchBar } from '../../../presentation/components/SearchBar';
@@ -24,29 +25,52 @@ const CACHE_KEY = 'plagas.list';
 
 export function PlagasScreen() {
   const [items, setItems] = useState<Plaga[]>([]);
+  const [cultivos, setCultivos] = useState<Cultivo[]>([]);
   const [loading, setLoading] = useState(true); 
   const [refreshing, setRefreshing] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedItem, setSelectedItem] = useState<Plaga | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCultivoId, setSelectedCultivoId] = useState<number | null>(null);
+
+  const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+  const filteredByCrop = useMemo(() => {
+    if (!selectedCultivoId) return items;
+    return items.filter(i =>
+      i.cultivos?.some(c => c.id === selectedCultivoId)
+    );
+  }, [items, selectedCultivoId]);
 
   const filteredItems = useMemo(() => {
-    if (!searchQuery.trim()) return items;
-    const q = searchQuery.toLowerCase();
-    return items.filter(i =>
-      i.nombre.toLowerCase().includes(q) ||
-      (i.descripcion && i.descripcion.toLowerCase().includes(q)) ||
-      (i.tipo && i.tipo.toLowerCase().includes(q))
+    let source = filteredByCrop;
+    if (!searchQuery.trim()) return source;
+    const q = normalize(searchQuery.toLowerCase());
+    return source.filter(i =>
+      normalize(i.nombre.toLowerCase()).includes(q) ||
+      (i.descripcion && normalize(i.descripcion.toLowerCase()).includes(q)) ||
+      (i.tipo && normalize(i.tipo.toLowerCase()).includes(q))
     );
-  }, [items, searchQuery]);
+  }, [filteredByCrop, searchQuery]);
 
   const loadData = async (isRefreshing = false) => {
     if (isRefreshing) setRefreshing(true);
     
     try {
-      const data = await getPlagas();
-      setItems(data);
-      await setCache(CACHE_KEY, data);
+      const [plagasData, asociaciones, cultivosData] = await Promise.all([
+        getPlagas(),
+        getAsociaciones(),
+        getCultivos(),
+      ]);
+      const map: Record<number, { id: number; nombre: string }[]> = {};
+      for (const a of asociaciones) {
+        if (!map[a.plagaId]) map[a.plagaId] = [];
+        map[a.plagaId].push({ id: a.id, nombre: a.nombre });
+      }
+      const merged = plagasData.map(p => ({ ...p, cultivos: map[p.id] || [] }));
+      setItems(merged);
+      setCultivos(cultivosData);
+      await setCache(CACHE_KEY, merged);
     } catch {
       const cached = await getCache<Plaga[]>(CACHE_KEY);
       if (cached) {
@@ -96,6 +120,17 @@ export function PlagasScreen() {
         ) : (
           <Text style={styles.noDescription}>Sin descripción disponible</Text>
         )}
+
+        {item.cultivos && item.cultivos.length > 0 && (
+          <View style={styles.cropRow}>
+            <Ionicons name="leaf" size={12} color="#059669" />
+            {item.cultivos.map(c => (
+              <View key={c.id} style={styles.cropBadge}>
+                <Text style={styles.cropBadgeText}>{c.nombre}</Text>
+              </View>
+            ))}
+          </View>
+        )}
       </Pressable>
     </View>
   );
@@ -124,8 +159,20 @@ export function PlagasScreen() {
         </Text>
       </View>
 
-      {/* Cuerpo de la Lista o Cargando */}
-      <SearchBar value={searchQuery} onChangeText={setSearchQuery} placeholder="Buscar plagas..." />
+      {/* Filtros: búsqueda + cultivo */}
+      <View style={styles.filterSection}>
+        <SearchBar value={searchQuery} onChangeText={setSearchQuery} placeholder="Buscar plagas..." />
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsScroll} contentContainerStyle={styles.chipsContent}>
+          <Pressable style={[styles.chip, !selectedCultivoId && styles.chipActive]} onPress={() => setSelectedCultivoId(null)}>
+            <Text style={[styles.chipText, !selectedCultivoId && styles.chipTextActive]}>Todos</Text>
+          </Pressable>
+          {cultivos.map(c => (
+            <Pressable key={c.id} style={[styles.chip, selectedCultivoId === c.id && styles.chipActive]} onPress={() => setSelectedCultivoId(c.id)}>
+              <Text style={[styles.chipText, selectedCultivoId === c.id && styles.chipTextActive]}>{c.nombre}</Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+      </View>
 
       {loading ? (
         <View style={styles.loadingContainer}>
@@ -166,6 +213,16 @@ export function PlagasScreen() {
             <Text style={styles.modalTitle}>{selectedItem?.nombre}</Text>
             {selectedItem && 'tipo' in selectedItem && selectedItem.tipo && (
               <View style={styles.modalBadge}><Text style={styles.modalBadgeText}>{selectedItem.tipo}</Text></View>
+            )}
+            {selectedItem?.cultivos && selectedItem.cultivos.length > 0 && (
+              <View style={styles.modalCropRow}>
+                <Ionicons name="leaf" size={14} color="#059669" />
+                {selectedItem.cultivos.map(c => (
+                  <View key={c.id} style={styles.modalCropBadge}>
+                    <Text style={styles.modalCropBadgeText}>{c.nombre}</Text>
+                  </View>
+                ))}
+              </View>
             )}
             <Text style={styles.modalDescription}>{selectedItem?.descripcion || 'Sin descripción disponible'}</Text>
             <Pressable style={styles.modalCloseBtn} onPress={() => setSelectedItem(null)}>
@@ -370,5 +427,78 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '700',
     fontSize: 16,
+  },
+
+  filterSection: {
+    paddingBottom: 4,
+  },
+  chipsScroll: {
+    paddingLeft: 20,
+    paddingRight: 20,
+    paddingBottom: 8,
+  },
+  chipsContent: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  chip: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: '#f1f5f9',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  chipActive: {
+    backgroundColor: '#059669',
+    borderColor: '#059669',
+  },
+  chipText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#475569',
+  },
+  chipTextActive: {
+    color: '#ffffff',
+  },
+  cropRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 4,
+    marginTop: 6,
+  },
+  cropBadge: {
+    backgroundColor: '#ecfdf5',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#d1fae5',
+  },
+  cropBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#059669',
+  },
+  modalCropRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: 12,
+  },
+  modalCropBadge: {
+    backgroundColor: '#ecfdf5',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#d1fae5',
+  },
+  modalCropBadgeText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#059669',
   },
 });

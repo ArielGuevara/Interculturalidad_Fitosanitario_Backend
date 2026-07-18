@@ -1,10 +1,14 @@
 import { CommonModule, DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { ImageModule } from 'primeng/image';
+import { TextareaModule } from 'primeng/textarea';
+import { InputNumberModule } from 'primeng/inputnumber';
+import { SelectModule } from 'primeng/select';
 import { TagModule } from 'primeng/tag';
 import { TimelineModule } from 'primeng/timeline';
 import { ToastModule } from 'primeng/toast';
@@ -24,10 +28,14 @@ import { TratamientoOficial } from '../../../core/models/tratamiento.model';
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     DatePipe,
     ButtonModule,
     DialogModule,
     ImageModule,
+    TextareaModule,
+    InputNumberModule,
+    SelectModule,
     TagModule,
     TimelineModule,
     ToastModule,
@@ -57,8 +65,23 @@ export class ReporteDetail implements OnInit {
   cultivosMap = signal<Record<number, string>>({});
   plagasMap = signal<Record<number, string>>({});
 
+  volverAReportarDialog = signal(false);
+  volverMotivo = signal('');
+  volverInputMode = signal<'texto' | 'audio'>('texto');
+  volverAudioBlob = signal<Blob | null>(null);
+  volverAudioUrl = signal('');
+  isRecording = signal(false);
+  mediaRecorderRef: MediaRecorder | null = null;
+  audioChunks: Blob[] = [];
+
+  suspenderDialog = signal(false);
+  suspenderMotivo = signal('');
+  suspenderTipo: 'TIEMPO' | 'DIAS' = 'TIEMPO';
+  suspenderDuracion = 10;
+
   fixedImages = computed(() => (this.reporte()?.imagenesUrls ?? []).map(url => this.multimediaService.fixMinioUrl(url)));
   fixedAudio = computed(() => this.multimediaService.fixMinioUrl(this.reporte()?.audioUrl));
+  fixedAudioRechazo = computed(() => this.multimediaService.fixMinioUrl(this.reporte()?.audioRechazoUrl));
   mapUrl = computed<SafeResourceUrl | null>(() => {
     const item = this.reporte();
     if (!item) return null;
@@ -107,29 +130,6 @@ export class ReporteDetail implements OnInit {
     window.open(`https://www.google.com/maps?q=${item.latitud},${item.longitud}`, '_blank');
   }
 
-  marcarComunidad() {
-    const item = this.reporte();
-    if (!item) return;
-
-    this.confirmationService.confirm({
-      message: 'Se creará una consulta comunitaria visible en el foro y el reporte pasará a estado COMUNIDAD.',
-      header: 'Enviar a comunidad',
-      icon: 'pi pi-comments',
-      accept: () => this.crearConsultaComunitaria(item)
-    });
-  }
-
-  rechazar() {
-    const item = this.reporte();
-    if (!item) return;
-    this.confirmationService.confirm({
-      message: '¿Seguro que deseas rechazar este reporte?',
-      header: 'Confirmar rechazo',
-      icon: 'pi pi-exclamation-triangle',
-      accept: () => this.cambiarEstado(item.id, 'RECHAZADO', 'Reporte rechazado por moderación')
-    });
-  }
-
   onTratamientoSaved(_tratamiento: TratamientoOficial) {
     const item = this.reporte();
     this.treatmentDialog.set(false);
@@ -146,40 +146,156 @@ export class ReporteDetail implements OnInit {
     return id ? this.plagasMap()[id] ?? `Plaga #${id}` : 'Sin diagnóstico';
   }
 
-  estadoSeverity(estado?: EstadoReporte): 'warn' | 'info' | 'success' | 'danger' | 'secondary' {
+  estadoSeverity(estado?: EstadoReporte): 'warn' | 'info' | 'success' | 'danger' | 'secondary' | 'contrast' {
     if (!estado) return 'secondary';
     const map: Record<EstadoReporte, 'warn' | 'info' | 'success' | 'danger'> = {
       PENDIENTE: 'warn',
       COMUNIDAD: 'info',
       VALIDADO: 'success',
-      RECHAZADO: 'danger'
+      RECHAZADO: 'danger',
+      VOLVER_A_REPORTAR: 'warn'
     };
     return map[estado];
   }
 
-  private cambiarEstado(id: number, estado: EstadoReporte, motivo: string) {
-    this.reportesService.cambiarEstado(id, { estado, motivo }).subscribe({
-      next: reporte => {
-        this.reporte.set(reporte);
-        this.loadHistorial(id);
-        this.messageService.add({ severity: 'success', summary: 'Estado actualizado', detail: `Reporte marcado como ${estado}.` });
+  estadoLabel(estado?: EstadoReporte): string {
+    if (!estado) return '';
+    const map: Record<EstadoReporte, string> = {
+      PENDIENTE: 'Pendiente',
+      COMUNIDAD: 'Comunidad',
+      VALIDADO: 'Validado',
+      RECHAZADO: 'Rechazado',
+      VOLVER_A_REPORTAR: 'Volver a reportar'
+    };
+    return map[estado];
+  }
+
+  // ── Volver a reportar ──────────────────────────────────
+  openVolverAReportar() {
+    this.volverInputMode.set('texto');
+    this.volverMotivo.set('');
+    this.volverAudioBlob.set(null);
+    this.volverAudioUrl.set('');
+    this.audioChunks = [];
+    this.volverAReportarDialog.set(true);
+  }
+
+  setVolverMode(mode: 'texto' | 'audio') {
+    this.volverInputMode.set(mode);
+    if (mode === 'audio') {
+      this.volverMotivo.set('');
+    } else {
+      this.removeAudioRechazo();
+      if (this.mediaRecorderRef && this.mediaRecorderRef.state !== 'inactive') {
+        this.mediaRecorderRef.stop();
+        this.isRecording.set(false);
+      }
+    }
+  }
+
+  async startRecordingAudio() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      this.mediaRecorderRef = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
+      this.audioChunks = [];
+
+      this.mediaRecorderRef.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          this.audioChunks.push(event.data);
+        }
+      };
+
+      this.mediaRecorderRef.onstop = () => {
+        const blob = new Blob(this.audioChunks, { type: 'audio/webm' });
+        this.volverAudioBlob.set(blob);
+        this.volverAudioUrl.set(URL.createObjectURL(blob));
+        stream.getTracks().forEach(t => t.stop());
+      };
+
+      this.mediaRecorderRef.start();
+      this.isRecording.set(true);
+    } catch {
+      this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo acceder al micrófono.' });
+    }
+  }
+
+  stopRecordingAudio() {
+    if (this.mediaRecorderRef && this.mediaRecorderRef.state !== 'inactive') {
+      this.mediaRecorderRef.stop();
+      this.isRecording.set(false);
+    }
+  }
+
+  removeAudioRechazo() {
+    this.volverAudioBlob.set(null);
+    this.volverAudioUrl.set('');
+    this.audioChunks = [];
+  }
+
+  confirmVolverAReportar() {
+    const item = this.reporte();
+    if (!item) return;
+
+    const formData = new FormData();
+    if (this.volverInputMode() === 'texto') {
+      if (!this.volverMotivo().trim()) {
+        this.messageService.add({ severity: 'warn', summary: 'Requerido', detail: 'Debes escribir un motivo.' });
+        return;
+      }
+      formData.append('motivo', this.volverMotivo());
+    } else {
+      if (!this.volverAudioBlob()) {
+        this.messageService.add({ severity: 'warn', summary: 'Requerido', detail: 'Debes grabar un audio.' });
+        return;
+      }
+      formData.append('audio', this.volverAudioBlob()!, 'rechazo.webm');
+    }
+
+    this.reportesService.volverAReportar(item.id, formData).subscribe({
+      next: () => {
+        this.volverAReportarDialog.set(false);
+        this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Reporte devuelto para corrección.' });
+        this.loadReporte();
       },
-      error: () => this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo actualizar el estado.' })
+      error: () => this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo procesar.' })
     });
   }
 
-  private crearConsultaComunitaria(item: Reporte) {
-    this.recomendacionesService.create({
-      reporteId: item.id,
-      cultivoId: item.cultivoId,
-      plagaId: item.plagaId ?? undefined,
-      titulo: `Consulta comunitaria: ${item.titulo}`,
-      descripcion: item.descripcion || item.descripcionProblema || 'Reporte derivado a comunidad para recibir recomendaciones de agricultores.',
-      tipo: 'CONSULTA'
+  // ── Suspender cuenta ──────────────────────────────────
+  openSuspender() {
+    this.suspenderMotivo.set('');
+    this.suspenderTipo = 'TIEMPO';
+    this.suspenderDuracion = 10;
+    this.suspenderDialog.set(true);
+  }
+
+  confirmSuspender() {
+    const item = this.reporte();
+    if (!item) return;
+    if (!this.suspenderMotivo().trim()) {
+      this.messageService.add({ severity: 'warn', summary: 'Requerido', detail: 'Debes escribir una causa.' });
+      return;
+    }
+
+    this.reportesService.suspenderUsuario(item.id, {
+      motivo: this.suspenderMotivo(),
+      tipoDuracion: this.suspenderTipo,
+      duracion: Number(this.suspenderDuracion)
     }).subscribe({
-      next: () => this.cambiarEstado(item.id, 'COMUNIDAD', 'Derivado a revisión comunitaria'),
-      error: () => this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo publicar el reporte en comunidad.' })
+      next: () => {
+        this.suspenderDialog.set(false);
+        this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Cuenta suspendida.' });
+      },
+      error: (err) => {
+        const msg = err?.error?.message || err?.message || 'No se pudo suspender la cuenta.';
+        this.messageService.add({ severity: 'error', summary: 'Error', detail: msg });
+      }
     });
+  }
+
+  onTipoChange(tipo: string) {
+    this.suspenderTipo = tipo as 'TIEMPO' | 'DIAS';
+    this.suspenderDuracion = tipo === 'TIEMPO' ? 10 : 1;
   }
 
   private loadCatalogMaps() {

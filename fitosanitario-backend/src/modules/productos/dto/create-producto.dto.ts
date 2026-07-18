@@ -6,7 +6,17 @@ import {
   MaxLength,
   IsArray,
   IsNumber,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+
+class PlagaCultivoPair {
+  @IsNumber()
+  plagaId: number;
+
+  @IsNumber()
+  cultivoId: number;
+}
 
 export class CreateProductoDto {
   @IsString()
@@ -31,4 +41,10 @@ export class CreateProductoDto {
   @IsOptional()
   @IsNumber({}, { each: true })
   cultivoIds?: number[];
+
+  @IsArray()
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => PlagaCultivoPair)
+  pairs?: PlagaCultivoPair[];
 }

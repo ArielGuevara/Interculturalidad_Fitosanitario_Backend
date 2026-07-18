@@ -51,6 +51,7 @@ export class PlagaList implements OnInit {
 
   plagas = signal<Plaga[]>([]);
   cultivos = signal<CultivoRef[]>([]);
+  plagaCultivosMap = signal<Record<number, CultivoRef[]>>({});
   loading = signal<boolean>(false);
   uploading = signal<boolean>(false);
   isDragging = signal<boolean>(false);
@@ -75,6 +76,20 @@ export class PlagaList implements OnInit {
   ngOnInit() {
     this.loadCultivos();
     this.loadPlagas();
+    this.loadAsociaciones();
+  }
+
+  loadAsociaciones() {
+    this.plagasService.findAllAsociaciones().subscribe({
+      next: (data) => {
+        const map: Record<number, CultivoRef[]> = {};
+        for (const a of data) {
+          if (!map[a.plagaId]) map[a.plagaId] = [];
+          map[a.plagaId].push({ id: a.id, nombre: a.nombre });
+        }
+        this.plagaCultivosMap.set(map);
+      }
+    });
   }
 
   onSearchInput(event: Event) {
@@ -88,7 +103,7 @@ export class PlagaList implements OnInit {
 
   loadCultivos() {
     this.cultivosService.findAll().subscribe({
-      next: (data) => this.cultivos.set(data),
+      next: (data) => this.cultivos.set(data.map(c => ({ id: c.id!, nombre: c.nombre }))),
     });
   }
 

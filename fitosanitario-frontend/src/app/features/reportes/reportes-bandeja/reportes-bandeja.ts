@@ -67,7 +67,8 @@ export class ReportesBandeja implements OnInit {
       PENDIENTE: 'warn',
       COMUNIDAD: 'info',
       VALIDADO: 'success',
-      RECHAZADO: 'danger'
+      RECHAZADO: 'danger',
+      VOLVER_A_REPORTAR: 'warn'
     };
     return map[estado] ?? 'secondary';
   }

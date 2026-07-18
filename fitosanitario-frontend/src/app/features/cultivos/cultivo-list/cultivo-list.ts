@@ -45,6 +45,7 @@ export class CultivoList implements OnInit {
 
   cultivos = signal<Cultivo[]>([]);
   loading = signal<boolean>(false);
+  searchQuery = signal<string>('');
   uploading = signal<boolean>(false);
   isDragging = signal<boolean>(false);
   
@@ -122,9 +123,14 @@ export class CultivoList implements OnInit {
     });
   }
 
+  onSearchInput(event: Event) {
+    this.searchQuery.set((event.target as HTMLInputElement).value);
+    this.loadCultivos();
+  }
+
   loadCultivos() {
     this.loading.set(true);
-    this.cultivosService.findAll().subscribe({
+    this.cultivosService.findAll(this.searchQuery() || undefined).subscribe({
       next: (data) => {
         // Corregimos todas las URLs de MinIO al vuelo para evitar 'localhost'
         const fixedData = data.map(c => ({

@@ -11,6 +11,14 @@ export type Plaga = {
   tipo: 'PLAGA' | 'ENFERMEDAD' | 'MALEZA';
   descripcion: string | null;
   imagenUrl: string | null;
+  cultivos?: { id: number; nombre: string }[];
+};
+
+export type PlagaCultivoPair = {
+  plagaId: number;
+  plagaNombre: string;
+  cultivoId: number;
+  cultivoNombre: string;
 };
 
 export type Producto = {
@@ -19,4 +27,5 @@ export type Producto = {
   ingredienteActivo: string | null;
   tipo: 'INSECTICIDA' | 'FUNGICIDA' | 'HERBICIDA' | 'BIOLOGICO';
   unidadBase: string | null;
+  pairs?: PlagaCultivoPair[];
 };

@@ -5,7 +5,7 @@
     <div class="detail-hero">
         <div class="hero-topline">
             <p-button icon="pi pi-arrow-left" label="Volver" styleClass="p-button-text p-button-secondary font-bold" (onClick)="volver()"></p-button>
-            <p-tag [value]="item.estado" [severity]="estadoSeverity(item.estado)"></p-tag>
+            <p-tag [value]="estadoLabel(item.estado)" [severity]="estadoSeverity(item.estado)"></p-tag>
         </div>
         <div class="header-content">
             <div class="hero-copy">
@@ -63,9 +63,17 @@
         <section class="dark-actions">
             <h3>Moderación</h3>
             <p>Revise evidencias, ubicación y emita una decisión técnica.</p>
+
+            <!-- Motivo de rechazo si el reporte fue devuelto -->
+            <div *ngIf="item.estado === 'VOLVER_A_REPORTAR' && item.motivoRechazo" class="rechazo-card">
+                <strong>Motivo de devolución:</strong>
+                <p>{{item.motivoRechazo}}</p>
+                <audio *ngIf="fixedAudioRechazo()" [src]="fixedAudioRechazo()" controls class="audio-player" style="margin-top:8px"></audio>
+            </div>
+
             <p-button label="Emitir tratamiento" icon="pi pi-check-circle" styleClass="action-btn btn-emerald" (onClick)="treatmentDialog.set(true)"></p-button>
-            <p-button label="Enviar a comunidad" icon="pi pi-comments" styleClass="action-btn p-button-outlined p-button-plain border-white-alpha-20 text-white" (onClick)="marcarComunidad()" [disabled]="item.estado === 'COMUNIDAD'"></p-button>
-            <p-button label="Rechazar reporte" icon="pi pi-times" styleClass="action-btn p-button-danger p-button-outlined" (onClick)="rechazar()"></p-button>
+            <p-button label="Volver a reportar" icon="pi pi-undo" styleClass="action-btn p-button-outlined p-button-plain border-white-alpha-20 text-white" (onClick)="openVolverAReportar()"></p-button>
+            <p-button label="Suspender cuenta" icon="pi pi-ban" styleClass="action-btn p-button-danger p-button-outlined" (onClick)="openSuspender()"></p-button>
             <small *ngIf="!item.plagaId" class="warning-text">El reporte no trae diagnóstico inicial; seleccione la plaga en el formulario.</small>
         </section>
     </div>
@@ -119,6 +127,58 @@
             <ng-template #noHistory><p class="empty-text">Aún no hay movimientos de moderación.</p></ng-template>
         </section>
     </div>
+
+    <!-- Diálogo: Volver a reportar -->
+    <p-dialog [(visible)]="volverAReportarDialog" [modal]="true" [style]="{width: '500px'}" [draggable]="false" [resizable]="false" header="Volver a reportar">
+        <p>Indica el motivo por el cual el reporte debe ser corregido. Elige solo una opción.</p>
+
+        <div class="flex gap-2 mb-3">
+            <button pButton [class]="volverInputMode() === 'texto' ? 'p-button-sm p-button-warning' : 'p-button-sm p-button-outlined'" icon="pi pi-pen-to-square" label="Escribir" (click)="setVolverMode('texto')"></button>
+            <button pButton [class]="volverInputMode() === 'audio' ? 'p-button-sm p-button-warning' : 'p-button-sm p-button-outlined'" icon="pi pi-microphone" label="Grabar audio" (click)="setVolverMode('audio')"></button>
+        </div>
+
+        <textarea *ngIf="volverInputMode() === 'texto'" pTextarea [(ngModel)]="volverMotivo" rows="4" style="width:100%;margin-bottom:12px" placeholder="Describe qué debe corregir el agricultor..."></textarea>
+
+        <ng-container *ngIf="volverInputMode() === 'audio'">
+            <div class="flex align-items-center gap-2 mb-2">
+                <button *ngIf="!isRecording()" pButton icon="pi pi-microphone" label="Comenzar a grabar" class="p-button-sm p-button-outlined" (click)="startRecordingAudio()"></button>
+                <button *ngIf="isRecording()" pButton icon="pi pi-stop" label="Detener" class="p-button-sm p-button-danger" (click)="stopRecordingAudio()"></button>
+                <span *ngIf="isRecording()" class="recording-indicator">
+                  <span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span>
+                </span>
+                <button *ngIf="volverAudioUrl()" pButton icon="pi pi-trash" class="p-button-sm p-button-text p-button-danger" (click)="removeAudioRechazo()"></button>
+            </div>
+            <audio *ngIf="volverAudioUrl()" [src]="volverAudioUrl()" controls class="audio-player"></audio>
+        </ng-container>
+
+        <ng-template pTemplate="footer">
+            <button pButton label="Cancelar" class="p-button-text" (click)="volverAReportarDialog.set(false)"></button>
+            <button pButton label="Confirmar devolución" class="p-button-warning" (click)="confirmVolverAReportar()"></button>
+        </ng-template>
+    </p-dialog>
+
+    <!-- Diálogo: Suspender cuenta -->
+    <p-dialog [(visible)]="suspenderDialog" [modal]="true" [style]="{width: '500px'}" [draggable]="false" [resizable]="false" header="Suspender cuenta">
+        <p>Esta acción bloqueará al agricultor de subir reportes y comentar en el foro.</p>
+        <div class="field">
+            <label style="font-weight:600;display:block;margin-bottom:4px">Causa de la suspensión</label>
+            <textarea pTextarea [(ngModel)]="suspenderMotivo" rows="3" style="width:100%;margin-bottom:12px" placeholder="Ej: Publicó contenido inapropiado..."></textarea>
+        </div>
+        <div class="field">
+            <label style="font-weight:600;display:block;margin-bottom:4px">Tipo de duración</label>
+            <p-select [options]="[{label:'Segundos',value:'TIEMPO'},{label:'Días',value:'DIAS'}]" [(ngModel)]="suspenderTipo" optionLabel="label" optionValue="value" (onChange)="onTipoChange($event.value)" style="width:100%"></p-select>
+        </div>
+        <div class="field" style="margin-top:8px">
+            <label style="font-weight:600;display:block;margin-bottom:4px">Duración</label>
+            <p-inputNumber [(ngModel)]="suspenderDuracion" [min]="suspenderTipo === 'TIEMPO' ? 10 : 1" style="width:100%"></p-inputNumber>
+            <small style="color:#64748b">{{ suspenderTipo === 'TIEMPO' ? 'Mínimo 10 segundos' : 'Mínimo 1 día' }}</small>
+        </div>
+
+        <ng-template pTemplate="footer">
+            <button pButton label="Cancelar" class="p-button-text" (click)="suspenderDialog.set(false)"></button>
+            <button pButton label="Suspender cuenta" class="p-button-danger" (click)="confirmSuspender()"></button>
+        </ng-template>
+    </p-dialog>
 
     <p-dialog [(visible)]="treatmentDialog" [modal]="true" [style]="{width: '900px', maxWidth: '96vw'}" styleClass="custom-dialog" [draggable]="false" [resizable]="false" [dismissableMask]="true" header="Tratamiento oficial">
         <app-tratamiento-form

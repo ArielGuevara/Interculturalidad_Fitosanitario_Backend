@@ -2,7 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../../db/schema';
 import { DB_CONNECTION } from '../../db/db.module';
-import { eq, ilike } from 'drizzle-orm';
+import { eq, ilike, sql } from 'drizzle-orm';
 import { CreateCultivoDto } from './dto/create-cultivo.dto';
 import { UpdateCultivoDto } from './dto/update-cultivo.dto';
 
@@ -18,7 +18,7 @@ export class CultivosRepository {
       return this.db
         .select()
         .from(schema.cultivos)
-        .where(ilike(schema.cultivos.nombre, pattern));
+        .where(sql`unaccent(${schema.cultivos.nombre}) ILIKE unaccent(${pattern})`);
     }
     return this.db.select().from(schema.cultivos);
   }

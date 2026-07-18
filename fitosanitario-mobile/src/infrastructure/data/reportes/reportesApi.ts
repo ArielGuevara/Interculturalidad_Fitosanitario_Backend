@@ -80,4 +80,32 @@ export async function createReporteMultipart(
   return (await res.json()) as Reporte;
 }
 
-export const reportesApi = { getReportes, getReporteById, getHistorial, createReporte: createReporteMultipart };
+export async function reEditarReporte(id: number, dto: {
+  titulo?: string;
+  descripcion?: string;
+  cultivoId?: number;
+  imagenesUrls?: string[];
+  audioUrl?: string;
+}): Promise<Reporte> {
+  const { data } = await apiClient.patch<Reporte>(`/reportes/${id}/re-editar`, dto);
+  return data;
+}
+
+export async function getSuspensionActiva(): Promise<{
+  id: number;
+  motivo: string;
+  tipoDuracion: string;
+  duracion: number;
+  fechaInicio: string;
+  fechaFin: string;
+  activa: boolean;
+} | null> {
+  try {
+    const { data } = await apiClient.get<any>('/reportes/suspension/activa');
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+export const reportesApi = { getReportes, getReporteById, getHistorial, createReporte: createReporteMultipart, reEditarReporte, getSuspensionActiva };

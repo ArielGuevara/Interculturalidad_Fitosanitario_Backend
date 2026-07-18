@@ -1,6 +1,12 @@
 import { apiClient } from '../../http/apiClient';
 import type { Plaga } from '../../../domain/catalogos/types';
 
+// GET /plagas/asociaciones — returns all plaga-cultivo associations
+export const getAsociaciones = async (): Promise<{ plagaId: number; id: number; nombre: string }[]> => {
+  const { data } = await apiClient.get<{ plagaId: number; id: number; nombre: string }[]>('/plagas/asociaciones');
+  return data;
+};
+
 // GET /plagas
 export const getPlagas = async (): Promise<Plaga[]> => {
   const { data } = await apiClient.get<Plaga[]>('/plagas');

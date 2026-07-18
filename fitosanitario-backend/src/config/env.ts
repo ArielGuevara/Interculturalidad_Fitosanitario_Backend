@@ -33,6 +33,9 @@ export const envConfig = () => ({
     authToken: process.env.TWILIO_AUTH_TOKEN || '',
     whatsappNumber: process.env.TWILIO_WHATSAPP_NUMBER || 'whatsapp:+14155238886',
   },
+  firebase: {
+    serviceAccountPath: process.env.FIREBASE_SERVICE_ACCOUNT_PATH || '',
+  },
   uploads: {
     // Límites por archivo (en bytes). Si no se setean, se usan defaults seguros en código.
     maxImageSizeBytes: process.env.MAX_IMAGE_SIZE_BYTES

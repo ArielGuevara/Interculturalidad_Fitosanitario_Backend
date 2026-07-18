@@ -30,12 +30,13 @@ export function TratamientosScreen() {
 
   const filteredItems = useMemo(() => {
     if (!searchQuery.trim()) return items;
-    const q = searchQuery.toLowerCase();
+    const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const q = normalize(searchQuery.toLowerCase());
     return items.filter(i =>
-      i.producto.nombreComercial.toLowerCase().includes(q) ||
-      i.cultivo.nombre.toLowerCase().includes(q) ||
-      i.plaga.nombre.toLowerCase().includes(q) ||
-      (i.metodoAplicacion && i.metodoAplicacion.toLowerCase().includes(q))
+      normalize(i.producto.nombreComercial.toLowerCase()).includes(q) ||
+      normalize(i.cultivo.nombre.toLowerCase()).includes(q) ||
+      normalize(i.plaga.nombre.toLowerCase()).includes(q) ||
+      (i.metodoAplicacion && normalize(i.metodoAplicacion.toLowerCase()).includes(q))
     );
   }, [items, searchQuery]);
 

@@ -20,13 +20,17 @@
         "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#2E7D32"
       },
+      "notificationIcon": "./assets/notification-icon.png",
+      "notificationColor": "#10b981",
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO",
         "android.permission.ACCESS_FINE_LOCATION",
-        "android.permission.ACCESS_COARSE_LOCATION"
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
       ],
       "package": "com.anonymous.fitosanitariomobile"
     },
@@ -34,12 +38,24 @@
       "expo-sqlite",
       "expo-audio",
       [
+        "expo-notifications",
+        {
+          "googleServicesFile": "./google-services.json"
+        }
+      ],
+      [
         "expo-location",
         {
           "locationAlwaysAndWhenInUsePermission": "Permitir a Fitosanitario acceder a tu ubicación para reportes agrícolas.",
           "locationWhenInUsePermission": "Permitir a Fitosanitario acceder a tu ubicación para reportes agrícolas."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "ab3d5c50-167e-47cb-80c1-b5f92cd764e3"
+      }
+    },
+    "owner": "micaela2003"
   }
 }

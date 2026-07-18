@@ -1,8 +1,9 @@
-﻿import React, { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, View, StyleSheet, ActivityIndicator, Image, Dimensions } from 'react-native';
+﻿import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { Alert, Pressable, ScrollView, Text, View, StyleSheet, ActivityIndicator, Image, Dimensions, TextInput, Modal, KeyboardAvoidingView, Platform, LayoutChangeEvent } from 'react-native';
 import { Audio, AVPlaybackSource } from 'expo-av';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useFocusEffect } from '@react-navigation/native';
 import type { AppStackParamList } from '../../navigation/RootNavigator';
 import { reportesApi } from '../../../infrastructure/data/reportes/reportesApi';
 import { tratamientosApi } from '../../../infrastructure/data/tratamientos/tratamientosApi';
@@ -20,6 +21,7 @@ const ESTADO_COLORS: Record<string, string> = {
   COMUNIDAD: '#3b82f6',
   VALIDADO: '#10b981',
   RECHAZADO: '#ef4444',
+  VOLVER_A_REPORTAR: '#f59e0b',
 };
 
 const ESTADO_LABELS: Record<string, string> = {
@@ -27,6 +29,7 @@ const ESTADO_LABELS: Record<string, string> = {
   COMUNIDAD: 'En comunidad',
   VALIDADO: 'Validado',
   RECHAZADO: 'Rechazado',
+  VOLVER_A_REPORTAR: 'Volver a reportar',
 };
 
 export function ReporteDetailScreen({ route }: Props) {
@@ -37,65 +40,179 @@ export function ReporteDetailScreen({ route }: Props) {
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [historial, setHistorial] = useState<HistorialEntry[]>([]);
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const soundRef = useRef<Audio.Sound | null>(null);
+  const rechazoSoundRef = useRef<Audio.Sound | null>(null);
   const [playing, setPlaying] = useState(false);
+  const [audioPosition, setAudioPosition] = useState(0);
+  const [audioDuration, setAudioDuration] = useState(0);
+  const [rechazoPlaying, setRechazoPlaying] = useState(false);
+  const [rechazoPosition, setRechazoPosition] = useState(0);
+  const [rechazoDuration, setRechazoDuration] = useState(0);
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const [data, hist] = await Promise.all([
-          reportesApi.getReporteById(id),
-          reportesApi.getHistorial(id).catch(() => [] as HistorialEntry[]),
-        ]);
-        setReporte(data);
-        setHistorial(hist);
+  // ── Re-edit (navigation) ───────────────────────────────
+  const [reEditModal, setReEditModal] = useState(false);
 
-        const t = await tratamientosApi.getTratamientoByReporte(id);
-        if (t) setTratamiento(t);
-      } catch (e: any) {
-        Alert.alert('Error', e?.message || 'No se pudo cargar el reporte');
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
+  const loadData = useCallback(async (showErrors: boolean) => {
+    try {
+      const [data, hist] = await Promise.all([
+        reportesApi.getReporteById(id),
+        reportesApi.getHistorial(id).catch(() => [] as HistorialEntry[]),
+      ]);
+      setReporte(data);
+      setHistorial(hist);
+      const t = await tratamientosApi.getTratamientoByReporte(id);
+      if (t) setTratamiento(t);
+    } catch (e: any) {
+      if (showErrors) Alert.alert('Error', e?.message || 'No se pudo cargar el reporte');
+    } finally {
+      setLoading(false);
+    }
   }, [id]);
+
+  useEffect(() => { loadData(true); }, [loadData]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (id && reporte) loadData(false);
+    }, [id, reporte, loadData]),
+  );
 
   useEffect(() => {
     return () => {
-      if (sound) { sound.unloadAsync(); }
+      soundRef.current?.unloadAsync();
+      rechazoSoundRef.current?.unloadAsync();
     };
-  }, [sound]);
+  }, []);
 
-  const playAudio = async () => {
+  const formatTime = (ms: number) => {
+    const totalSec = Math.floor(ms / 1000);
+    const min = Math.floor(totalSec / 60);
+    const sec = totalSec % 60;
+    return `${min}:${sec.toString().padStart(2, '0')}`;
+  };
+
+  const onAudioStatusUpdate = (status: any) => {
+    if (!status.isLoaded) return;
+    setAudioPosition(status.positionMillis ?? 0);
+    setAudioDuration(status.durationMillis ?? 0);
+    setPlaying(status.isPlaying);
+    if (status.didJustFinish) {
+      soundRef.current?.setPositionAsync(0).catch(() => {});
+      setPlaying(false);
+    }
+  };
+
+  const toggleAudio = async (positionMillis: number = 0) => {
     if (!reporte?.audioUrl) return;
     try {
-      if (sound) {
-        const status = await sound.getStatusAsync();
-        if (status.isLoaded && status.isPlaying) {
-          await sound.pauseAsync();
+      if (soundRef.current) {
+        const st = await soundRef.current.getStatusAsync();
+        if (!st.isLoaded) return;
+        if (st.isPlaying) {
+          await soundRef.current.pauseAsync();
           setPlaying(false);
           return;
         }
-        if (status.isLoaded) {
-          await sound.playAsync();
-          setPlaying(true);
-          return;
-        }
+        const shouldReset = st.didJustFinish || st.positionMillis >= (st.durationMillis ?? 0);
+        await soundRef.current.setPositionAsync(shouldReset ? 0 : positionMillis);
+        await soundRef.current.playAsync();
+        setPlaying(true);
+        return;
       }
       const { sound: s } = await Audio.Sound.createAsync(
         { uri: reporte.audioUrl } as AVPlaybackSource,
       );
-      setSound(s);
-      setPlaying(true);
-      s.setOnPlaybackStatusUpdate((status) => {
-        if (status.isLoaded && !status.isPlaying) {
-          setPlaying(false);
-        }
-      });
+      soundRef.current = s;
+      setAudioPosition(0);
+      setAudioDuration(0);
+      s.setOnPlaybackStatusUpdate(onAudioStatusUpdate);
+      if (positionMillis > 0) await s.setPositionAsync(positionMillis);
       await s.playAsync();
+      setPlaying(true);
     } catch { Alert.alert('Error', 'No se pudo reproducir el audio'); }
   };
+
+  const onRechazoAudioStatusUpdate = (status: any) => {
+    if (!status.isLoaded) return;
+    setRechazoPosition(status.positionMillis ?? 0);
+    setRechazoDuration(status.durationMillis ?? 0);
+    setRechazoPlaying(status.isPlaying);
+    if (status.didJustFinish) {
+      rechazoSoundRef.current?.setPositionAsync(0).catch(() => {});
+      setRechazoPlaying(false);
+    }
+  };
+
+  const toggleRechazoAudio = async (positionMillis: number = 0) => {
+    if (!reporte?.audioRechazoUrl) return;
+    try {
+      if (rechazoSoundRef.current) {
+        const st = await rechazoSoundRef.current.getStatusAsync();
+        if (!st.isLoaded) return;
+        if (st.isPlaying) {
+          await rechazoSoundRef.current.pauseAsync();
+          setRechazoPlaying(false);
+          return;
+        }
+        const shouldReset = st.didJustFinish || st.positionMillis >= (st.durationMillis ?? 0);
+        await rechazoSoundRef.current.setPositionAsync(shouldReset ? 0 : positionMillis);
+        await rechazoSoundRef.current.playAsync();
+        setRechazoPlaying(true);
+        return;
+      }
+      const { sound: s } = await Audio.Sound.createAsync(
+        { uri: reporte.audioRechazoUrl } as AVPlaybackSource,
+      );
+      rechazoSoundRef.current = s;
+      setRechazoPosition(0);
+      setRechazoDuration(0);
+      s.setOnPlaybackStatusUpdate(onRechazoAudioStatusUpdate);
+      if (positionMillis > 0) await s.setPositionAsync(positionMillis);
+      await s.playAsync();
+      setRechazoPlaying(true);
+    } catch { Alert.alert('Error', 'No se pudo reproducir el audio'); }
+  };
+
+  const openReEdit = () => {
+    if (!reporte) return;
+    navigation.navigate('CreateReporte', {
+      edit: {
+        id: reporte.id,
+        titulo: reporte.titulo,
+        descripcion: reporte.descripcion,
+        descripcionProblema: reporte.descripcionProblema,
+        cultivoId: reporte.cultivoId,
+        plagaId: reporte.plagaId,
+        latitud: reporte.latitud,
+        longitud: reporte.longitud,
+        imagenesUrls: reporte.imagenesUrls ?? [],
+        audioUrl: reporte.audioUrl ?? null,
+      },
+    });
+  };
+
+  function SeekBar({ position, duration, onTap, color }: { position: number; duration: number; onTap: (ms: number) => void; color: string }) {
+    const [barWidth, setBarWidth] = useState(0);
+    const handlePress = (evt: any) => {
+      if (!barWidth) return;
+      const x = evt.nativeEvent.locationX;
+      const ratio = Math.max(0, Math.min(1, x / barWidth));
+      onTap(ratio * duration);
+    };
+    const progress = duration > 0 ? Math.max(0, Math.min(1, position / duration)) : 0;
+    return (
+      <View
+        style={styles.seekBarTrack}
+        onLayout={(e: LayoutChangeEvent) => setBarWidth(e.nativeEvent.layout.width)}
+        onStartShouldSetResponder={() => true}
+        onResponderGrant={handlePress}
+        onResponderMove={handlePress}
+      >
+        <View style={[styles.seekBarFill, { width: `${progress * 100}%`, backgroundColor: color }]} />
+        <View style={[styles.seekBarThumb, { left: `${progress * 100}%`, backgroundColor: color }]} />
+      </View>
+    );
+  }
 
   if (loading) {
     return (
@@ -166,6 +283,37 @@ export function ReporteDetailScreen({ route }: Props) {
         </View>
       )}
 
+      {/* Motivo de rechazo (VOLVER_A_REPORTAR) */}
+      {reporte.estado === 'VOLVER_A_REPORTAR' && (
+        <View style={[styles.card, { borderColor: '#fde68a', backgroundColor: '#fffbeb' }]}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+            <Ionicons name="information-circle" size={18} color="#d97706" />
+            <Text style={[styles.cardTitle, { color: '#92400e', marginBottom: 0 }]}>
+              El moderador solicitó cambios
+            </Text>
+          </View>
+          {reporte.motivoRechazo && (
+            <Text style={{ fontSize: 14, color: '#78350f', lineHeight: 20, marginBottom: 8 }}>
+              {reporte.motivoRechazo}
+            </Text>
+          )}
+          {reporte.audioRechazoUrl && (
+            <View style={styles.audioPlayerRow}>
+              <Pressable onPress={() => toggleRechazoAudio()}>
+                <Ionicons name={rechazoPlaying ? 'pause-circle' : 'play-circle'} size={28} color="#d97706" />
+              </Pressable>
+              <SeekBar position={rechazoPosition} duration={rechazoDuration} onTap={toggleRechazoAudio} color="#d97706" />
+              <Text style={styles.seekBarTime}>{formatTime(rechazoPosition)} / {formatTime(rechazoDuration)}</Text>
+              <Ionicons name="volume-high" size={20} color="#d97706" />
+            </View>
+          )}
+          <Pressable style={styles.reEditBtn} onPress={openReEdit}>
+            <Ionicons name="create-outline" size={18} color="#fff" />
+            <Text style={styles.reEditBtnText}>Editar y volver a enviar</Text>
+          </Pressable>
+        </View>
+      )}
+
       {/* Imágenes */}
       {reporte.imagenesUrls && reporte.imagenesUrls.length > 0 && (
         <View style={styles.card}>
@@ -186,14 +334,16 @@ export function ReporteDetailScreen({ route }: Props) {
 
       {/* Audio */}
       {reporte.audioUrl && (
-        <Pressable style={styles.audioCard} onPress={playAudio}>
-          <Ionicons name={playing ? 'pause-circle' : 'mic-circle'} size={32} color="#059669" />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.cardTitle}>Audio</Text>
-            <Text style={styles.audioStatus}>{playing ? 'Reproduciendo...' : 'Toca para escuchar'}</Text>
+        <View style={styles.audioCard}>
+          <View style={styles.audioPlayerRow}>
+            <Pressable onPress={() => toggleAudio()}>
+              <Ionicons name={playing ? 'pause-circle' : 'play-circle'} size={28} color="#059669" />
+            </Pressable>
+            <SeekBar position={audioPosition} duration={audioDuration} onTap={toggleAudio} color="#059669" />
+            <Text style={styles.seekBarTime}>{formatTime(audioPosition)} / {formatTime(audioDuration)}</Text>
+            <Ionicons name="volume-high" size={20} color="#94a3b8" />
           </View>
-          <Ionicons name={playing ? 'pause' : 'play'} size={22} color="#059669" />
-        </Pressable>
+        </View>
       )}
 
       {/* Treatment info */}
@@ -354,19 +504,44 @@ const styles = StyleSheet.create({
   descText: { fontSize: 14, color: '#475569', lineHeight: 20 },
   imageRow: { flexDirection: 'row', gap: 8 },
   image: { width: W * 0.5, height: W * 0.4, borderRadius: 12 },
-  audioPlaceholder: { fontSize: 14, color: '#64748b' },
+
   audioCard: {
     backgroundColor: '#fff',
     borderRadius: 16,
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
     marginBottom: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
     borderWidth: 1,
     borderColor: '#d1fae5',
   },
-  audioStatus: { fontSize: 13, color: '#059669', fontWeight: '500' },
+  audioPlayerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  seekBarTrack: {
+    flex: 1,
+    height: 6,
+    backgroundColor: '#e2e8f0',
+    borderRadius: 3,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  seekBarFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  seekBarThumb: {
+    position: 'absolute',
+    top: -4,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    marginLeft: -7,
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  seekBarTime: { fontSize: 12, color: '#94a3b8', minWidth: 50, textAlign: 'center' },
   treatmentCard: {
     backgroundColor: '#fff',
     borderRadius: 16,
@@ -385,6 +560,19 @@ const styles = StyleSheet.create({
   treatmentDosis: { fontSize: 14, color: '#64748b', marginTop: 2 },
   treatmentCarencia: { fontSize: 13, color: '#dc2626', marginTop: 4 },
   treatmentView: { fontSize: 13, fontWeight: '600', color: '#059669', marginTop: 8 },
+
+  // Rechazo card
+  reEditBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#d97706',
+    borderRadius: 12,
+    paddingVertical: 14,
+    marginTop: 12,
+  },
+  reEditBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
 
   // Comunidad
   comunidadCard: {
@@ -454,4 +642,5 @@ const styles = StyleSheet.create({
   historialDate: { fontSize: 11, color: '#94a3b8' },
   historialActor: { fontSize: 12, color: '#64748b', marginTop: 1 },
   historialMotivo: { fontSize: 12, color: '#64748b', fontStyle: 'italic', marginTop: 2 },
+
 });
