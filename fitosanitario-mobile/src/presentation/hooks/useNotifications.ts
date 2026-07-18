@@ -117,7 +117,7 @@ export function useNotifications(onNotificationTap?: (data?: NotificationPayload
     try {
       notificationListener.current = Notifications.addNotificationReceivedListener(
         (notification: any) => {
-          console.log('[Push] Notification received:', notification);
+          console.log('[Push] Notification RECEIVED:', JSON.stringify({ title: notification?.request?.content?.title, body: notification?.request?.content?.body }));
         },
       );
       responseListener.current = Notifications.addNotificationResponseReceivedListener(
@@ -132,11 +132,15 @@ export function useNotifications(onNotificationTap?: (data?: NotificationPayload
     }
 
     return () => {
-      if (notificationListener.current) {
+      if (notificationListener.current && typeof Notifications.removeNotificationSubscription === 'function') {
         Notifications.removeNotificationSubscription(notificationListener.current);
+      } else if (notificationListener.current && typeof Notifications.removeSubscription === 'function') {
+        Notifications.removeSubscription(notificationListener.current);
       }
-      if (responseListener.current) {
+      if (responseListener.current && typeof Notifications.removeNotificationSubscription === 'function') {
         Notifications.removeNotificationSubscription(responseListener.current);
+      } else if (responseListener.current && typeof Notifications.removeSubscription === 'function') {
+        Notifications.removeSubscription(responseListener.current);
       }
     };
   }, [usuario, onNotificationTap]);
