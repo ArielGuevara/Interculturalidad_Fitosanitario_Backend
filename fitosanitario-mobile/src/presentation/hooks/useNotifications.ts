@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { Platform, NativeModules } from 'react-native';
+import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 import { useAuthStore } from '../../infrastructure/auth/authStore';
 import { registrarDispositivo } from '../../infrastructure/data/alertas/alertasApi';
 
@@ -10,8 +11,6 @@ try {
   Notifications = require('expo-notifications');
   Device = require('expo-device');
 } catch {
-  // expo-notifications no está disponible en Expo Go SDK 53+
-  // Usar development build para notificaciones push
 }
 
 if (Notifications) {
@@ -31,60 +30,113 @@ if (Notifications) {
 async function registerForPushNotificationsAsync(): Promise<string | null> {
   if (!Device || !Notifications) return null;
   try {
-    if (!Device.isDevice) return null;
+    if (!Device.isDevice) {
+      console.log('[Push] Not a physical device — push tokens only work on real devices');
+      return null;
+    }
 
     let finalStatus = (await Notifications.getPermissionsAsync()).status;
     if (finalStatus !== 'granted') {
       finalStatus = (await Notifications.requestPermissionsAsync()).status;
     }
-    if (finalStatus !== 'granted') return null;
-
-    const tokenData = await Notifications.getExpoPushTokenAsync();
+    if (finalStatus !== 'granted') {
+      console.log('[Push] Permission not granted');
+      return null;
+    }
 
     if (Platform.OS === 'android') {
       await Notifications.setNotificationChannelAsync('default', {
-        name: 'default',
+        name: 'Notificaciones Fitosanitario',
         importance: Notifications.AndroidImportance?.MAX ?? 4,
         vibrationPattern: [0, 250, 250, 250],
         lightColor: '#10b981',
       });
     }
 
-    return tokenData.data;
-  } catch {
+    const projectId =
+      (Constants.expoConfig as any)?.extra?.eas?.projectId ??
+      (Constants as any).easConfig?.projectId;
+
+    if (projectId) {
+      try {
+        const expoTokenData = await Notifications.getExpoPushTokenAsync({ projectId });
+        console.log('[Push] Expo push token:', expoTokenData.data);
+        return expoTokenData.data;
+      } catch (err: any) {
+        console.warn('[Push] Expo token failed, falling back to FCM:', err?.message ?? err);
+      }
+    }
+
+    try {
+      const devicePushToken = await Notifications.getDevicePushTokenAsync();
+      console.log('[Push] FCM device token:', devicePushToken.data);
+      return devicePushToken.data;
+    } catch (err: any) {
+      console.warn('[Push] FCM token also failed:', err?.message ?? err);
+      return null;
+    }
+  } catch (err: any) {
+    console.warn('[Push] Error getting push token:', err?.message ?? err);
     return null;
   }
 }
 
-export function useNotifications(onNotificationTap?: () => void) {
+export type NotificationPayload = {
+  type?: string;
+  reporteId?: number;
+  tratamientoId?: number;
+  recomendacionId?: number;
+  suspensionId?: number;
+  [key: string]: any;
+};
+
+export function useNotifications(onNotificationTap?: (data?: NotificationPayload) => void) {
   const notificationListener = useRef<any>(null);
   const responseListener = useRef<any>(null);
   const tokenRegistered = useRef(false);
+  const usuario = useAuthStore((s) => s.usuario);
 
   useEffect(() => {
-    if (!Notifications || !Device) return;
+    if (!Notifications || !Device || !usuario || tokenRegistered.current) return;
 
-    const setup = async () => {
+    (async () => {
       try {
-        const usuario = useAuthStore.getState().usuario;
-        if (!usuario || tokenRegistered.current) return;
-
         const token = await registerForPushNotificationsAsync();
         if (!token) return;
 
         const plataforma = Platform.OS === 'ios' ? 'ios' : 'android';
         await registrarDispositivo(token, plataforma);
+        console.log('[Push] Token registered with backend:', token);
         tokenRegistered.current = true;
-      } catch {}
-    };
-
-    setup();
+      } catch (err: any) {
+        console.warn('[Push] Token registration failed:', err?.message ?? err);
+      }
+    })();
 
     try {
-      notificationListener.current = Notifications.addNotificationReceivedListener(() => {});
-      responseListener.current = Notifications.addNotificationResponseReceivedListener(() => {
-        onNotificationTap?.();
-      });
-    } catch {}
-  }, [onNotificationTap]);
+      notificationListener.current = Notifications.addNotificationReceivedListener(
+        (notification: any) => {
+          console.log('[Push] Notification received:', notification);
+        },
+      );
+      responseListener.current = Notifications.addNotificationResponseReceivedListener(
+        (response: any) => {
+          const data = response?.notification?.request?.content?.data as NotificationPayload | undefined;
+          console.log('[Push] Notification tapped:', data);
+          onNotificationTap?.(data);
+        },
+      );
+    } catch (err: any) {
+      console.warn('[Push] Error setting up listeners:', err?.message ?? err);
+    }
+
+    return () => {
+      if (notificationListener.current) {
+        Notifications.removeNotificationSubscription(notificationListener.current);
+      }
+      if (responseListener.current) {
+        Notifications.removeNotificationSubscription(responseListener.current);
+      }
+    };
+  }, [usuario, onNotificationTap]);
 }
