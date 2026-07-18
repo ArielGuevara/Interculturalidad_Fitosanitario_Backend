@@ -6,6 +6,9 @@ export interface PushMessage {
   title: string;
   body: string;
   data?: Record<string, any>;
+  channelId?: string;
+  sound?: string;
+  priority?: 'default' | 'normal' | 'high';
 }
 
 @Injectable()
@@ -80,6 +83,9 @@ export class PushService {
         title,
         body,
         data,
+        channelId: 'fitosanitario',
+        sound: 'default',
+        priority: 'high',
       }));
       await this.sendViaExpo(messages);
     }

@@ -45,11 +45,12 @@ async function registerForPushNotificationsAsync(): Promise<string | null> {
     }
 
     if (Platform.OS === 'android') {
-      await Notifications.setNotificationChannelAsync('default', {
+      await Notifications.setNotificationChannelAsync('fitosanitario', {
         name: 'Notificaciones Fitosanitario',
-        importance: Notifications.AndroidImportance?.MAX ?? 4,
+        importance: Notifications.AndroidImportance?.HIGH ?? 4,
         vibrationPattern: [0, 250, 250, 250],
         lightColor: '#10b981',
+        sound: 'default',
       });
     }
 
