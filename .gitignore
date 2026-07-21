@@ -36,3 +36,6 @@ fitosanitario-backend/node_modules/
 fitosanitario-frontend/dist/
 fitosanitario-frontend/node_modules/
 fitosanitario-frontend/.angular/
+
+# Git rewrite artifacts (internal git operations)
+.git-rewrite/

@@ -1,6 +1,0 @@
-tree 0bb6c64d8fb9c95099ace42ddfe36f8b0f87ee2e
-parent 393ac0409c96abeec92c95532fa61814878b9c7a
-author Micaela Salcedo <mssalcedo2@espe.edu.ec> 1783892807 -0500
-committer Micaela Salcedo <mssalcedo2@espe.edu.ec> 1783892807 -0500
-
-feat: buscador en plagas, cultivos, productos, tratamientos (web + mobile + backend search query param)
