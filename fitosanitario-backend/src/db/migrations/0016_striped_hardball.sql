@@ -1,0 +1,1 @@
+ALTER TABLE "notificaciones" ADD COLUMN "tipo" varchar(20);

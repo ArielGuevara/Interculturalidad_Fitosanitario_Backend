@@ -95,32 +95,32 @@ export function HomeScreen() {
     {
       icon: 'bug-outline',
       label: 'Plagas',
-      color: '#15803d',
+      color: '#DEA55A',
       onPress: () => navigation.navigate('Plagas'),
     },
     {
       icon: 'chatbubbles-outline',
       label: 'Foro',
-      color: '#047857',
+      color: '#F8E8C0',
       onPress: () => navigation.navigate('ForoList'),
     },
     {
       icon: 'notifications-outline',
-      label: 'Alertas',
-      color: '#166534',
-      onPress: () => navigation.navigate('Alertas'),
+      label: 'Notificaciones',
+      color: '#CC7358',
+      onPress: () => navigation.navigate('Notificaciones'),
     },
     {
       icon: 'cloud-outline',
       label: 'Sincronizar',
-      color: '#14532d',
+      color: '#7FAA8F',
       onPress: onSync,
     },
   ];
 
   return (
     <View style={styles.root}>
-      <StatusBar barStyle="light-content" backgroundColor="#0a2412" translucent />
+      <StatusBar barStyle="light-content" backgroundColor="#276749" translucent />
 
       <View style={styles.header}>
         <View style={styles.blobA} />
@@ -147,42 +147,44 @@ export function HomeScreen() {
                 icon="clipboard-outline"
                 label="Nuevo reporte"
                 onPress={() => navigation.navigate('CreateReporte')}
-                color="#15803d"
+                color="#7DD3FC"
+                textColor="#143A22"
                 style={{ marginBottom: 12 }}
               />
               <AccessibleButton
                 icon="cloud-upload-outline"
                 label="Subir pendientes"
                 onPress={onSync}
-                color="#166534"
+                color="#2D6A4F"
                 style={{ marginBottom: 20 }}
               />
               <AccessibleButton
                 icon="bug"
                 label="Plagas"
                 onPress={() => navigation.navigate('Plagas')}
-                color="#15803d"
+                color="#DEA55A"
                 style={{ marginBottom: 12 }}
               />
               <AccessibleButton
                 icon="chatbubbles"
                 label={`Foro (${comunidadCount})`}
                 onPress={() => navigation.navigate('ForoList')}
-                color="#047857"
+                color="#F8E8C0"
+                textColor="#143A22"
                 style={{ marginBottom: 12 }}
               />
               <AccessibleButton
                 icon="notifications"
-                label="Alertas"
-                onPress={() => navigation.navigate('Alertas')}
-                color="#166534"
+                label="Notificaciones"
+                onPress={() => navigation.navigate('Notificaciones')}
+                color="#CC7358"
                 style={{ marginBottom: 12 }}
               />
               <AccessibleButton
                 icon="cloud"
                 label="Sincronizar"
                 onPress={onSync}
-                color="#14532d"
+                color="#7FAA8F"
               />
             </>
           ) : (
@@ -227,16 +229,19 @@ export function HomeScreen() {
               <Text style={styles.sectionLabel}>ACCIONES RÁPIDAS</Text>
 
               <View style={styles.grid}>
-                {features.map((f, idx) => (
-                  <Pressable
-                    key={idx}
-                    style={[styles.gridCard, { backgroundColor: f.color, width: GRID_CARD_WIDTH }]}
-                    onPress={f.onPress}
-                  >
-                    <Ionicons name={f.icon as any} size={28} color="#fff" />
-                    <Text style={styles.gridLabel}>{f.label}</Text>
-                  </Pressable>
-                ))}
+                {features.map((f, idx) => {
+                  const isForo = f.color === '#FAEDCD';
+                  return (
+                    <Pressable
+                      key={idx}
+                      style={[styles.gridCard, { backgroundColor: f.color, width: GRID_CARD_WIDTH }]}
+                      onPress={f.onPress}
+                    >
+                      <Ionicons name={f.icon as any} size={28} color={isForo ? '#143A22' : '#fff'} />
+                      <Text style={[styles.gridLabel, isForo && { color: '#143A22' }]}>{f.label}</Text>
+                    </Pressable>
+                  );
+                })}
               </View>
             </>
           )}
@@ -252,7 +257,7 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#f0faf2' },
 
   header: {
-    backgroundColor: '#0a2412',
+    backgroundColor: '#276749',
     paddingTop: STATUSBAR_HEIGHT + 16,
     paddingHorizontal: 24,
     paddingBottom: 24,
@@ -260,11 +265,11 @@ const styles = StyleSheet.create({
   },
   blobA: {
     position: 'absolute', width: W * 0.65, height: W * 0.65, borderRadius: W,
-    backgroundColor: '#14532d', opacity: 0.5, top: -W * 0.3, right: -W * 0.15,
+    backgroundColor: '#38A169', opacity: 0.5, top: -W * 0.3, right: -W * 0.15,
   },
   blobB: {
     position: 'absolute', width: W * 0.4, height: W * 0.4, borderRadius: W,
-    backgroundColor: '#166534', opacity: 0.35, bottom: -W * 0.1, left: -W * 0.1,
+    backgroundColor: '#48BB78', opacity: 0.35, bottom: -W * 0.1, left: -W * 0.1,
   },
   headerContent: {
     flexDirection: 'row',
@@ -287,7 +292,7 @@ const styles = StyleSheet.create({
   },
   avatar: {
     width: 48, height: 48, borderRadius: 24,
-    backgroundColor: '#15803d',
+    backgroundColor: '#38A169',
     borderWidth: 2, borderColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center', justifyContent: 'center',
   },

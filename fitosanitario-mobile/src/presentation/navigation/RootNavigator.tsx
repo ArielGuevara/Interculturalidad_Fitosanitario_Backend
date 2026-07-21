@@ -25,8 +25,8 @@ import { ProfileScreen } from '../screens/profile/ProfileScreen';
 import { ForoScreen } from '../screens/comunidad/ForoScreen';
 import { RecomendacionFormScreen } from '../screens/comunidad/RecomendacionFormScreen';
 import { RecomendacionDetailScreen } from '../screens/comunidad/RecomendacionDetailScreen';
-import { AlertasScreen } from '../screens/alertas/AlertasScreen';
-import { NotificacionesScreen } from '../screens/alertas/NotificacionesScreen';
+import { SaberDetailScreen } from '../screens/comunidad/SaberDetailScreen';
+import { NotificacionesScreen } from '../screens/alertas/AlertasScreen';
 
 export type AuthStackParamList = {
   Login: undefined;
@@ -69,6 +69,7 @@ export type AppStackParamList = {
   ForoList: undefined;
   RecomendacionForm: { reporteId?: number; cultivoId?: number; plagaId?: number };
   RecomendacionDetail: { id: number };
+  SaberDetail: { id: number };
   Alertas: undefined;
   Notificaciones: undefined;
 };
@@ -92,7 +93,7 @@ function AuthNavigator() {
 
 function TabsNavigator() {
   return (
-    <Tabs.Navigator>
+    <Tabs.Navigator screenOptions={{ tabBarActiveTintColor: '#15803d' }}>
       <Tabs.Screen
         name="Home"
         component={HomeScreen}
@@ -141,23 +142,37 @@ function TabsNavigator() {
 function AppNavigator() {
   const handleNotificationTap = useCallback((data?: { type?: string; reporteId?: number; tratamientoId?: number; recomendacionId?: number }) => {
     if (!navigationRef.isReady()) return;
-    if (!data?.type) { navigationRef.navigate('Alertas'); return; }
+    if (!data?.type) { navigationRef.navigate('Notificaciones'); return; }
     switch (data.type) {
       case 'tratamiento_asignado':
       case 'cambio_estado':
       case 'nuevo_reporte':
         if (data.reporteId) navigationRef.navigate('ReporteDetail', { id: data.reporteId });
-        else navigationRef.navigate('Alertas');
+        else navigationRef.navigate('Notificaciones');
         break;
       case 'nuevo_comentario':
+      case 'foro_aprobado':
+      case 'nuevo_foro_publicado':
         if (data.recomendacionId) navigationRef.navigate('RecomendacionDetail', { id: data.recomendacionId });
-        else navigationRef.navigate('Alertas');
+        else navigationRef.navigate('Notificaciones');
+        break;
+      case 'foro_rechazado':
+        navigationRef.navigate('Notificaciones');
+        break;
+      case 'nuevo_foro_pendiente':
+        Alert.alert('Nuevo foro pendiente', 'Hay un nuevo foro pendiente de revisión.');
+        navigationRef.navigate('Notificaciones');
+        break;
+      case 'comentario_promovido':
+      case 'saber_ancestral_aprobado':
+        if (data.recomendacionId) navigationRef.navigate('RecomendacionDetail', { id: data.recomendacionId });
+        else navigationRef.navigate('Notificaciones');
         break;
       case 'cuenta_suspendida':
         Alert.alert('Cuenta suspendida', 'Tu cuenta ha sido suspendida. Revisa los detalles en tu perfil.');
         break;
       default:
-        navigationRef.navigate('Alertas');
+        navigationRef.navigate('Notificaciones');
     }
   }, []);
 
@@ -201,9 +216,9 @@ function AppNavigator() {
         options={{ title: 'Recomendación' }}
       />
       <AppStack.Screen
-        name="Alertas"
-        component={AlertasScreen}
-        options={{ title: 'Alertas' }}
+        name="SaberDetail"
+        component={SaberDetailScreen}
+        options={{ title: 'Saber Ancestral' }}
       />
       <AppStack.Screen
         name="Notificaciones"

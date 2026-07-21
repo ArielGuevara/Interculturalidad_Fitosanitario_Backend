@@ -6,7 +6,9 @@ import {
   IsOptional,
   IsEnum,
   IsBoolean,
+  IsArray,
   Min,
+  ArrayMinSize,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -23,9 +25,17 @@ export class CreateTratamientoDto {
   recomendacionOrigenId?: number;
 
   // Qué se trata y con qué
+  @IsOptional()
   @IsInt()
   @Type(() => Number)
-  cultivoId: number;
+  cultivoId?: number;
+
+  @IsOptional()
+  @IsArray()
+  @IsInt({ each: true })
+  @ArrayMinSize(1)
+  @Type(() => Number)
+  cultivoIds?: number[];
 
   @IsInt()
   @Type(() => Number)
@@ -89,6 +99,14 @@ export class CreateTratamientoDto {
   @IsString()
   @IsOptional()
   etapaCultivo?: string;
+
+  @IsString()
+  @IsOptional()
+  nombre?: string;
+
+  @IsString()
+  @IsOptional()
+  descripcion?: string;
 
   @IsString()
   @IsOptional()

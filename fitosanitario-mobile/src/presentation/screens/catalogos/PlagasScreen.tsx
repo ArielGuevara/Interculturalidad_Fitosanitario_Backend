@@ -22,6 +22,7 @@ import { ImageViewerModal } from '../../../presentation/components/ImageViewerMo
 import { SearchBar } from '../../../presentation/components/SearchBar';
 
 const CACHE_KEY = 'plagas.list';
+const PAGE_SIZE = 5;
 
 export function PlagasScreen() {
   const [items, setItems] = useState<Plaga[]>([]);
@@ -32,6 +33,7 @@ export function PlagasScreen() {
   const [selectedItem, setSelectedItem] = useState<Plaga | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCultivoId, setSelectedCultivoId] = useState<number | null>(null);
+  const [page, setPage] = useState(1);
 
   const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
@@ -52,6 +54,11 @@ export function PlagasScreen() {
       (i.tipo && normalize(i.tipo.toLowerCase()).includes(q))
     );
   }, [filteredByCrop, searchQuery]);
+
+  const displayedItems = useMemo(() => filteredItems.slice(0, page * PAGE_SIZE), [filteredItems, page]);
+  const hasMore = displayedItems.length < filteredItems.length;
+
+  useEffect(() => { setPage(1); }, [searchQuery, selectedCultivoId]);
 
   const loadData = async (isRefreshing = false) => {
     if (isRefreshing) setRefreshing(true);
@@ -181,17 +188,22 @@ export function PlagasScreen() {
         </View>
       ) : (
         <FlatList
-          data={filteredItems}
+          data={displayedItems}
           keyExtractor={(i) => String(i.id)}
           renderItem={renderItem}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={renderEmptyComponent}
+          ListFooterComponent={hasMore ? (
+            <Pressable style={styles.loadMoreBtn} onPress={() => setPage(p => p + 1)}>
+              <Text style={styles.loadMoreText}>Ver más ({filteredItems.length - displayedItems.length} restantes)</Text>
+            </Pressable>
+          ) : null}
           refreshControl={
             <RefreshControl 
               refreshing={refreshing} 
               onRefresh={() => loadData(true)} 
-              tintColor="#e11d48" // Tono rojo/rosa para plagas
+              tintColor="#e11d48"
               colors={['#e11d48']}
             />
           }
@@ -204,33 +216,36 @@ export function PlagasScreen() {
         onClose={() => setSelectedImage(null)}
       />
 
-      <Modal visible={selectedItem !== null} animationType="fade" transparent>
-        <View style={styles.modalOverlay}>
-          <ScrollView contentContainerStyle={styles.modalContent}>
-            {selectedItem?.imagenUrl && (
-              <Image source={{ uri: selectedItem.imagenUrl }} style={styles.modalImage} resizeMode="cover" />
-            )}
-            <Text style={styles.modalTitle}>{selectedItem?.nombre}</Text>
-            {selectedItem && 'tipo' in selectedItem && selectedItem.tipo && (
-              <View style={styles.modalBadge}><Text style={styles.modalBadgeText}>{selectedItem.tipo}</Text></View>
-            )}
-            {selectedItem?.cultivos && selectedItem.cultivos.length > 0 && (
-              <View style={styles.modalCropRow}>
-                <Ionicons name="leaf" size={14} color="#059669" />
-                {selectedItem.cultivos.map(c => (
-                  <View key={c.id} style={styles.modalCropBadge}>
-                    <Text style={styles.modalCropBadgeText}>{c.nombre}</Text>
-                  </View>
-                ))}
+<Modal visible={selectedItem !== null} animationType="fade" transparent onRequestClose={() => setSelectedItem(null)}>
+  <Pressable style={styles.modalOverlay} onPress={() => setSelectedItem(null)}>
+    <Pressable style={styles.modalContent} onPress={() => {}}>
+      <ScrollView contentContainerStyle={styles.modalContentInner}>
+        {selectedItem?.imagenUrl && (
+          <Image source={{ uri: selectedItem.imagenUrl }} style={styles.modalImage} resizeMode="contain" />
+
+        )}
+        <Text style={styles.modalTitle}>{selectedItem?.nombre}</Text>
+        {selectedItem && 'tipo' in selectedItem && selectedItem.tipo && (
+          <View style={styles.modalBadge}><Text style={styles.modalBadgeText}>{selectedItem.tipo}</Text></View>
+        )}
+        {selectedItem?.cultivos && selectedItem.cultivos.length > 0 && (
+          <View style={styles.modalCropRow}>
+            <Ionicons name="leaf" size={14} color="#059669" />
+            {selectedItem.cultivos.map(c => (
+              <View key={c.id} style={styles.modalCropBadge}>
+                <Text style={styles.modalCropBadgeText}>{c.nombre}</Text>
               </View>
-            )}
-            <Text style={styles.modalDescription}>{selectedItem?.descripcion || 'Sin descripción disponible'}</Text>
-            <Pressable style={styles.modalCloseBtn} onPress={() => setSelectedItem(null)}>
-              <Text style={styles.modalCloseText}>Cerrar</Text>
-            </Pressable>
-          </ScrollView>
-        </View>
-      </Modal>
+            ))}
+          </View>
+        )}
+        <Text style={styles.modalDescription}>{selectedItem?.descripcion || 'Sin descripción disponible'}</Text>
+        <Pressable style={styles.modalCloseBtn} onPress={() => setSelectedItem(null)}>
+          <Text style={styles.modalCloseText}>Cerrar</Text>
+        </Pressable>
+      </ScrollView>
+    </Pressable>
+  </Pressable>
+</Modal>
     </SafeAreaView>
   );
 }
@@ -339,6 +354,22 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
 
+  loadMoreBtn: {
+    paddingVertical: 14,
+    alignItems: 'center',
+    backgroundColor: '#fef2f2',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#fecaca',
+    marginTop: 4,
+    marginBottom: 16,
+  },
+  loadMoreText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#dc2626',
+  },
+
   // Estados
   loadingContainer: {
     flex: 1,
@@ -377,26 +408,30 @@ const styles = StyleSheet.create({
 
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
-    padding: 24,
+    padding: 40,
   },
   modalContent: {
     backgroundColor: '#fff',
     borderRadius: 20,
-    padding: 24,
+    maxHeight: '70%',
+  },
+  modalContentInner: {
+    padding: 20,
   },
   modalImage: {
     width: '100%',
-    height: 200,
+    height: 160,
     borderRadius: 12,
-    marginBottom: 16,
+    backgroundColor: '#f1f5f9',
+    marginBottom: 12,
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '800',
     color: '#0f172a',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   modalBadge: {
     backgroundColor: '#f1f5f9',
@@ -404,7 +439,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 8,
     alignSelf: 'flex-start',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   modalBadgeText: {
     fontSize: 12,
@@ -412,21 +447,21 @@ const styles = StyleSheet.create({
     color: '#475569',
   },
   modalDescription: {
-    fontSize: 15,
+    fontSize: 14,
     color: '#334155',
-    lineHeight: 22,
-    marginBottom: 20,
+    lineHeight: 20,
+    marginBottom: 16,
   },
   modalCloseBtn: {
     backgroundColor: '#059669',
     borderRadius: 12,
-    paddingVertical: 14,
+    paddingVertical: 12,
     alignItems: 'center',
   },
   modalCloseText: {
     color: '#fff',
     fontWeight: '700',
-    fontSize: 16,
+    fontSize: 15,
   },
 
   filterSection: {
@@ -486,7 +521,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexWrap: 'wrap',
     gap: 6,
-    marginBottom: 12,
+    marginBottom: 10,
   },
   modalCropBadge: {
     backgroundColor: '#ecfdf5',

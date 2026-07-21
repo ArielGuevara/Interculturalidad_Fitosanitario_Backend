@@ -16,6 +16,7 @@ import { RecomendacionesModule } from './modules/recomendaciones/recomendaciones
 import { AlertasModule } from './modules/alertas/alertas.module';
 import { DispositivosModule } from './modules/dispositivos/dispositivos.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { InformesModule } from './modules/informes/informes.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DbModule } from './db/db.module';
@@ -41,6 +42,7 @@ import { DbModule } from './db/db.module';
     AlertasModule,
     DispositivosModule,
     NotificationsModule,
+    InformesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

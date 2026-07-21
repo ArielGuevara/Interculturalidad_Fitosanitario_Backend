@@ -8,6 +8,38 @@ import type { TratamientoConRelaciones } from '../../../domain/tratamientos/type
 
 type Props = NativeStackScreenProps<AppStackParamList, 'TratamientoDetail'>;
 
+const ICONS: Record<string, React.ComponentProps<typeof Ionicons>['name']> = {
+  medicamento: 'medical-outline',
+  dosis: 'flask-outline',
+  volumen: 'water-outline',
+  aplicacion: 'color-fill-outline',
+  aplicaciones: 'repeat-outline',
+  intervalo: 'calendar-outline',
+  duracion: 'time-outline',
+  carencia: 'ban-outline',
+  reingreso: 'alarm-outline',
+  etapa: 'leaf-outline',
+  enciclopedia: 'book-outline',
+  condiciones: 'sunny-outline',
+};
+
+function TechBlock({ icon, label, value }: { icon: React.ComponentProps<typeof Ionicons>['name']; label: string; value: string }) {
+  return (
+    <View style={styles.techBlock}>
+      <View style={styles.techBlockInner}>
+        <View style={styles.techIcon}>
+          <Ionicons name={icon} size={20} color="#059669" />
+        </View>
+        <View style={styles.techContent}>
+          <Text style={styles.techLabel}>{label}</Text>
+          <Text style={styles.techValue}>{value}</Text>
+        </View>
+      </View>
+      <View style={styles.techDivider} />
+    </View>
+  );
+}
+
 export function TratamientoDetailScreen({ route }: Props) {
   const { id } = route.params;
   const [tratamiento, setTratamiento] = useState<TratamientoConRelaciones | null>(null);
@@ -30,7 +62,7 @@ export function TratamientoDetailScreen({ route }: Props) {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#10b981" />
+        <ActivityIndicator size="large" color="#059669" />
       </View>
     );
   }
@@ -43,154 +75,231 @@ export function TratamientoDetailScreen({ route }: Props) {
     );
   }
 
-  const InfoRow = ({ label, value }: { label: string; value: string }) => (
-    <View style={styles.infoRow}>
-      <Text style={styles.label}>{label}</Text>
-      <Text style={styles.value}>{value}</Text>
-    </View>
-  );
+  const cultivosStr = (tratamiento.cultivos ?? [])
+    .map(c => c.nombre.toUpperCase())
+    .join(' • ') || tratamiento.cultivo?.nombre?.toUpperCase() || null;
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Header - Cultivo + Plaga */}
-      <View style={styles.header}>
-        <View style={styles.headerRow}>
-          <Text style={styles.cultivo}>{tratamiento.cultivo?.nombre || 'N/A'}</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-            <Ionicons name={tratamiento.plaga?.tipo === 'ENFERMEDAD' ? 'fitness-outline' : 'bug'} size={16} color="#bbf7d0" />
-            <Text style={styles.badge}>{tratamiento.plaga?.nombre}</Text>
+      {/* Encabezado secundario */}
+      <Text style={styles.idText}>Tratamiento Oficial #{tratamiento.id}</Text>
+
+      {/* Título principal */}
+      <Text style={styles.nombre}>
+        {tratamiento.nombre || tratamiento.producto?.nombreComercial || `Tratamiento #${tratamiento.id}`}
+      </Text>
+
+      {/* Cultivos + Plaga */}
+      <View style={styles.chipRow}>
+        {cultivosStr && <Text style={styles.chipText}>{cultivosStr}</Text>}
+        {tratamiento.plaga && (
+          <>
+            {cultivosStr && <Text style={styles.chipDot}>·</Text>}
+            <Text style={styles.chipTextPlaga}>{tratamiento.plaga.nombre.toUpperCase()}</Text>
+          </>
+        )}
+      </View>
+
+      {/* Descripción */}
+      {tratamiento.descripcion ? (
+        <View style={styles.descBox}>
+          <Text style={styles.descripcion}>{tratamiento.descripcion}</Text>
+        </View>
+      ) : null}
+
+      {/* Separador */}
+      <View style={styles.sectionDivider} />
+
+      {/* Información técnica */}
+      <TechBlock icon={ICONS.medicamento} label="Medicamento" value={tratamiento.producto?.nombreComercial || '—'} />
+      <TechBlock icon={ICONS.aplicacion} label="Método de aplicación" value={metodoLabel(tratamiento.metodoAplicacion)} />
+      <TechBlock icon={ICONS.dosis} label="Dosis" value={`${tratamiento.dosis} ${tratamiento.unidadDosis}`} />
+      {tratamiento.volumenAgua ? (
+        <TechBlock icon={ICONS.volumen} label="Volumen de agua" value={`${tratamiento.volumenAgua} ${tratamiento.unidadVolumen || 'L'}`} />
+      ) : null}
+      <TechBlock icon={ICONS.aplicaciones} label="Aplicaciones" value={`${tratamiento.numeroAplicaciones}`} />
+      <TechBlock icon={ICONS.intervalo} label="Intervalo" value={`${tratamiento.intervaloDias} día(s)`} />
+      <TechBlock icon={ICONS.duracion} label="Duración total" value={`${tratamiento.duracionTotalDias} día(s)`} />
+      <TechBlock icon={ICONS.carencia} label="Días de carencia" value={`${tratamiento.diasCarencia}`} />
+      {tratamiento.periodoReingresoHoras != null ? (
+        <TechBlock icon={ICONS.reingreso} label="Reingreso" value={`${tratamiento.periodoReingresoHoras} hora(s)`} />
+      ) : null}
+      {tratamiento.etapaCultivo ? (
+        <TechBlock icon={ICONS.etapa} label="Etapa del cultivo" value={tratamiento.etapaCultivo} />
+      ) : null}
+      <TechBlock icon={ICONS.enciclopedia} label="Enciclopedia" value={tratamiento.enEnciclopedia ? 'Sí' : 'No'} />
+
+      {/* Condiciones de aplicación */}
+      {tratamiento.condicionesAplicacion ? (
+        <View style={styles.condicionesBlock}>
+          <View style={styles.condicionesHeader}>
+            <Ionicons name={ICONS.condiciones} size={20} color="#059669" />
+            <Text style={styles.condicionesLabel}>Condiciones de aplicación</Text>
           </View>
+          <Text style={styles.condicionesValue}>{tratamiento.condicionesAplicacion}</Text>
         </View>
-      </View>
+      ) : null}
 
-      {/* Producto */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Producto Recomendado</Text>
-        <Text style={styles.productoNombre}>{tratamiento.producto?.nombreComercial || 'N/A'}</Text>
-        <Text style={styles.productoTipo}>{tratamiento.producto?.tipo}</Text>
-      </View>
-
-      {/* Dosificación */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Dosificación</Text>
-        <InfoRow label="Dosis" value={`${tratamiento.dosis} ${tratamiento.unidadDosis}`} />
-        {tratamiento.volumenAgua && (
-          <InfoRow label="Volumen de agua" value={`${tratamiento.volumenAgua} ${tratamiento.unidadVolumen || ''}`} />
-        )}
-        <InfoRow label="Método de aplicación" value={tratamiento.metodoAplicacion} />
-      </View>
-
-      {/* Calendario */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Calendario de Aplicación</Text>
-        <InfoRow label="Intervalo" value={`Cada ${tratamiento.intervaloDias} día(s)`} />
-        <InfoRow label="Aplicaciones" value={`${tratamiento.numeroAplicaciones} vez/veces`} />
-        <InfoRow label="Duración total" value={`${tratamiento.duracionTotalDias} día(s)`} />
-      </View>
-
-      {/* Seguridad */}
-      <View style={[styles.card, styles.warningCard]}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 }}>
-          <Ionicons name="pause-circle-outline" size={16} color="#dc2626" />
-          <Text style={[styles.cardTitle, { color: '#dc2626', marginBottom: 0 }]}>Seguridad</Text>
-        </View>
-        <InfoRow label="Días de carencia" value={`${tratamiento.diasCarencia} día(s)`} />
-        {tratamiento.periodoReingresoHoras != null && (
-          <InfoRow label="Reingreso" value={`${tratamiento.periodoReingresoHoras} hora(s)`} />
-        )}
-      </View>
-
-      {/* Info adicional */}
-      {tratamiento.etapaCultivo && (
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Contexto</Text>
-          <InfoRow label="Etapa del cultivo" value={tratamiento.etapaCultivo} />
-          {tratamiento.condicionesAplicacion && (
-            <InfoRow label="Condiciones" value={tratamiento.condicionesAplicacion} />
-          )}
-        </View>
-      )}
-
-      {/* Moderador */}
+      {/* Footer */}
       <View style={styles.footer}>
         <Text style={styles.footerText}>
-          Validado por: {tratamiento.moderador?.nombre || 'N/A'}
+          Validado por {tratamiento.moderador?.nombre || 'moderador'}
         </Text>
         <Text style={styles.footerDate}>
-          {new Date(tratamiento.fechaValidacion).toLocaleDateString()}
+          {new Date(tratamiento.fechaValidacion).toLocaleDateString('es-EC', { year: 'numeric', month: 'long', day: 'numeric' })}
         </Text>
+        {tratamiento.fechaUltimaActualizacion && (
+          <Text style={styles.footerDate}>
+            Actualizado {new Date(tratamiento.fechaUltimaActualizacion).toLocaleDateString('es-EC')}
+          </Text>
+        )}
       </View>
     </ScrollView>
   );
 }
 
+function metodoLabel(m: string): string {
+  switch (m) {
+    case 'FOLIAR': return 'Foliar';
+    case 'SUELO': return 'Suelo';
+    case 'RIEGO': return 'Riego';
+    default: return m;
+  }
+}
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f0faf2' },
-  content: { padding: 16, paddingBottom: 40 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f0faf2' },
-  notFound: { fontSize: 16, color: '#6b7280' },
-  header: {
-    backgroundColor: '#15803d',
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 12,
-  },
-  headerRow: { gap: 8 },
-  cultivo: { fontSize: 22, fontWeight: '800', color: '#fff' },
-  badge: {
-    fontSize: 14,
-    color: '#bbf7d0',
-    fontWeight: '600',
-    marginTop: 4,
-  },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-  warningCard: {
-    borderWidth: 1,
-    borderColor: '#fecaca',
-    backgroundColor: '#fffbfb',
-  },
-  cardTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#1e293b',
-    marginBottom: 12,
-  },
-  productoNombre: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#059669',
-  },
-  productoTipo: {
+  container: { flex: 1, backgroundColor: '#f8fafc' },
+  content: { padding: 20, paddingBottom: 48 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f8fafc' },
+  notFound: { fontSize: 16, color: '#64748b' },
+
+  idText: {
     fontSize: 12,
-    color: '#6b7280',
-    marginTop: 2,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
+    color: '#94a3b8',
+    fontWeight: '500',
+    marginBottom: 4,
   },
-  infoRow: {
+  nombre: {
+    fontSize: 26,
+    fontWeight: '900',
+    color: '#059669',
+    lineHeight: 32,
+    marginBottom: 14,
+  },
+  chipRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
-  },
-  label: { fontSize: 14, color: '#64748b' },
-  value: { fontSize: 14, fontWeight: '600', color: '#1e293b' },
-  footer: {
-    marginTop: 8,
+    flexWrap: 'wrap',
     alignItems: 'center',
+    marginBottom: 14,
     gap: 4,
   },
-  footerText: { fontSize: 12, color: '#94a3b8' },
-  footerDate: { fontSize: 11, color: '#94a3b8' },
+  chipText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#059669',
+    letterSpacing: 0.5,
+  },
+  chipTextPlaga: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#dc2626',
+    letterSpacing: 0.5,
+  },
+  chipDot: {
+    fontSize: 16,
+    color: '#059669',
+    fontWeight: '700',
+    marginHorizontal: 2,
+  },
+  descBox: {
+    backgroundColor: '#f0fdf4',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 16,
+  },
+  descripcion: {
+    fontSize: 14,
+    color: '#166534',
+    lineHeight: 21,
+  },
+
+  sectionDivider: {
+    height: 1,
+    backgroundColor: '#e2e8f0',
+    marginBottom: 8,
+  },
+
+  techBlock: {
+    paddingVertical: 4,
+  },
+  techBlockInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+  },
+  techIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#f0fdf4',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  techContent: {
+    flex: 1,
+  },
+  techLabel: {
+    fontSize: 11,
+    color: '#94a3b8',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+    marginBottom: 2,
+  },
+  techValue: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#0f172a',
+  },
+  techDivider: {
+    height: 1,
+    backgroundColor: '#f1f5f9',
+  },
+
+  condicionesBlock: {
+    backgroundColor: '#f0fdf4',
+    borderRadius: 12,
+    padding: 14,
+    marginTop: 8,
+  },
+  condicionesHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 6,
+  },
+  condicionesLabel: {
+    fontSize: 11,
+    color: '#94a3b8',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  condicionesValue: {
+    fontSize: 14,
+    color: '#166534',
+    lineHeight: 20,
+  },
+
+  footer: {
+    marginTop: 24,
+    alignItems: 'center',
+    gap: 2,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#e2e8f0',
+  },
+  footerText: { fontSize: 12, color: '#94a3b8', fontWeight: '500' },
+  footerDate: { fontSize: 11, color: '#cbd5e1' },
 });

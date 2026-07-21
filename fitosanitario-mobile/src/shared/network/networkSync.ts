@@ -1,5 +1,5 @@
 import NetInfo from '@react-native-community/netinfo';
-import { syncPendingReportes } from '../../infrastructure/offline/sync';
+import { syncPendingReportes, syncPendingRecomendaciones } from '../../infrastructure/offline/sync';
 
 let isSyncing = false;
 let hasInitialized = false;
@@ -27,6 +27,7 @@ async function runSync(source: 'network' | 'app') {
     console.log(`[SYNC] Ejecutando sync desde: ${source}`);
 
     const result = await syncPendingReportes();
+    await syncPendingRecomendaciones();
 
     console.log('[SYNC] Resultado:', result);
   } catch (err) {

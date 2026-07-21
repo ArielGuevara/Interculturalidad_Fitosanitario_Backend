@@ -48,6 +48,7 @@ export function ReporteDetailScreen({ route }: Props) {
   const [rechazoPlaying, setRechazoPlaying] = useState(false);
   const [rechazoPosition, setRechazoPosition] = useState(0);
   const [rechazoDuration, setRechazoDuration] = useState(0);
+  const [suspension, setSuspension] = useState<any>(null);
 
   // ── Re-edit (navigation) ───────────────────────────────
   const [reEditModal, setReEditModal] = useState(false);
@@ -62,6 +63,8 @@ export function ReporteDetailScreen({ route }: Props) {
       setHistorial(hist);
       const t = await tratamientosApi.getTratamientoByReporte(id);
       if (t) setTratamiento(t);
+      const s = await reportesApi.getSuspensionActiva();
+      if (s?.activa) setSuspension(s);
     } catch (e: any) {
       if (showErrors) Alert.alert('Error', e?.message || 'No se pudo cargar el reporte');
     } finally {
@@ -241,6 +244,29 @@ export function ReporteDetailScreen({ route }: Props) {
         <Text style={[styles.estadoText, { color: estadoColor }]}>{estadoLabel}</Text>
       </View>
 
+      {/* Suspensión activa */}
+      {suspension && (
+        <View style={[styles.card, { borderColor: '#fecaca', backgroundColor: '#fef2f2', marginBottom: 12 }]}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: '#fecaca', alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="shield-checkmark" size={20} color="#dc2626" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 15, fontWeight: '800', color: '#991b1b' }}>Cuenta suspendida</Text>
+              <Text style={{ fontSize: 13, color: '#b91c1c', marginTop: 2 }}>
+                {suspension.motivo || 'Tu cuenta ha sido suspendida'}
+              </Text>
+              {suspension.fechaFin && (
+                <Text style={{ fontSize: 12, color: '#dc2626', marginTop: 2 }}>
+                  Válida hasta: {new Date(suspension.fechaFin).toLocaleDateString()}
+                </Text>
+              )}
+            </View>
+            <Ionicons name="alert-circle" size={22} color="#dc2626" />
+          </View>
+        </View>
+      )}
+
       {/* Título */}
       <Text style={styles.title}>{reporte.titulo}</Text>
 
@@ -286,9 +312,11 @@ export function ReporteDetailScreen({ route }: Props) {
       {/* Motivo de rechazo (VOLVER_A_REPORTAR) */}
       {reporte.estado === 'VOLVER_A_REPORTAR' && (
         <View style={[styles.card, { borderColor: '#fde68a', backgroundColor: '#fffbeb' }]}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-            <Ionicons name="information-circle" size={18} color="#d97706" />
-            <Text style={[styles.cardTitle, { color: '#92400e', marginBottom: 0 }]}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+            <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#fef3c7', alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="information-circle" size={18} color="#d97706" />
+            </View>
+            <Text style={{ fontSize: 15, fontWeight: '700', color: '#92400e', flex: 1 }}>
               El moderador solicitó cambios
             </Text>
           </View>
@@ -352,20 +380,24 @@ export function ReporteDetailScreen({ route }: Props) {
           style={styles.treatmentCard}
           onPress={() => navigation.navigate('TratamientoDetail', { id: tratamiento.id })}
         >
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <Ionicons name="checkmark-circle" size={18} color="#10b981" />
-            <Text style={styles.treatmentTitle}>Tratamiento oficial</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+            <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#dbeafe', alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="medkit" size={18} color="#2563eb" />
+            </View>
+            <Text style={styles.treatmentTitle}>Tratamiento oficial asignado</Text>
           </View>
-          <Text style={styles.treatmentProduct}>
-            {tratamiento.producto?.nombreComercial || 'Producto'}
-          </Text>
-          <Text style={styles.treatmentDosis}>
-            {tratamiento.dosis} {tratamiento.unidadDosis}
-          </Text>
-          <Text style={styles.treatmentCarencia}>
-            <Ionicons name="pause-circle-outline" size={16} color="#dc2626" /> {tratamiento.diasCarencia} días de carencia
-          </Text>
-          <Text style={styles.treatmentView}>Ver detalle →</Text>
+          <View style={{ backgroundColor: '#eff6ff', borderRadius: 12, padding: 12, gap: 6 }}>
+            <Text style={styles.treatmentProduct}>
+              {tratamiento.producto?.nombreComercial || 'Producto'}
+            </Text>
+            <Text style={styles.treatmentDosis}>
+              {tratamiento.dosis} {tratamiento.unidadDosis}
+            </Text>
+            <Text style={styles.treatmentCarencia}>
+              <Ionicons name="pause-circle-outline" size={16} color="#dc2626" /> {tratamiento.diasCarencia} días de carencia
+            </Text>
+          </View>
+          <Text style={styles.treatmentView}>Ver detalle del tratamiento →</Text>
         </Pressable>
       ) : reporte.estado === 'COMUNIDAD' ? (
         <View style={styles.comunidadCard}>
@@ -543,23 +575,23 @@ const styles = StyleSheet.create({
   },
   seekBarTime: { fontSize: 12, color: '#94a3b8', minWidth: 50, textAlign: 'center' },
   treatmentCard: {
-    backgroundColor: '#fff',
+    backgroundColor: '#eff6ff',
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#d1fae5',
-    shadowColor: '#059669',
-    shadowOpacity: 0.1,
+    borderColor: '#bfdbfe',
+    shadowColor: '#2563eb',
+    shadowOpacity: 0.08,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
     elevation: 3,
   },
-  treatmentTitle: { fontSize: 15, fontWeight: '700', color: '#059669', marginBottom: 8 },
+  treatmentTitle: { fontSize: 15, fontWeight: '700', color: '#1d4ed8' },
   treatmentProduct: { fontSize: 18, fontWeight: '800', color: '#1e293b' },
-  treatmentDosis: { fontSize: 14, color: '#64748b', marginTop: 2 },
+  treatmentDosis: { fontSize: 14, color: '#4b5563', marginTop: 2 },
   treatmentCarencia: { fontSize: 13, color: '#dc2626', marginTop: 4 },
-  treatmentView: { fontSize: 13, fontWeight: '600', color: '#059669', marginTop: 8 },
+  treatmentView: { fontSize: 13, fontWeight: '600', color: '#2563eb', marginTop: 10, textAlign: 'right' },
 
   // Rechazo card
   reEditBtn: {

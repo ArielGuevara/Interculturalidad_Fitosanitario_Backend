@@ -3,36 +3,67 @@
 
 <div class="page-header flex flex-column md:flex-row justify-content-between align-items-end gap-4">
   <div>
-    <h2 class="title m-0">Zonas de Alerta</h2>
-    <p class="subtitle m-0">Definición de áreas geográficas para monitoreo fitosanitario.</p>
+    <h2 class="title m-0">Notificaciones Globales</h2>
+    <p class="subtitle m-0">Envía y gestiona notificaciones push a todos los usuarios del sistema.</p>
   </div>
-  <p-button label="Nueva Zona" icon="pi pi-plus" (onClick)="openMap()" styleClass="p-button-success border-round-2xl py-3 px-5 shadow-3"></p-button>
+  <p-button label="Nueva notificación" icon="pi pi-plus" (onClick)="openNew()" styleClass="p-button-success border-round-2xl py-3 px-5 shadow-3"></p-button>
+</div>
+
+<div class="filters-bar">
+  <span class="search-box">
+    <i class="pi pi-search search-icon"></i>
+    <input type="text" pInputText [(ngModel)]="filtroQ" placeholder="Buscar por título..." class="search-input">
+  </span>
+  <p-datepicker
+    [(ngModel)]="filtroFechaInicio"
+    placeholder="Fecha inicio"
+    [showIcon]="true"
+    [maxDate]="filtroFechaFin || hoy"
+    iconDisplay="input"
+    class="filter-date">
+  </p-datepicker>
+  <p-datepicker
+    [(ngModel)]="filtroFechaFin"
+    placeholder="Fecha fin"
+    [showIcon]="true"
+    [minDate]="filtroFechaInicio || undefined"
+    [maxDate]="hoy"
+    iconDisplay="input"
+    class="filter-date">
+  </p-datepicker>
+  <p-select
+    [options]="tipoFilterOptions"
+    [(ngModel)]="filtroTipo"
+    placeholder="Tipo"
+    [showClear]="true"
+    class="filter-tipo">
+  </p-select>
 </div>
 
 <div class="table-wrapper">
-  <p-table [value]="zonas()" [loading]="loading()" [rows]="10" [paginator]="true" responsiveLayout="stack" [breakpoint]="'960px'" styleClass="premium-table">
+  <p-table [value]="filteredNotificaciones" [loading]="loading()" [rows]="10" [paginator]="true" responsiveLayout="stack" [breakpoint]="'960px'" styleClass="premium-table">
     <ng-template pTemplate="header">
       <tr>
-        <th>Nombre</th>
+        <th>Título</th>
         <th>Descripción</th>
-        <th>Centro (Lat, Lon)</th>
-        <th>Radio (km)</th>
-        <th>Estado</th>
+        <th>Tipo</th>
+        <th>Fecha de envío</th>
         <th style="width: 160px" class="text-center">Acciones</th>
       </tr>
     </ng-template>
-    <ng-template pTemplate="body" let-zona>
+    <ng-template pTemplate="body" let-item>
       <tr>
-        <td><span class="font-bold text-slate-900">{{zona.nombre}}</span></td>
-        <td><span class="text-slate-500 text-sm">{{zona.descripcion || '—'}}</span></td>
-        <td><span class="text-sm font-mono">{{zona.latitudCentro.toFixed(4)}}, {{zona.longitudCentro.toFixed(4)}}</span></td>
-        <td><span class="font-bold">{{zona.radioKm}} km</span></td>
-        <td><p-tag [value]="zona.activo ? 'Activa' : 'Inactiva'" [severity]="zona.activo ? 'success' : 'danger'"></p-tag></td>
+        <td><span class="font-bold text-slate-900">{{item.titulo}}</span></td>
+        <td><span class="text-slate-500 text-sm line-clamp-2">{{item.cuerpo}}</span></td>
+        <td>
+          <p-tag [value]="item.tipo === 'PELIGRO' ? 'Peligro' : 'Informativo'"
+                 [severity]="item.tipo === 'PELIGRO' ? 'danger' : 'success'"></p-tag>
+        </td>
+        <td><span class="text-sm font-medium">{{item.createdAt | date:'medium'}}</span></td>
         <td>
           <div class="flex justify-content-center gap-2">
-            <p-button icon="pi pi-map" styleClass="btn-icon" pTooltip="Ver en mapa" (onClick)="openMap(zona)"></p-button>
-            <p-button icon="pi pi-pencil" styleClass="btn-icon" (onClick)="editZona(zona)"></p-button>
-            <p-button icon="pi pi-trash" styleClass="btn-icon btn-delete" (onClick)="deleteZona(zona)"></p-button>
+            <p-button icon="pi pi-pencil" styleClass="btn-icon" (onClick)="editItem(item)"></p-button>
+            <p-button icon="pi pi-trash" styleClass="btn-icon btn-delete" (onClick)="deleteItem(item)"></p-button>
           </div>
         </td>
       </tr>
@@ -40,10 +71,10 @@
     </ng-template>
     <ng-template pTemplate="emptymessage">
       <tr>
-        <td colspan="6" class="text-center p-8 bg-white border-round-3xl">
+        <td colspan="5" class="text-center p-8 bg-white border-round-3xl">
           <div class="flex flex-column align-items-center gap-3">
-            <i class="pi pi-map-marker text-5xl text-slate-200"></i>
-            <span class="text-slate-400 font-bold text-lg">No hay zonas de alerta definidas.</span>
+            <i class="pi pi-bell text-5xl text-slate-200"></i>
+            <span class="text-slate-400 font-bold text-lg">No hay notificaciones globales.</span>
           </div>
         </td>
       </tr>
@@ -51,68 +82,41 @@
   </p-table>
 </div>
 
-<!-- Mapa Dialog -->
-<p-dialog [(visible)]="mapDialogVisible" [modal]="true" [style]="{width: '700px', maxWidth: '95vw'}" styleClass="p-fluid" [draggable]="false" [resizable]="false" [dismissableMask]="true">
-  <div class="flex flex-column align-items-center text-center p-4 w-full">
-    <h2 class="font-black text-2xl text-900 m-0 w-full">{{isEditMode() ? 'Ubicación de Zona' : 'Nueva Zona - Selecciona ubicación'}}</h2>
-    <p class="text-slate-500 font-medium mt-2 w-full">Arrastra el marcador para definir el centro de la zona.</p>
-  </div>
-  <div id="zona-map" style="height: 400px; width: 100%; border-radius: 16px; z-index: 1;"></div>
-  <div class="flex gap-3 mt-3">
-    <div class="field flex-1">
-      <label class="font-bold text-sm">Latitud</label>
-      <input type="text" pInputText [ngModel]="mapLat()" readonly class="w-full" />
-    </div>
-    <div class="field flex-1">
-      <label class="font-bold text-sm">Longitud</label>
-      <input type="text" pInputText [ngModel]="mapLon()" readonly class="w-full" />
-    </div>
-    <div class="field flex-1">
-      <label class="font-bold text-sm">Radio (km)</label>
-      <p-inputNumber [(ngModel)]="selectedZona.radioKm" [min]="1" [max]="500" class="w-full"></p-inputNumber>
-    </div>
-  </div>
-  <ng-template pTemplate="footer">
-    <div class="flex justify-content-center gap-3 w-full">
-      <p-button label="Cancelar" styleClass="p-button-text" (onClick)="mapDialogVisible.set(false)"></p-button>
-      <p-button label="Confirmar Ubicación" icon="pi pi-check" styleClass="p-button-success" (onClick)="confirmMapPosition()"></p-button>
+<!-- Crear / Editar Dialog -->
+<p-dialog [(visible)]="displayDialog" [modal]="true" [style]="{width: '550px', maxWidth: '95vw'}" styleClass="p-fluid" [draggable]="false" [resizable]="false" [dismissableMask]="true">
+  <ng-template pTemplate="header">
+    <div class="flex align-items-center gap-3 w-full">
+      <i class="pi pi-bell text-xl text-green-600"></i>
+      <span class="font-black text-xl">{{isEditMode() ? 'Editar notificación' : 'Nueva notificación global'}}</span>
     </div>
   </ng-template>
-</p-dialog>
 
-<!-- Edición Dialog -->
-<p-dialog [(visible)]="displayDialog" [modal]="true" [style]="{width: '500px', maxWidth: '95vw'}" styleClass="p-fluid" [draggable]="false" [resizable]="false" [showHeader]="false" [dismissableMask]="true">
-  <div class="flex flex-column align-items-center text-center p-4 w-full">
-    <h2 class="font-black text-2xl text-900 m-0 w-full">{{isEditMode() ? 'Editar Zona' : 'Nueva Zona'}}</h2>
-  </div>
-  <div class="flex flex-column gap-4 px-3 w-full">
+  <div class="flex flex-column gap-4 px-1 w-full">
     <div class="field w-full">
-      <label class="font-bold text-sm">Nombre *</label>
-      <input type="text" pInputText [(ngModel)]="selectedZona.nombre" placeholder="Ej: Zona Norte" class="w-full" />
+      <label class="font-bold text-sm">Título *</label>
+      <input type="text" pInputText [(ngModel)]="form.titulo" placeholder="Ej: Alerta sanitaria" class="w-full" />
     </div>
     <div class="field w-full">
-      <label class="font-bold text-sm">Descripción</label>
-      <textarea pInputText [(ngModel)]="selectedZona.descripcion" rows="3" placeholder="Descripción opcional" class="w-full" style="resize: none"></textarea>
-    </div>
-    <div class="flex gap-3">
-      <div class="field flex-1">
-        <label class="font-bold text-sm">Latitud Centro</label>
-        <p-inputNumber [(ngModel)]="selectedZona.latitudCentro" [min]="-90" [max]="90" [step]="0.0001" class="w-full"></p-inputNumber>
-      </div>
-      <div class="field flex-1">
-        <label class="font-bold text-sm">Longitud Centro</label>
-        <p-inputNumber [(ngModel)]="selectedZona.longitudCentro" [min]="-180" [max]="180" [step]="0.0001" class="w-full"></p-inputNumber>
-      </div>
+      <label class="font-bold text-sm">Descripción *</label>
+      <textarea pInputTextarea [(ngModel)]="form.cuerpo" rows="4" placeholder="Contenido de la notificación..." class="w-full"></textarea>
     </div>
     <div class="field w-full">
-      <label class="font-bold text-sm">Radio (km)</label>
-      <p-inputNumber [(ngModel)]="selectedZona.radioKm" [min]="1" [max]="500" class="w-full"></p-inputNumber>
+      <label class="font-bold text-sm">Tipo</label>
+      <p-select [options]="[{label:'Peligro',value:'PELIGRO'},{label:'Informativo',value:'INFORMATIVO'}]"
+                optionLabel="label" optionValue="value" [(ngModel)]="form.tipo" class="w-full"></p-select>
     </div>
   </div>
+
   <ng-template pTemplate="footer">
-    <div class="flex justify-content-center gap-3 w-full px-2">
+    <div class="flex justify-content-end gap-3 w-full">
       <p-button label="Cancelar" styleClass="p-button-text" (onClick)="displayDialog.set(false)"></p-button>
-      <p-button label="Guardar" icon="pi pi-check" styleClass="p-button-success" (onClick)="saveZona()"></p-button>
+      <ng-container *ngIf="!isEditMode()">
+        <p-button label="Enviar notificación" icon="pi pi-send" styleClass="p-button-success" (onClick)="saveAndSend()"></p-button>
+      </ng-container>
+      <ng-container *ngIf="isEditMode()">
+        <p-button label="Guardar cambios" icon="pi pi-check" styleClass="p-button-outlined p-button-success" (onClick)="saveChanges()"></p-button>
+        <p-button label="Guardar y reenviar alerta" icon="pi pi-send" styleClass="p-button-success" (onClick)="saveAndResend()"></p-button>
+      </ng-container>
     </div>
   </ng-template>
 </p-dialog>

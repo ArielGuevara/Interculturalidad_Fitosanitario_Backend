@@ -3,7 +3,7 @@ import { Type } from 'class-transformer';
 
 export class CreateComentarioDto {
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   contenido: string;
 
   // Si viene, es una respuesta a otro comentario
@@ -11,4 +11,8 @@ export class CreateComentarioDto {
   @IsOptional()
   @Type(() => Number)
   comentarioPadreId?: number;
+
+  @IsString()
+  @IsOptional()
+  imagenUrl?: string;
 }

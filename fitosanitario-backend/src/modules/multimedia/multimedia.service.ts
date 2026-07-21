@@ -93,6 +93,21 @@ export class MultimediaService {
     };
   }
 
+  async uploadImage(file: Express.Multer.File) {
+    this.validateImageFile(file);
+    const objectKey = this.storageService.generateObjectKey({
+      folder: 'images',
+      originalName: file.originalname,
+      contentType: file.mimetype,
+    });
+    await this.storageService.uploadBuffer({
+      buffer: file.buffer,
+      objectKey,
+      contentType: file.mimetype,
+    });
+    return { url: this.buildProxyUrl(objectKey) };
+  }
+
   async uploadAudio(file: Express.Multer.File) {
     this.validateAudioFile(file);
 

@@ -58,7 +58,7 @@ export class AuthService {
   }
 
   private buildResponse(usuario: any) {
-    const payload = { sub: usuario.id, email: usuario.email, rol: usuario.rol };
+    const payload = { sub: usuario.id, email: usuario.email, rol: usuario.rol, permisos: usuario.permisos ?? [] };
     const token = this.jwtService.sign(payload);
 
     return {
@@ -67,7 +67,12 @@ export class AuthService {
         id: usuario.id,
         nombre: usuario.nombre,
         email: usuario.email,
+        telefono: usuario.telefono ?? null,
         rol: usuario.rol,
+        cargo: usuario.cargo ?? null,
+        activo: usuario.activo ?? true,
+        permisos: usuario.permisos ?? [],
+        fechaRegistro: usuario.fechaRegistro,
       },
     };
   }

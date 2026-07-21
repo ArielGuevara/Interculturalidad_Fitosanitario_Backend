@@ -7,6 +7,7 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
   UploadedFile,
   UploadedFiles,
   UseFilters,
@@ -36,9 +37,15 @@ export class ReportesController {
   constructor(private readonly reportesService: ReportesService) {}
 
   @Get()
-  findAll(@CurrentUser() user: { id: number; rol: string }) {
+  findAll(
+    @CurrentUser() user: { id: number; rol: string },
+    @Query('cultivoId', new ParseIntPipe({ optional: true })) cultivoId?: number,
+    @Query('q') q?: string,
+    @Query('fechaInicio') fechaInicio?: string,
+    @Query('fechaFin') fechaFin?: string,
+  ) {
     if (user.rol === 'MODERADOR') {
-      return this.reportesService.findAll();
+      return this.reportesService.findAll({ cultivoId, q, fechaInicio, fechaFin });
     }
     return this.reportesService.findByUsuario(user.id);
   }
@@ -62,6 +69,12 @@ export class ReportesController {
   @Get('suspension/activa')
   getSuspensionActiva(@CurrentUser() user: { id: number }) {
     return this.reportesService.getSuspensionActiva(user.id);
+  }
+
+  @Get('usuario/:userId/suspension/activa')
+  @Roles('MODERADOR')
+  getSuspensionActivaByUser(@Param('userId', ParseIntPipe) userId: number) {
+    return this.reportesService.getSuspensionActiva(userId);
   }
 
   @Post()

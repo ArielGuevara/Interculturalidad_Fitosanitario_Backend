@@ -1,6 +1,26 @@
-# Session Summary — Jul 12, 2026
+# Session Summary — Jul 19, 2026
 
 ## What we did so far
+
+### UX/UI Redesign — Tratamientos, Foros y Saberes Ancestrales (Jul 19)
+- **Mobile TratamientoDetailScreen**: Rediseño completo con nuevo layout tipo ficha técnica — ID secundario gris, título grande verde, cultivos+plaga como chips, descripción en bloque verde, información técnica como bloques individuales con iconos y separación visual, condiciones de aplicación como tarjeta destacada
+- **Web tratamiento-list dialog**: Mismo orden que mobile — ID secundario, título, cultivos+plaga, descripción en bloque verde, grid de info técnica con "Método de aplicación" añadido
+- **Backend moderación foros**: `findAll()` ahora soporta filtro `?moderado=true/false`; Mobile API siempre pasa `moderado: true` para ocultar foros no aprobados
+- **Notificaciones foro**: Cuando moderador aprueba/rechaza un foro, se notifica al autor (foro_aprobado/foro_rechazado); al aprobarse, se notifica a TODOS los agricultores (nuevo_foro_publicado)
+- **Mobile ForoScreen**: Saber card rediseñado — badge "SABER ANCESTRAL" con icono bulb, título, autor, cultivos chip, valoración thumbs-up con conteo
+- **Mobile RecomendacionDetailScreen**: Badge "Comentario verificado" para moderadores, indicador de grabación con punto rojo animado, grabación tipo WhatsApp (presionar→grabar, soltar→detener)
+- **Web ComunidadModeracion**: Moderator chip en comentarios (verde con escudo), columnas de tabla Saberes actualizadas (Cultivos, Comentario Moderador), botón promover con `pi-lightbulb`, edición solo permite comentarioModerador/visibilidad/duración extra
+- **Backend**: `esModerador` flag añadido a queries de comentarios; `motivoRechazo`/`moderado` campos añadidos a DTO de update
+- **Types**: `esModerador` añadido a `ComentarioForo` en mobile y web
+- **Notification handlers**: Mobile router y web layout actualizados para manejar `foro_aprobado`, `foro_rechazado`, `nuevo_foro_publicado`, `comentario_promovido`, `saber_ancestral_aprobado`
+- **Compilación**: Mobile `tsc --noEmit` OK, Web `ng build` OK, Backend solo errors pre-existing en test files
+
+### Tratamientos Oficiales — CRUD completo + pivote cultivos (Jul 19)
+- **Web tratamiento-list**: Columna "Cultivo" → "Cultivos" con chips/tags, botón eliminar con `ConfirmDialog`, detalle muestra múltiples cultivos, formulario "Nuevo tratamiento" en dialog
+- **Web tratamiento-form**: Input `cultivoIds: number[]` con `p-multiselect`, `applyContext()` convierte `cultivoId` único a `cultivoIds`
+- **Backend migración 0021**: `CREATE TABLE tratamiento_cultivos`, migración datos existentes, `ALTER COLUMN cultivo_id DROP NOT NULL`
+- **Compilación limpia**: Backend (solo test errors pre-existing), mobile (`tsc --noEmit` OK), frontend (`ng build` OK)
+- **BD actualizada**: PostgreSQL Docker Up 44h, tabla pivote creada, 13 registros migrados
 
 ### Project setup
 - Initialized Node.js backend (Express + Drizzle ORM + PostgreSQL)

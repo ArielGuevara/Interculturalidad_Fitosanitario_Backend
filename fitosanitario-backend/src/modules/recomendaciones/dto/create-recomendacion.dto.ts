@@ -36,6 +36,25 @@ export class CreateRecomendacionDto {
   @IsEnum(['RECOMENDACION', 'CONSULTA', 'CONOCIMIENTO_ANCESTRAL'])
   tipo: 'RECOMENDACION' | 'CONSULTA' | 'CONOCIMIENTO_ANCESTRAL' =
     'RECOMENDACION';
+
+  @IsString()
+  @IsOptional()
+  solucion?: string;
+
+  @IsString()
+  @IsOptional()
+  comentarioModerador?: string;
+
+  @IsString()
+  @IsOptional()
+  imagenUrl?: string;
+
+  @IsOptional()
+  moderado?: boolean;
+
+  @IsString()
+  @IsOptional()
+  motivoRechazo?: string;
 }
 
 export class CreateValoracionDto {

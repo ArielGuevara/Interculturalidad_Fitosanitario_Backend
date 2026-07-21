@@ -39,16 +39,18 @@ describe('MultimediaService', () => {
     req.flush(mockResponse);
   });
 
-  it('fixMinioUrl() should keep URL unchanged when already pointing to minioPublicUrl', () => {
-    const url = 'http://localhost:9000/images/test.jpg';
+  it('fixMinioUrl() should replace hostname with apiUrl hostname', () => {
+    const url = 'http://192.168.100.14:3000/api/multimedia/images/test.jpg';
     const fixed = service.fixMinioUrl(url);
-    expect(fixed).toBe(url);
+    const apiUrl = new URL(environment.apiUrl);
+    expect(fixed).toBe(`http://${apiUrl.hostname}:${apiUrl.port}/api/multimedia/images/test.jpg`);
   });
 
-  it('fixMinioUrl() should replace 127.0.0.1 with minioPublicUrl', () => {
+  it('fixMinioUrl() should replace 127.0.0.1 with apiUrl hostname', () => {
     const url = 'http://127.0.0.1:9000/images/test.jpg';
     const fixed = service.fixMinioUrl(url);
-    expect(fixed).not.toContain('127.0.0.1');
+    const apiUrl = new URL(environment.apiUrl);
+    expect(fixed).toBe(`http://${apiUrl.hostname}:${apiUrl.port}/images/test.jpg`);
   });
 
   it('fixMinioUrl() should return empty string for null/undefined', () => {

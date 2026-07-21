@@ -11,7 +11,8 @@ import {
   UseInterceptors,
   UploadedFile,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FileFieldsInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import { ComunidadService } from './comunidad.service';
 import { MultimediaService } from '../multimedia/multimedia.service';
 import { CreateRecomendacionDto } from './dto/create-recomendacion.dto';
@@ -95,7 +96,7 @@ export class ComunidadController {
   }
 
   @Post('recomendaciones/:id/comentarios/with-audio')
-  @UseInterceptors(FileInterceptor('audio'))
+  @UseInterceptors(FileInterceptor('audio', { storage: memoryStorage() }))
   async createComentarioWithAudio(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: CreateComentarioDto,
@@ -110,12 +111,27 @@ export class ComunidadController {
     return this.comunidadService.createComentario(id, user.id, { ...dto, audioUrl });
   }
 
-  @Delete('comentarios/:id')
-  @Roles('MODERADOR')
-  desactivarComentario(
+  @Post('recomendaciones/:id/comentarios/with-image')
+  @UseInterceptors(FileInterceptor('imagen', { storage: memoryStorage() }))
+  async createComentarioWithImage(
     @Param('id', ParseIntPipe) id: number,
+    @Body() dto: CreateComentarioDto,
+    @UploadedFile() imagen: Express.Multer.File,
     @CurrentUser() user: { id: number },
   ) {
-    return this.comunidadService.desactivarComentario(id, user.id);
+    let imagenUrl: string | undefined;
+    if (imagen) {
+      const upload = await this.multimediaService.uploadImage(imagen);
+      imagenUrl = upload.url;
+    }
+    return this.comunidadService.createComentario(id, user.id, { ...dto, imagenUrl });
+  }
+
+  @Delete('comentarios/:id')
+  desactivarComentario(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: { id: number; rol: string },
+  ) {
+    return this.comunidadService.desactivarComentario(id, user.id, user.rol);
   }
 }

@@ -14,9 +14,8 @@ export const tratamientosApi = {
 
   getTratamientoByReporte: async (reporteId: number): Promise<TratamientoConRelaciones | null> => {
     try {
-      const tratamientos = await apiClient.get<TratamientoConRelaciones[]>('/tratamientos');
-      const encontrado = tratamientos.data.find((t: any) => t.reporteId === reporteId);
-      return encontrado || null;
+      const { data } = await apiClient.get<TratamientoConRelaciones>(`/tratamientos/por-reporte/${reporteId}`);
+      return data;
     } catch {
       return null;
     }

@@ -1,6 +1,12 @@
-<div class="layout-wrapper" [class.collapsed]="isCollapsed()">
+<div class="layout-wrapper" [class.collapsed]="isCollapsed()" [class.mobile-open]="isMobileOpen()">
     <!-- Máscara para móvil -->
-    <div class="sidebar-mask" (click)="toggleSidebar()"></div>
+    <div class="sidebar-mask" (click)="closeMobileMenu()"></div>
+
+    <!-- NOTIFICACIÓN FLOTANTE (siempre visible arriba-derecha) -->
+    <div class="notif-float-btn" (click)="toggleNotif($event)">
+        <i class="pi pi-bell"></i>
+        <span *ngIf="noLeidas() > 0" class="notif-float-badge">{{ noLeidas() }}</span>
+    </div>
 
     <!-- SIDEBAR -->
     <aside class="sidebar shadow-4">
@@ -17,30 +23,28 @@
         </header>
 
         <nav class="sidebar-nav">
-            <a *ngFor="let item of navItems" 
-               [routerLink]="[item.route]" 
-               routerLinkActive="active-link"
-               class="nav-item"
-               [pTooltip]="isCollapsed() ? item.label : ''"
-               [tooltipDisabled]="!isCollapsed()"
-               tooltipPosition="right">
-                <i [class]="item.icon + ' nav-icon'"></i>
-                <span class="nav-label">{{item.label}}</span>
-            </a>
+            @for (item of navItems(); track item.route) {
+              <a [routerLink]="[item.route]" 
+                 routerLinkActive="active-link"
+                 class="nav-item"
+                 [pTooltip]="isCollapsed() && !isMobile() ? item.label : ''"
+                 [tooltipDisabled]="!isCollapsed() || isMobile()"
+                 tooltipPosition="right"
+                 (click)="closeMobileMenu()">
+                  <i [class]="item.icon + ' nav-icon'"></i>
+                  <span class="nav-label">{{item.label}}</span>
+              </a>
+            }
         </nav>
 
         <footer class="sidebar-footer">
-            <div class="profile-section">
+            <div class="profile-section" [routerLink]="['/perfil']" style="cursor:pointer">
                 <div class="user-avatar-box shadow-sm">
                     <i class="pi pi-user" style="font-size: 1.1rem"></i>
                 </div>
                 <div class="user-details">
                     <span class="user-name">{{ authService.currentUser()?.nombre }}</span>
                     <span class="user-role">{{ authService.currentUser()?.rol }}</span>
-                </div>
-                <div class="notif-btn-wrapper">
-                    <p-button icon="pi pi-bell" styleClass="p-button-text p-button-secondary" (onClick)="toggleNotif($event)"></p-button>
-                    <span *ngIf="noLeidas() > 0" class="notification-badge-sm">{{ noLeidas() }}</span>
                 </div>
                 <p-button icon="pi pi-sign-out" 
                           styleClass="p-button-text p-button-danger p-2 logout-btn" 
@@ -52,17 +56,11 @@
     <!-- CONTENIDO PRINCIPAL -->
     <div class="main-wrapper">
         <!-- CABECERA MÓVIL -->
-        <header class="mobile-header lg:hidden">
-            <p-button icon="pi pi-bars" styleClass="p-button-text p-button-secondary" (onClick)="toggleSidebar()"></p-button>
+        <header class="mobile-header">
+            <p-button icon="pi pi-bars" styleClass="p-button-text p-button-secondary" (onClick)="toggleMobileMenu()"></p-button>
             <span class="font-black text-xl text-900 tracking-tighter">Fitosani</span>
-            <div class="flex align-items-center gap-2">
-                <div class="notif-btn-wrapper">
-                    <p-button icon="pi pi-bell" styleClass="p-button-text p-button-secondary" (onClick)="toggleNotif($event)"></p-button>
-                    <span *ngIf="noLeidas() > 0" class="notification-badge">{{ noLeidas() }}</span>
-                </div>
-                <div class="flex align-items-center justify-content-center bg-green-500 border-round-lg p-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M7 20h10"/><path d="M10 20c5.5-2.5 8-6.4 8-10 0-4.4-3.6-8-8-8s-8 3.6-8 8c0 3.6 2.5 7.5 8 10Z"/><path d="M10 20c-5.5-2.5-8-6.4-8-10 0-4.4 3.6-8 8-8s8 3.6 8 8c0 3.6-2.5 7.5-8 10Z"/><path d="M10 20c1.5-3 3-6.5 3-10"/></svg>
-                </div>
+            <div class="flex align-items-center justify-content-center bg-green-500 border-round-lg p-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M7 20h10"/><path d="M10 20c5.5-2.5 8-6.4 8-10 0-4.4-3.6-8-8-8s-8 3.6-8 8c0 3.6 2.5 7.5 8 10Z"/><path d="M10 20c-5.5-2.5-8-6.4-8-10 0-4.4 3.6-8 8-8s8 3.6 8 8c0 3.6-2.5 7.5-8 10Z"/><path d="M10 20c1.5-3 3-6.5 3-10"/></svg>
             </div>
         </header>
 
@@ -75,7 +73,7 @@
                 </div>
                 <div *ngIf="notificaciones().length === 0" class="p-3 text-center text-gray-500">Sin notificaciones</div>
                 <div *ngFor="let n of notificaciones()" 
-                     (click)="marcarLeida(n.id)"
+                     (click)="clickNotificacion(n)"
                      class="notif-item"
                      [class.notif-unread]="!n.leida">
                     <div class="notif-title">{{ n.titulo }}</div>

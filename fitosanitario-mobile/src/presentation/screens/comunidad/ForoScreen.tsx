@@ -1,16 +1,18 @@
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, FlatList, Pressable, ActivityIndicator, StyleSheet,
-  RefreshControl, SafeAreaView, ScrollView,
+  RefreshControl, SafeAreaView, ScrollView, Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { recomendacionesApi } from '../../../infrastructure/data/recomendaciones/recomendacionesApi';
 import { getCultivos } from '../../../infrastructure/data/catalogos/cultivosApi';
 import { getPlagas } from '../../../infrastructure/data/catalogos/plagasApi';
+import { getCache, setCache } from '../../../infrastructure/offline/cache';
 import { useAuthStore } from '../../../infrastructure/auth/authStore';
-import type { Recomendacion } from '../../../domain/recomendaciones/types';
-import type { Cultivo, Plaga } from '../../../domain/catalogos/types';
+import type { Recomendacion, SaberAncestral } from '../../../domain/recomendaciones/types';
+import type { Cultivo } from '../../../domain/catalogos/types';
+import { SearchBar } from '../../../presentation/components/SearchBar';
 
 const TIPO_ICON: Record<string, any> = {
   RECOMENDACION: 'bulb-outline',
@@ -24,42 +26,60 @@ const TIPO_COLOR: Record<string, string> = {
   CONOCIMIENTO_ANCESTRAL: '#7c3aed',
 };
 
-const TIPO_CHIP_BG: Record<string, string> = {
+const TIPO_BG: Record<string, string> = {
   RECOMENDACION: '#d1fae5',
   CONSULTA: '#fef3c7',
   CONOCIMIENTO_ANCESTRAL: '#ede9fe',
 };
 
-const TIPO_LABEL: Record<string, string> = {
-  RECOMENDACION: 'Recomendaciones',
-  CONSULTA: 'Consultas',
-  CONOCIMIENTO_ANCESTRAL: 'Ancestral',
-};
+type TabKey = 'foros' | 'saberes';
 
 export function ForoScreen() {
   const navigation = useNavigation<any>();
   const usuario = useAuthStore((s) => s.usuario);
+  const [tabActivo, setTabActivo] = useState<TabKey>('foros');
+
+  // Foros state
   const [recomendaciones, setRecomendaciones] = useState<Recomendacion[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-
   const [filtroTipo, setFiltroTipo] = useState<string | null>(null);
   const [filtroCultivoId, setFiltroCultivoId] = useState<number | undefined>();
   const [filtroPlagaId, setFiltroPlagaId] = useState<number | undefined>();
   const [showMisForos, setShowMisForos] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Saberes state
+  const [saberes, setSaberes] = useState<SaberAncestral[]>([]);
+  const [loadingSaberes, setLoadingSaberes] = useState(false);
+  const [searchSaberes, setSearchSaberes] = useState('');
+  const [filtroCultivoSaber, setFiltroCultivoSaber] = useState<number | undefined>();
 
   const [cultivos, setCultivos] = useState<Cultivo[]>([]);
-  const [plagas, setPlagas] = useState<Plaga[]>([]);
+
+  // Select modals
+  const [showTipoSelect, setShowTipoSelect] = useState(false);
+  const [showCultivoSelect, setShowCultivoSelect] = useState(false);
+  const [showPlagaSelect, setShowPlagaSelect] = useState(false);
+  const [showCultivoSaberSelect, setShowCultivoSaberSelect] = useState(false);
+
+  const tipos = [
+    { key: 'RECOMENDACION', label: 'Recomendación', icon: 'bulb-outline', color: '#059669' },
+    { key: 'CONSULTA', label: 'Consulta', icon: 'help-circle-outline', color: '#d97706' },
+  ];
 
   const loadCatalogs = useCallback(async () => {
     try {
-      const [c, p] = await Promise.all([getCultivos(), getPlagas()]);
+      const c = await getCultivos();
       setCultivos(c);
-      setPlagas(p);
-    } catch {}
+      await setCache('cultivos.list', c);
+    } catch {
+      const cc = await getCache<Cultivo[]>('cultivos.list');
+      if (cc) setCultivos(cc);
+    }
   }, []);
 
-  const loadData = useCallback(async (isRefresh = false) => {
+  const loadForos = useCallback(async (isRefresh = false) => {
     try {
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
@@ -75,55 +95,74 @@ export function ForoScreen() {
         });
       }
       setRecomendaciones(data);
-    } catch (e) {
-      console.error('Error cargando foro:', e);
+      await setCache('recomendaciones.list', data);
+    } catch {
+      const cached = await getCache<Recomendacion[]>('recomendaciones.list');
+      if (cached) setRecomendaciones(cached);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   }, [filtroTipo, filtroCultivoId, filtroPlagaId, showMisForos]);
 
+  const loadSaberes = useCallback(async (isRefresh = false) => {
+    try {
+      if (isRefresh) setRefreshing(true);
+      else setLoadingSaberes(true);
+
+      const data = await recomendacionesApi.getAllSaberes({
+        q: searchSaberes || undefined,
+        cultivoId: filtroCultivoSaber,
+      });
+      setSaberes(data);
+      await setCache('saberes.list', data);
+    } catch {
+      const cached = await getCache<SaberAncestral[]>('saberes.list');
+      if (cached) setSaberes(cached);
+    } finally {
+      setLoadingSaberes(false);
+      setRefreshing(false);
+    }
+  }, [searchSaberes, filtroCultivoSaber]);
+
   useFocusEffect(
     useCallback(() => {
       loadCatalogs();
-      loadData();
-    }, [loadData, loadCatalogs])
+      if (tabActivo === 'foros') loadForos();
+      else loadSaberes();
+    }, [tabActivo, loadForos, loadSaberes, loadCatalogs])
   );
 
-  const tipos = [
-    { key: 'RECOMENDACION', label: 'Recomendaciones' },
-    { key: 'CONSULTA', label: 'Consultas' },
-    { key: 'CONOCIMIENTO_ANCESTRAL', label: 'Ancestral' },
-  ];
+  const switchTab = (tab: TabKey) => {
+    setTabActivo(tab);
+    if (tab === 'foros') loadForos();
+    else loadSaberes();
+  };
 
-  const renderItem = ({ item }: { item: Recomendacion }) => (
+  // ── Renderers ──
+  const renderForoItem = ({ item }: { item: Recomendacion }) => (
     <Pressable
       style={styles.card}
       onPress={() => navigation.navigate('RecomendacionDetail', { id: item.id })}
     >
       <View style={styles.cardHeader}>
-        <Ionicons name={TIPO_ICON[item.tipo] || 'chatbubble-outline'} size={22} color="#10b981" />
-        <View style={[styles.tipoBadge, { backgroundColor: TIPO_COLOR[item.tipo] + '20' }]}>
-          <Text style={[styles.tipoText, { color: TIPO_COLOR[item.tipo] }]}>
-            {item.tipo === 'CONOCIMIENTO_ANCESTRAL' ? 'ANCESTRAL' : item.tipo}
+        <Ionicons name={TIPO_ICON[item.tipo] || 'chatbubble-outline'} size={22} color={TIPO_COLOR[item.tipo] || '#10b981'} />
+        <View style={[styles.tipoBadge, { backgroundColor: (TIPO_COLOR[item.tipo] || '#10b981') + '20' }]}>
+          <Text style={[styles.tipoText, { color: TIPO_COLOR[item.tipo] || '#10b981' }]}>
+            {item.tipo === 'RECOMENDACION' ? 'Recomendación' : item.tipo === 'CONSULTA' ? 'Consulta' : 'Ancestral'}
           </Text>
         </View>
       </View>
-
       <Text style={styles.cardTitle} numberOfLines={2}>{item.titulo}</Text>
       <Text style={styles.cardDesc} numberOfLines={2}>{item.descripcion}</Text>
-
       <View style={styles.cardFooter}>
         <Text style={styles.author}>{item.usuario?.nombre || 'Anónimo'}</Text>
         <View style={styles.ratingRow}>
           <Ionicons name={item.valoracionPromedio > 0 ? 'star' : 'star-outline'} size={14} color="#f59e0b" />
-          <Text style={styles.ratingValue}>
-            {item.valoracionPromedio > 0 ? item.valoracionPromedio.toFixed(1) : '0.0'}
-          </Text>
+          <Text style={styles.ratingValue}>{item.valoracionPromedio > 0 ? item.valoracionPromedio.toFixed(1) : '0.0'}</Text>
           <Text style={styles.ratingCount}>({item.totalValoraciones})</Text>
         </View>
       </View>
-
       <View style={styles.tagRow}>
         {item.cultivo && (
           <Text style={styles.tag}><Ionicons name="leaf" size={12} color="#16a34a" /> {item.cultivo.nombre}</Text>
@@ -137,145 +176,233 @@ export function ForoScreen() {
     </Pressable>
   );
 
+  const renderSaberItem = ({ item }: { item: SaberAncestral }) => (
+    <Pressable
+      style={styles.saberCard}
+      onPress={() => navigation.navigate('SaberDetail', { id: item.id })}
+    >
+      <View style={styles.saberCardHeader}>
+        <View style={[styles.saberBadge, { backgroundColor: '#ede9fe' }]}>
+          <Ionicons name="bulb-outline" size={12} color="#7c3aed" />
+          <Text style={[styles.saberBadgeText, { color: '#7c3aed' }]}>SABER ANCESTRAL</Text>
+        </View>
+      </View>
+      <Text style={styles.saberTitle} numberOfLines={2}>{item.titulo}</Text>
+      <Text style={styles.saberAuthor}>{item.usuario?.nombre || 'Anónimo'}</Text>
+      {item.cultivo && (
+        <View style={styles.saberCultivosRow}>
+          <Text style={styles.saberCultivo}><Ionicons name="leaf" size={12} color="#16a34a" /> {item.cultivo.nombre}</Text>
+        </View>
+      )}
+      <View style={styles.saberRatingRow}>
+        <Ionicons name="thumbs-up" size={14} color="#059669" />
+        <Text style={styles.saberRatingText}>{item.valoracionPromedio > 0 ? item.valoracionPromedio.toFixed(1) : '0.0'}</Text>
+        <Text style={styles.saberRatingCount}>({item.totalValoraciones} calificaciones)</Text>
+      </View>
+    </Pressable>
+  );
+
+  const renderSelect = (label: string, value: string | undefined, placeholder: string, onPress: () => void) => (
+    <Pressable style={styles.selectBtn} onPress={onPress}>
+      <Text style={[styles.selectText, !value && styles.selectPlaceholder]}>
+        {value || placeholder}
+      </Text>
+      <Ionicons name="chevron-down" size={16} color="#94a3b8" />
+    </Pressable>
+  );
+
+  // ── Render ──
   return (
     <SafeAreaView style={styles.container}>
-      {/* Row 1 - Main tabs: Todos | Mis Foros */}
-      <View style={styles.tabRow}>
+      {/* ── Tabs: Foros / Saberes Ancestrales ── */}
+      <View style={styles.mainTabRow}>
         <Pressable
-          style={[styles.tab, !showMisForos && styles.tabActive]}
-          onPress={() => { setShowMisForos(false); setFiltroTipo(null); }}
+          style={[styles.mainTab, tabActivo === 'foros' && styles.mainTabActive]}
+          onPress={() => switchTab('foros')}
         >
-          <Text style={[styles.tabText, !showMisForos && styles.tabTextActive]}>Todos</Text>
+          <Text style={[styles.mainTabText, tabActivo === 'foros' && styles.mainTabTextActive]}>
+            FOROS
+          </Text>
         </Pressable>
         <Pressable
-          style={[styles.tab, showMisForos && styles.tabActive]}
-          onPress={() => setShowMisForos(true)}
+          style={[styles.mainTab, tabActivo === 'saberes' && styles.mainTabActive]}
+          onPress={() => switchTab('saberes')}
         >
-          <Ionicons name="person" size={14} color={showMisForos ? '#fff' : '#64748b'} />
-          <Text style={[styles.tabText, showMisForos && styles.tabTextActive]}> Mis Foros</Text>
+          <Text style={[styles.mainTabText, tabActivo === 'saberes' && styles.mainTabTextActive]}>
+            SABERES ANCESTRALES
+          </Text>
         </Pressable>
       </View>
 
-      {!showMisForos && (
-        <View style={styles.filtersContainer}>
-          {/* Row 2 - Tipo filters */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tipoRow}>
-            {tipos.map((t) => {
-              const active = filtroTipo === t.key;
-              const chipColor = TIPO_COLOR[t.key];
-              const chipBg = TIPO_CHIP_BG[t.key];
-              return (
-                <Pressable
-                  key={t.key}
-                  style={[
-                    styles.tipoChip,
-                    { backgroundColor: active ? chipColor : chipBg, borderColor: chipColor },
-                  ]}
-                  onPress={() => setFiltroTipo(filtroTipo === t.key ? null : t.key)}
-                >
-                  <Ionicons
-                    name={TIPO_ICON[t.key]}
-                    size={14}
-                    color={active ? '#fff' : chipColor}
-                  />
-                  <Text style={[styles.tipoChipText, { color: active ? '#fff' : chipColor }]}>
-                    {t.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-
-          {/* Row 3 - Cultivo filter */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.cultivoRow}>
+      {/* ── TAB: FOROS ── */}
+      {tabActivo === 'foros' && (
+        <>
+          {/* Sub-tabs: Todos / Mis Foros */}
+          <View style={styles.subTabRow}>
             <Pressable
-              style={[styles.cultivoChip, !filtroCultivoId && styles.cultivoChipActive]}
-              onPress={() => setFiltroCultivoId(undefined)}
+              style={[styles.subTab, !showMisForos && styles.subTabActive]}
+              onPress={() => { setShowMisForos(false); setFiltroTipo(null); }}
             >
-              <Text style={[styles.cultivoChipText, !filtroCultivoId && styles.cultivoChipTextActive]}>
-                Todos
-              </Text>
+              <Text style={[styles.subTabText, !showMisForos && styles.subTabTextActive]}>Todos</Text>
             </Pressable>
-            {cultivos.map((c) => {
-              const active = filtroCultivoId === c.id;
-              return (
-                <Pressable
-                  key={`c-${c.id}`}
-                  style={[styles.cultivoChip, active && styles.cultivoChipActive]}
-                  onPress={() => setFiltroCultivoId(active ? undefined : c.id)}
-                >
-                  <Ionicons name="leaf" size={14} color={active ? '#fff' : '#16a34a'} />
-                  <Text style={[styles.cultivoChipText, active && styles.cultivoChipTextActive]}>
-                    {c.nombre}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-
-          {/* Row 4 - Plaga filter */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.plagaRow}>
             <Pressable
-              style={[styles.plagaChip, !filtroPlagaId && styles.plagaChipActive]}
-              onPress={() => setFiltroPlagaId(undefined)}
+              style={[styles.subTab, showMisForos && styles.subTabActive]}
+              onPress={() => setShowMisForos(true)}
             >
-              <Text style={[styles.plagaChipText, !filtroPlagaId && styles.plagaChipTextActive]}>
-                Ninguna
-              </Text>
+              <Ionicons name="person" size={14} color={showMisForos ? '#fff' : '#64748b'} />
+              <Text style={[styles.subTabText, showMisForos && styles.subTabTextActive]}> Mis Foros</Text>
             </Pressable>
-            {plagas.map((p) => {
-              const active = filtroPlagaId === p.id;
-              return (
-                <Pressable
-                  key={`p-${p.id}`}
-                  style={[styles.plagaChip, active && styles.plagaChipActive]}
-                  onPress={() => setFiltroPlagaId(active ? undefined : p.id)}
-                >
-                  <Ionicons name="bug" size={14} color={active ? '#fff' : '#dc2626'} />
-                  <Text style={[styles.plagaChipText, active && styles.plagaChipTextActive]}>
-                    {p.nombre}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-        </View>
-      )}
+          </View>
 
-      {loading ? (
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color="#10b981" />
-        </View>
-      ) : (
-        <FlatList
-          data={recomendaciones}
-          keyExtractor={(item) => String(item.id)}
-          renderItem={renderItem}
-          contentContainerStyle={styles.list}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={() => loadData(true)} tintColor="#10b981" />
-          }
-          ListEmptyComponent={
-            <View style={styles.empty}>
-              <Ionicons name="chatbubble-outline" size={54} color="#94a3b8" />
-              <Text style={styles.emptyText}>
-                {showMisForos ? 'No has publicado nada aún' : 'No hay publicaciones aún'}
-              </Text>
-              <Text style={styles.emptySubtext}>
-                {showMisForos ? 'Crea tu primera publicación en el foro' : 'Sé el primero en compartir tu conocimiento'}
-              </Text>
+          {/* Filters */}
+          {!showMisForos && (
+            <View style={styles.filtersRow}>
+              {renderSelect('Tipo', (filtroTipo ? tipos.find(t => t.key === filtroTipo)?.label : null) || undefined, 'Tipo', () => setShowTipoSelect(true))}
+              {renderSelect('Cultivo', (filtroCultivoId ? cultivos.find(c => c.id === filtroCultivoId)?.nombre : null) || undefined, 'Cultivo', () => setShowCultivoSelect(true))}
+              {renderSelect('Plaga', (filtroPlagaId ? cultivos.find(c => c.id === filtroPlagaId)?.nombre : null) || undefined, 'Plaga', () => setShowPlagaSelect(true))}
+              {(filtroTipo || filtroCultivoId || filtroPlagaId) && (
+                <Pressable style={styles.clearBtn} onPress={() => { setFiltroTipo(null); setFiltroCultivoId(undefined); setFiltroPlagaId(undefined); }}>
+                  <Ionicons name="close" size={16} color="#ef4444" />
+                </Pressable>
+              )}
             </View>
-          }
-        />
+          )}
+
+          {/* Search bar */}
+          <SearchBar value={searchQuery} onChangeText={setSearchQuery} placeholder="Buscar en foros..." />
+
+          {/* List */}
+          {loading ? (
+            <View style={styles.center}><ActivityIndicator size="large" color="#059669" /></View>
+          ) : (
+            <FlatList
+              data={recomendaciones}
+              keyExtractor={(item) => String(item.id)}
+              renderItem={renderForoItem}
+              contentContainerStyle={styles.list}
+              refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => loadForos(true)} tintColor="#059669" />}
+              ListEmptyComponent={
+                <View style={styles.empty}>
+                  <Ionicons name="chatbubble-outline" size={54} color="#94a3b8" />
+                  <Text style={styles.emptyText}>{showMisForos ? 'No has publicado nada aún' : 'No hay publicaciones aún'}</Text>
+                  <Text style={styles.emptySubtext}>{showMisForos ? 'Crea tu primera publicación' : 'Sé el primero en compartir'}</Text>
+                </View>
+              }
+            />
+          )}
+        </>
       )}
 
-      <Pressable
-        style={styles.fab}
-        onPress={() => navigation.navigate('RecomendacionForm', {})}
-      >
-        <Text style={styles.fabText}>+</Text>
-      </Pressable>
+      {/* ── TAB: SABERES ANCESTRALES ── */}
+      {tabActivo === 'saberes' && (
+        <>
+          {/* Filters */}
+          <View style={styles.filtersRow}>
+            {renderSelect('Cultivo', (filtroCultivoSaber ? cultivos.find(c => c.id === filtroCultivoSaber)?.nombre : null) || undefined, 'Cultivo', () => setShowCultivoSaberSelect(true))}
+            {filtroCultivoSaber && (
+              <Pressable style={styles.clearBtn} onPress={() => setFiltroCultivoSaber(undefined)}>
+                <Ionicons name="close" size={16} color="#ef4444" />
+              </Pressable>
+            )}
+          </View>
+
+          {/* Search bar */}
+          <SearchBar value={searchSaberes} onChangeText={setSearchSaberes} placeholder="Buscar saberes ancestrales..." />
+
+          {/* List */}
+          {loadingSaberes ? (
+            <View style={styles.center}><ActivityIndicator size="large" color="#7c3aed" /></View>
+          ) : (
+            <FlatList
+              data={saberes}
+              keyExtractor={(item) => String(item.id)}
+              renderItem={renderSaberItem}
+              contentContainerStyle={styles.list}
+              refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => loadSaberes(true)} tintColor="#7c3aed" />}
+              ListEmptyComponent={
+                <View style={styles.empty}>
+                  <Ionicons name="leaf-outline" size={54} color="#94a3b8" />
+                  <Text style={styles.emptyText}>No hay saberes ancestrales aún</Text>
+                  <Text style={styles.emptySubtext}>Los comentarios validados por moderadores aparecerán aquí</Text>
+                </View>
+              }
+            />
+          )}
+        </>
+      )}
+
+      {/* FAB - only for foros tab */}
+      {tabActivo === 'foros' && (
+        <Pressable style={styles.fab} onPress={() => navigation.navigate('RecomendacionForm', {})}>
+          <Text style={styles.fabText}>+</Text>
+        </Pressable>
+      )}
+
+      {/* ── Modals ── */}
+      <ModalSelect visible={showTipoSelect} title="Filtrar por tipo" onClose={() => setShowTipoSelect(false)}>
+        <Pressable style={[styles.modalItem, !filtroTipo && styles.modalItemActive]} onPress={() => { setFiltroTipo(null); setShowTipoSelect(false); }}>
+          <Ionicons name="apps" size={20} color={!filtroTipo ? '#fff' : '#94a3b8'} />
+          <Text style={[styles.modalItemText, !filtroTipo && styles.modalItemTextActive]}>Todos</Text>
+        </Pressable>
+        {tipos.map((t) => (
+          <Pressable key={t.key} style={[styles.modalItem, filtroTipo === t.key && styles.modalItemActive]} onPress={() => { setFiltroTipo(filtroTipo === t.key ? null : t.key); setShowTipoSelect(false); }}>
+            <Ionicons name={t.icon as any} size={20} color={filtroTipo === t.key ? '#fff' : t.color} />
+            <Text style={[styles.modalItemText, filtroTipo === t.key && styles.modalItemTextActive]}>{t.label}</Text>
+          </Pressable>
+        ))}
+      </ModalSelect>
+
+      <ModalSelect visible={showCultivoSelect} title="Filtrar por cultivo" onClose={() => setShowCultivoSelect(false)}>
+        <Pressable style={[styles.modalItem, !filtroCultivoId && styles.modalItemActive]} onPress={() => { setFiltroCultivoId(undefined); setShowCultivoSelect(false); }}>
+          <Ionicons name="apps" size={20} color={!filtroCultivoId ? '#fff' : '#94a3b8'} />
+          <Text style={[styles.modalItemText, !filtroCultivoId && styles.modalItemTextActive]}>Todos</Text>
+        </Pressable>
+        <ScrollView style={styles.modalList}>
+          {cultivos.map((c) => (
+            <Pressable key={c.id} style={[styles.modalItem, filtroCultivoId === c.id && styles.modalItemActive]} onPress={() => { setFiltroCultivoId(c.id); setShowCultivoSelect(false); }}>
+              <Ionicons name="leaf" size={20} color={filtroCultivoId === c.id ? '#fff' : '#16a34a'} />
+              <Text style={[styles.modalItemText, filtroCultivoId === c.id && styles.modalItemTextActive]}>{c.nombre}</Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+      </ModalSelect>
+
+      <ModalSelect visible={showPlagaSelect} title="Filtrar por plaga" onClose={() => setShowPlagaSelect(false)}>
+        <Pressable style={[styles.modalItem, !filtroPlagaId && styles.modalItemActive]} onPress={() => { setFiltroPlagaId(undefined); setShowPlagaSelect(false); }}>
+          <Ionicons name="apps" size={20} color={!filtroPlagaId ? '#fff' : '#94a3b8'} />
+          <Text style={[styles.modalItemText, !filtroPlagaId && styles.modalItemTextActive]}>Todas</Text>
+        </Pressable>
+      </ModalSelect>
+
+      <ModalSelect visible={showCultivoSaberSelect} title="Filtrar por cultivo" onClose={() => setShowCultivoSaberSelect(false)}>
+        <Pressable style={[styles.modalItem, !filtroCultivoSaber && styles.modalItemActive]} onPress={() => { setFiltroCultivoSaber(undefined); setShowCultivoSaberSelect(false); }}>
+          <Ionicons name="apps" size={20} color={!filtroCultivoSaber ? '#fff' : '#94a3b8'} />
+          <Text style={[styles.modalItemText, !filtroCultivoSaber && styles.modalItemTextActive]}>Todos</Text>
+        </Pressable>
+        <ScrollView style={styles.modalList}>
+          {cultivos.map((c) => (
+            <Pressable key={c.id} style={[styles.modalItem, filtroCultivoSaber === c.id && styles.modalItemActive]} onPress={() => { setFiltroCultivoSaber(c.id); setShowCultivoSaberSelect(false); }}>
+              <Ionicons name="leaf" size={20} color={filtroCultivoSaber === c.id ? '#fff' : '#16a34a'} />
+              <Text style={[styles.modalItemText, filtroCultivoSaber === c.id && styles.modalItemTextActive]}>{c.nombre}</Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+      </ModalSelect>
     </SafeAreaView>
+  );
+}
+
+// Helper modal component
+function ModalSelect({ visible, title, children, onClose }: { visible: boolean; title: string; children: React.ReactNode; onClose: () => void }) {
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <Pressable style={styles.modalOverlay} onPress={onClose}>
+        <Pressable style={styles.modalContent} onPress={() => {}}>
+          <Text style={styles.modalTitle}>{title}</Text>
+          {children}
+        </Pressable>
+      </Pressable>
+    </Modal>
   );
 }
 
@@ -283,8 +410,35 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f0faf2' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
-  // Row 1 - Tabs
-  tabRow: {
+  // Main tabs
+  mainTabRow: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
+  },
+  mainTab: {
+    flex: 1,
+    paddingVertical: 14,
+    alignItems: 'center',
+    borderBottomWidth: 3,
+    borderBottomColor: 'transparent',
+  },
+  mainTabActive: {
+    borderBottomColor: '#059669',
+  },
+  mainTabText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#94a3b8',
+    letterSpacing: 0.5,
+  },
+  mainTabTextActive: {
+    color: '#059669',
+  },
+
+  // Sub tabs
+  subTabRow: {
     flexDirection: 'row',
     paddingHorizontal: 16,
     paddingTop: 8,
@@ -292,78 +446,54 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     gap: 8,
   },
-  tab: {
+  subTab: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 8,
+    paddingVertical: 6,
     borderRadius: 20,
     backgroundColor: '#f1f5f9',
   },
-  tabActive: { backgroundColor: '#059669' },
-  tabText: { fontSize: 14, fontWeight: '600', color: '#64748b' },
-  tabTextActive: { color: '#fff' },
+  subTabActive: { backgroundColor: '#059669' },
+  subTabText: { fontSize: 13, fontWeight: '600', color: '#64748b' },
+  subTabTextActive: { color: '#fff' },
 
-  filtersContainer: { backgroundColor: '#fff', paddingBottom: 4 },
-
-  // Row 2 - Tipo chips
-  tipoRow: {
+  filtersRow: {
+    flexDirection: 'row',
     paddingHorizontal: 16,
+    paddingVertical: 6,
+    backgroundColor: '#fff',
+    gap: 8,
+    alignItems: 'center',
+    flexWrap: 'wrap',
+  },
+  selectBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f1f5f9',
     paddingVertical: 8,
-  },
-  tipoChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    marginRight: 8,
+    borderRadius: 14,
     borderWidth: 1,
+    borderColor: '#e2e8f0',
+    gap: 6,
+    minWidth: 90,
   },
-  tipoChipText: { fontSize: 12, fontWeight: '600' },
+  selectText: { fontSize: 12, fontWeight: '600', color: '#0f172a' },
+  selectPlaceholder: { color: '#94a3b8' },
+  clearBtn: {
+    width: 32, height: 32, borderRadius: 16, backgroundColor: '#fee2e2',
+    alignItems: 'center', justifyContent: 'center',
+  },
 
-  // Row 3 - Cultivo chips
-  cultivoRow: {
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-  },
-  cultivoChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    marginRight: 8,
-    borderWidth: 1,
-    borderColor: '#16a34a',
-    backgroundColor: '#fff',
-  },
-  cultivoChipActive: { backgroundColor: '#16a34a', borderColor: '#16a34a' },
-  cultivoChipText: { fontSize: 12, fontWeight: '500', color: '#16a34a' },
-  cultivoChipTextActive: { color: '#fff' },
-
-  // Row 4 - Plaga chips
-  plagaRow: {
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-  },
-  plagaChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    marginRight: 8,
-    borderWidth: 1,
-    borderColor: '#dc2626',
-    backgroundColor: '#fff',
-  },
-  plagaChipActive: { backgroundColor: '#dc2626', borderColor: '#dc2626' },
-  plagaChipText: { fontSize: 12, fontWeight: '500', color: '#dc2626' },
-  plagaChipTextActive: { color: '#fff' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 40 },
+  modalContent: { backgroundColor: '#fff', borderRadius: 20, padding: 16, maxHeight: '50%' },
+  modalTitle: { fontSize: 16, fontWeight: '800', color: '#0f172a', marginBottom: 12 },
+  modalList: { maxHeight: 200 },
+  modalItem: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 10, marginBottom: 2 },
+  modalItemActive: { backgroundColor: '#059669' },
+  modalItemText: { fontSize: 14, fontWeight: '600', color: '#374151' },
+  modalItemTextActive: { color: '#fff' },
 
   list: { padding: 16, paddingBottom: 80 },
   card: {
@@ -377,12 +507,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 8,
-  },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
   tipoBadge: { paddingHorizontal: 10, paddingVertical: 2, borderRadius: 12 },
   tipoText: { fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },
   cardTitle: { fontSize: 16, fontWeight: '700', color: '#1e293b', marginBottom: 4 },
@@ -414,4 +539,35 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   fabText: { fontSize: 28, color: '#fff', fontWeight: '300', marginTop: -2 },
+
+  // Saber card
+  saberCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  saberCardHeader: { marginBottom: 8 },
+  saberBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 12,
+    gap: 4,
+  },
+  saberBadgeText: { fontSize: 10, fontWeight: '700', letterSpacing: 0.4 },
+  saberTitle: { fontSize: 16, fontWeight: '700', color: '#1e293b', marginBottom: 4 },
+  saberAuthor: { fontSize: 12, color: '#94a3b8', marginBottom: 6 },
+  saberCultivosRow: { flexDirection: 'row', marginBottom: 8 },
+  saberCultivo: { fontSize: 11, color: '#059669', backgroundColor: '#d1fae5', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
+  saberRatingRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  saberRatingText: { fontSize: 13, fontWeight: '600', color: '#374151' },
+  saberRatingCount: { fontSize: 11, color: '#94a3b8' },
 });

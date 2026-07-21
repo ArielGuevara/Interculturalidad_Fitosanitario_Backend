@@ -59,6 +59,9 @@ export const usuarios = pgTable('usuarios', {
   telefono: varchar('telefono', { length: 20 }),
   passwordHash: varchar('password_hash', { length: 255 }).notNull(),
   rol: rolUsuarioEnum('rol').notNull().default('AGRICULTOR'),
+  cargo: varchar('cargo', { length: 100 }),
+  activo: boolean('activo').notNull().default(true),
+  permisos: jsonb('permisos').$type<string[]>().notNull().default([]),
   fechaRegistro: timestamp('fecha_registro').notNull().defaultNow(),
 });
 
@@ -134,7 +137,6 @@ export const suspensionesUsuarios = pgTable('suspensiones_usuarios', {
     .notNull()
     .references(() => usuarios.id),
   reporteId: integer('reporte_id')
-    .notNull()
     .references(() => reportes.id),
   motivo: text('motivo').notNull(),
   tipoDuracion: tipoDuracionSuspensionEnum('tipo_duracion').notNull(),
@@ -185,13 +187,11 @@ export const productosPlagasCultivos = pgTable('productos_plagas_cultivos', {
 export const tratamientosOficiales = pgTable('tratamientos_oficiales', {
   id: serial('id').primaryKey(),
   reporteId: integer('reporte_id').references(() => reportes.id),
-  recomendacionOrigenId: integer('recomendacion_origen_id'), // FK a comunidad, se agrega en Sprint 4
+  recomendacionOrigenId: integer('recomendacion_origen_id'),
   moderadorId: integer('moderador_id')
     .notNull()
     .references(() => usuarios.id),
-  cultivoId: integer('cultivo_id')
-    .notNull()
-    .references(() => cultivos.id),
+  cultivoId: integer('cultivo_id').references(() => cultivos.id),
   plagaId: integer('plaga_id')
     .notNull()
     .references(() => plagasEnfermedades.id),
@@ -201,6 +201,9 @@ export const tratamientosOficiales = pgTable('tratamientos_oficiales', {
 
   dosis: doublePrecision('dosis').notNull(),
   unidadDosis: varchar('unidad_dosis', { length: 50 }).notNull(),
+
+  nombre: varchar('nombre', { length: 200 }),
+  descripcion: text('descripcion'),
 
   volumenAgua: doublePrecision('volumen_agua'),
   unidadVolumen: varchar('unidad_volumen', { length: 50 }),
@@ -222,6 +225,17 @@ export const tratamientosOficiales = pgTable('tratamientos_oficiales', {
   fechaUltimaActualizacion: timestamp('fecha_ultima_actualizacion')
     .notNull()
     .defaultNow(),
+});
+
+// ── Tabla pivote: TRATAMIENTO_CULTIVOS ────────────────────
+export const tratamientoCultivos = pgTable('tratamiento_cultivos', {
+  id: serial('id').primaryKey(),
+  tratamientoId: integer('tratamiento_id')
+    .notNull()
+    .references(() => tratamientosOficiales.id, { onDelete: 'cascade' }),
+  cultivoId: integer('cultivo_id')
+    .notNull()
+    .references(() => cultivos.id, { onDelete: 'cascade' }),
 });
 
 // ── Enum: TIPO_RECOMENDACION ────────────────────────────────
@@ -251,6 +265,13 @@ export const recomendacionesComunidad = pgTable('recomendaciones_comunidad', {
   activo: boolean('activo').notNull().default(true),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  moderadorId: integer('moderador_id').references(() => usuarios.id),
+  motivoRechazo: text('motivo_rechazo'),
+  fechaExpiracion: timestamp('fecha_expiracion'),
+  comentarioOrigenId: integer('comentario_origen_id').references(() => comentariosForo.id),
+  solucion: text('solucion'),
+  comentarioModerador: text('comentario_moderador'),
+  imagenUrl: text('imagen_url'),
 });
 
 // ── Tabla: VALORACION ───────────────────────────────────────
@@ -279,6 +300,7 @@ export const comentariosForo = pgTable('comentarios_foro', {
   comentarioPadreId: integer('comentario_padre_id'),
   contenido: text('contenido').notNull(),
   audioUrl: varchar('audio_url', { length: 500 }),
+  imagenUrl: text('imagen_url'),
   activo: boolean('activo').notNull().default(true),
   moderadoPor: integer('moderado_por').references(() => usuarios.id),
   fechaModeracion: timestamp('fecha_moderacion'),
@@ -351,6 +373,9 @@ export const notificaciones = pgTable('notificaciones', {
   titulo: varchar('titulo', { length: 200 }).notNull(),
   cuerpo: text('cuerpo').notNull(),
   leida: boolean('leida').notNull().default(false),
+  esGlobal: boolean('es_global').notNull().default(false),
+  tipo: varchar('tipo', { length: 50 }),
+  data: jsonb('data'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 

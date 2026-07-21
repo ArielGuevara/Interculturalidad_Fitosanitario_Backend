@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Param,
   Body,
   ParseIntPipe,
@@ -60,14 +61,15 @@ export class TratamientosController {
     return this.tratamientosService.create(dto, user.id);
   }
 
-  // Editar tratamiento — solo MODERADOR
+  // Editar tratamiento con notificación — solo MODERADOR
   @Patch(':id')
   @Roles('MODERADOR')
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateTratamientoDto,
+    @CurrentUser() user: { id: number },
   ) {
-    return this.tratamientosService.update(id, dto);
+    return this.tratamientosService.updateWithNotification(id, dto, user.id);
   }
 
   // Agregar/quitar de enciclopedia — solo MODERADOR (RF-09)
@@ -78,5 +80,18 @@ export class TratamientosController {
     @Body('enEnciclopedia') enEnciclopedia: boolean,
   ) {
     return this.tratamientosService.marcarEnciclopedia(id, enEnciclopedia);
+  }
+
+  // Ver si un reporte ya tiene tratamiento
+  @Get('por-reporte/:reporteId')
+  findByReporte(@Param('reporteId', ParseIntPipe) reporteId: number) {
+    return this.tratamientosService.findByReporte(reporteId);
+  }
+
+  // Eliminar tratamiento físicamente — solo MODERADOR
+  @Delete(':id')
+  @Roles('MODERADOR')
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.tratamientosService.delete(id);
   }
 }

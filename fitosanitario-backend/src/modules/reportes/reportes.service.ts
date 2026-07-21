@@ -62,7 +62,10 @@ export class ReportesService {
     return reporte;
   }
 
-  findAll() {
+  findAll(params?: { cultivoId?: number; q?: string; fechaInicio?: string; fechaFin?: string }) {
+    if (params && (params.cultivoId || params.q || params.fechaInicio || params.fechaFin)) {
+      return this.reportesRepository.findAllFiltered(params);
+    }
     return this.reportesRepository.findAll();
   }
 

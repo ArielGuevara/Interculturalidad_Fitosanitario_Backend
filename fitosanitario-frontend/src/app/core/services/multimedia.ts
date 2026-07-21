@@ -35,16 +35,12 @@ export class MultimediaService {
    */
   fixMinioUrl(url: string | undefined | null): string {
     if (!url) return '';
-    
     try {
         const urlObj = new URL(url);
-        const publicMinioUrl = new URL(environment.minioPublicUrl);
-
-        if (urlObj.port === '9000' || urlObj.hostname === 'localhost' || urlObj.hostname === '127.0.0.1') {
-            urlObj.protocol = publicMinioUrl.protocol;
-            urlObj.hostname = publicMinioUrl.hostname;
-            urlObj.port = publicMinioUrl.port;
-        }
+        const apiUrl = new URL(environment.apiUrl);
+        urlObj.hostname = apiUrl.hostname;
+        urlObj.port = apiUrl.port;
+        urlObj.protocol = apiUrl.protocol;
         return urlObj.toString();
     } catch {
         return url;

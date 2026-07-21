@@ -1,47 +1,86 @@
-import { Component, inject, OnInit, signal, AfterViewInit } from '@angular/core';
+import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
+import { SelectModule } from 'primeng/select';
 import { CultivosService } from '../../core/services/cultivos';
 import { PlagasService } from '../../core/services/plagas';
 import { ProductosService } from '../../core/services/productos';
 import { ReportesService } from '../../core/services/reportes';
-import { AlertasService } from '../../core/services/alertas';
+import { InformesService } from '../../core/services/informes';
 import { forkJoin } from 'rxjs';
-import { Router, RouterModule } from '@angular/router';
-import { Chart, registerables } from 'chart.js';
-
-Chart.register(...registerables);
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, CardModule, ButtonModule, RouterModule],
+  imports: [CommonModule, FormsModule, CardModule, ButtonModule, DialogModule, SelectModule],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',
 })
-export class Dashboard implements OnInit, AfterViewInit {
+export class Dashboard implements OnInit {
   private cultivosService = inject(CultivosService);
   private plagasService = inject(PlagasService);
   private productosService = inject(ProductosService);
   private reportesService = inject(ReportesService);
-  private alertasService = inject(AlertasService);
+  private informesService = inject(InformesService);
   private router = inject(Router);
 
   stats = signal<any[]>([]);
   reportesStats = signal<any>({ total: 0, pendientes: 0, validados: 0, rechazados: 0 });
-  plagasChartData = signal<{ nombre: string; count: number }[]>([]);
+
+  reportesBarPct = computed(() => {
+    const s = this.reportesStats();
+    const max = Math.max(s.pendientes, s.validados, s.rechazados, 1);
+    return {
+      pendientes: (s.pendientes / max) * 100,
+      validados: (s.validados / max) * 100,
+      rechazados: (s.rechazados / max) * 100,
+    };
+  });
+
+  // Diálogos
+  dialogoCultivos = false;
+  dialogoPlagas = false;
+  dialogoUsuarios = false;
+  dialogoProductos = false;
+  dialogoTratamientos = false;
+
+  // Filtros
+  filtroCultivoId: number | null = null;
+  filtroRol: string | null = null;
+  filtroTipoProducto: string | null = null;
+  cargando = false;
+  cargandoPreview = false;
+
+  cultivosList: any[] = [];
+  rolesOptions = [
+    { label: 'Agricultores', value: 'AGRICULTOR' },
+    { label: 'Moderadores', value: 'MODERADOR' },
+    { label: 'Administradores', value: 'ADMIN' },
+  ];
+  tipoProductoOptions = [
+    { label: 'Insecticida', value: 'INSECTICIDA' },
+    { label: 'Fungicida', value: 'FUNGICIDA' },
+    { label: 'Herbicida', value: 'HERBICIDA' },
+    { label: 'Biológico', value: 'BIOLOGICO' },
+  ];
 
   ngOnInit() {
     this.loadStats();
-  }
-
-  ngAfterViewInit() {
-    setTimeout(() => this.initCharts(), 500);
+    this.cargarCultivos();
   }
 
   navigateTo(path: string) {
     this.router.navigate([path]);
+  }
+
+  cargarCultivos() {
+    this.cultivosService.findAll().subscribe(data => {
+      this.cultivosList = data;
+    });
   }
 
   loadStats() {
@@ -51,99 +90,94 @@ export class Dashboard implements OnInit, AfterViewInit {
       productos: this.productosService.findAll(),
       reportes: this.reportesService.findAll(),
       pendientes: this.reportesService.findPendientes(),
-      alertas: this.alertasService.findAllAlertas(),
     }).subscribe(data => {
       const totalReportes = data.reportes.length;
       const pendientes = data.pendientes.length;
       const validados = data.reportes.filter(r => r.estado === 'VALIDADO').length;
       const rechazados = data.reportes.filter(r => r.estado === 'RECHAZADO').length;
-      const alertasActivas = data.alertas.filter(a => !a.leida).length;
 
       this.stats.set([
         { label: 'Cultivos', value: data.cultivos.length, icon: 'pi pi-map', color: 'bg-green-100 text-green-700', trend: 'Catálogo de plantas', route: '/cultivos' },
         { label: 'Plagas/Enf.', value: data.plagas.length, icon: 'pi pi-exclamation-triangle', color: 'bg-orange-100 text-orange-700', trend: 'Amenazas registradas', route: '/plagas' },
         { label: 'Productos', value: data.productos.length, icon: 'pi pi-box', color: 'bg-blue-100 text-blue-700', trend: 'Insumos registrados', route: '/productos' },
         { label: 'Reportes', value: totalReportes, icon: 'pi pi-inbox', color: 'bg-indigo-100 text-indigo-700', trend: `${pendientes} pendientes`, route: '/reportes' },
-        { label: 'Alertas', value: alertasActivas, icon: 'pi pi-bell', color: 'bg-purple-100 text-purple-700', trend: alertasActivas > 0 ? `${alertasActivas} activas` : 'Sin alertas', route: '/zonas-alerta' },
       ]);
 
       this.reportesStats.set({ total: totalReportes, pendientes, validados, rechazados });
-
-      // Count reports by pest for the chart
-      const plagaCount: Record<string, number> = {};
-      for (const r of data.reportes) {
-        if (r.plagaId) {
-          const plaga = data.plagas.find(p => p.id === r.plagaId);
-          const name = plaga?.nombre || `Plaga #${r.plagaId}`;
-          plagaCount[name] = (plagaCount[name] || 0) + 1;
-        }
-      }
-      const sorted = Object.entries(plagaCount)
-        .map(([nombre, count]) => ({ nombre, count }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 8);
-      this.plagasChartData.set(sorted);
-      setTimeout(() => this.initCharts(), 200);
     });
   }
 
-  private initCharts() {
-    this.initReportesChart();
-    this.initPlagasChart();
+  generarInforme(tipo: string) {
+    this.cargando = true;
+    this._generarYDescargar(tipo, true);
   }
 
-  private initReportesChart() {
-    const el = document.getElementById('reportes-chart') as HTMLCanvasElement;
-    if (!el) return;
-    const ctx = el.getContext('2d');
-    if (!ctx) return;
-    const s = this.reportesStats();
-    new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: ['Pendientes', 'Validados', 'Rechazados', 'Comunidad'],
-        datasets: [{
-          data: [s.pendientes, s.validados, s.rechazados, s.total - s.pendientes - s.validados - s.rechazados],
-          backgroundColor: ['#f59e0b', '#10b981', '#ef4444', '#6366f1'],
-          borderWidth: 0,
-        }],
+  previsualizarInforme(tipo: string) {
+    this.cargandoPreview = true;
+    const filtros = this._buildFiltros(tipo);
+
+    this.informesService.generar(tipo, filtros).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        this.cargandoPreview = false;
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { position: 'bottom' } },
+      error: () => {
+        this.cargandoPreview = false;
       },
     });
   }
 
-  private initPlagasChart() {
-    const el = document.getElementById('plagas-chart') as HTMLCanvasElement;
-    if (!el) return;
-    const ctx = el.getContext('2d');
-    if (!ctx) return;
-    const data = this.plagasChartData();
-    if (data.length === 0) return;
-    new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: data.map(d => d.nombre),
-        datasets: [{
-          label: 'Reportes',
-          data: data.map(d => d.count),
-          backgroundColor: '#10b981',
-          borderRadius: 8,
-        }],
+  private _buildFiltros(tipo: string): any {
+    const filtros: any = {};
+    if (tipo === 'plagas' || tipo === 'tratamientos') {
+      if (this.filtroCultivoId) filtros.cultivoId = this.filtroCultivoId;
+    }
+    if (tipo === 'usuarios' && this.filtroRol) {
+      filtros.rol = this.filtroRol;
+    }
+    if (tipo === 'productos' && this.filtroTipoProducto) {
+      filtros.tipoProducto = this.filtroTipoProducto;
+    }
+    return filtros;
+  }
+
+  private _generarYDescargar(tipo: string, cerrarDialogo: boolean) {
+    const filtros = this._buildFiltros(tipo);
+
+    this.informesService.generar(tipo, filtros).subscribe({
+      next: (blob) => {
+        this.downloadPdf(blob, `informe_${tipo}.pdf`);
+        if (cerrarDialogo) this.cerrarDialogos();
+        this.cargando = false;
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        indexAxis: 'y',
-        plugins: { legend: { display: false } },
-        scales: {
-          x: { beginAtZero: true, ticks: { stepSize: 1 } },
-          y: { ticks: { font: { size: 11 } } },
-        },
+      error: () => {
+        this.cargando = false;
       },
     });
+  }
+
+  private downloadPdf(blob: Blob, filename: string) {
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  }
+
+  resetFiltros() {
+    this.filtroCultivoId = null;
+    this.filtroRol = null;
+    this.filtroTipoProducto = null;
+  }
+
+  private cerrarDialogos() {
+    this.dialogoCultivos = false;
+    this.dialogoPlagas = false;
+    this.dialogoUsuarios = false;
+    this.dialogoProductos = false;
+    this.dialogoTratamientos = false;
+    this.resetFiltros();
   }
 }

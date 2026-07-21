@@ -19,6 +19,7 @@ import { getCache, setCache } from '../../../infrastructure/offline/cache';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const CACHE_KEY = 'reportes.list';
+const PAGE_SIZE = 10;
 
 const ESTADO_COLORS: Record<string, string> = {
   PENDIENTE: '#f59e0b',
@@ -89,20 +90,27 @@ function AnimatedCard({ item, onPress }: { item: Reporte, onPress: () => void })
 
 export function ReportesScreen() {
   const navigation = useNavigation<any>();
-  const [items, setItems] = useState<Reporte[]>([]);
+  const [allItems, setAllItems] = useState<Reporte[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [page, setPage] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  const displayedItems = allItems.slice(0, page * PAGE_SIZE);
+  const hasMore = displayedItems.length < allItems.length;
 
   const loadData = async (isRefreshing = false) => {
     if (isRefreshing) setRefreshing(true);
     try {
       const data = await getReportes();
-      setItems(data);
+      setAllItems(data);
+      setPage(1);
       await setCache(CACHE_KEY, data);
     } catch {
       const cached = await getCache<Reporte[]>(CACHE_KEY);
       if (cached) {
-        setItems(cached);
+        setAllItems(cached);
+        setPage(1);
       } else {
         Alert.alert('Modo Offline', 'No hay reportes en caché. Conéctate para sincronizar.');
       }
@@ -110,6 +118,14 @@ export function ReportesScreen() {
       setLoading(false);
       setRefreshing(false);
     }
+  };
+
+  const loadMore = () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    setPage((p) => p + 1);
+    // Small delay for UX
+    setTimeout(() => setLoadingMore(false), 300);
   };
 
   useFocusEffect(
@@ -131,12 +147,27 @@ export function ReportesScreen() {
     );
   };
 
+  const renderFooter = () => {
+    if (!hasMore) return null;
+    return (
+      <Pressable
+        style={styles.loadMoreBtn}
+        onPress={loadMore}
+        disabled={loadingMore}
+      >
+        <Text style={styles.loadMoreText}>
+          {loadingMore ? 'Cargando...' : `Cargar más (${allItems.length - displayedItems.length} restantes)`}
+        </Text>
+      </Pressable>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Reportes</Text>
         <Text style={styles.headerSubtitle}>
-          {items.length === 1 ? '1 reporte' : `${items.length} reportes`}
+          {allItems.length === 1 ? '1 reporte' : `${allItems.length} reportes`}
         </Text>
       </View>
 
@@ -147,11 +178,12 @@ export function ReportesScreen() {
         </View>
       ) : (
         <FlatList
-          data={items}
+          data={displayedItems}
           keyExtractor={(i) => String(i.id)}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={renderEmptyComponent}
+          ListFooterComponent={renderFooter}
           refreshControl={
             <RefreshControl 
               refreshing={refreshing} 
@@ -309,6 +341,20 @@ const styles = StyleSheet.create({
     color: '#64748b',
     textAlign: 'center',
     lineHeight: 22,
+  },
+
+  loadMoreBtn: {
+    alignItems: 'center',
+    paddingVertical: 14,
+    marginBottom: 16,
+    backgroundColor: '#f1f5f9',
+    borderRadius: 14,
+    marginHorizontal: 20,
+  },
+  loadMoreText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#64748b',
   },
 
   // Floating Action Button (FAB)

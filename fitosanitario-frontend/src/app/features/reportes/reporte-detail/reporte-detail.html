@@ -60,7 +60,7 @@
             </div>
         </section>
 
-        <section class="dark-actions">
+        <section class="actions-section">
             <h3>Moderación</h3>
             <p>Revise evidencias, ubicación y emita una decisión técnica.</p>
 
@@ -71,9 +71,11 @@
                 <audio *ngIf="fixedAudioRechazo()" [src]="fixedAudioRechazo()" controls class="audio-player" style="margin-top:8px"></audio>
             </div>
 
-            <p-button label="Emitir tratamiento" icon="pi pi-check-circle" styleClass="action-btn btn-emerald" (onClick)="treatmentDialog.set(true)"></p-button>
-            <p-button label="Volver a reportar" icon="pi pi-undo" styleClass="action-btn p-button-outlined p-button-plain border-white-alpha-20 text-white" (onClick)="openVolverAReportar()"></p-button>
-            <p-button label="Suspender cuenta" icon="pi pi-ban" styleClass="action-btn p-button-danger p-button-outlined" (onClick)="openSuspender()"></p-button>
+            <p-button [label]="treatmentLabel()" icon="pi pi-check-circle" styleClass="action-btn btn-emerald" (onClick)="openTreatmentDialog()"></p-button>
+            <p-button *ngIf="canVolverAReportar()" label="Volver a reportar" icon="pi pi-undo" styleClass="action-btn p-button-outlined p-button-plain border-green-600 text-green-700" (onClick)="openVolverAReportar()"></p-button>
+            <p-button *ngIf="!canVolverAReportar()" label="Ya fue devuelto" icon="pi pi-check" styleClass="action-btn p-button-outlined p-button-plain border-gray-400 text-gray-400" [disabled]="true"></p-button>
+            <p-button *ngIf="canSuspender()" label="Suspender cuenta" icon="pi pi-ban" styleClass="action-btn p-button-danger p-button-outlined" (onClick)="openSuspender()"></p-button>
+            <p-button *ngIf="!canSuspender()" label="Ya suspendido" icon="pi pi-check" styleClass="action-btn p-button-outlined p-button-plain border-gray-400 text-gray-400" [disabled]="true"></p-button>
             <small *ngIf="!item.plagaId" class="warning-text">El reporte no trae diagnóstico inicial; seleccione la plaga en el formulario.</small>
         </section>
     </div>
@@ -107,7 +109,7 @@
         <section class="white-section map-section">
             <div class="flex justify-content-between align-items-center gap-3 mb-3">
                 <h3 class="m-0">Ubicación geoespacial</h3>
-                <p-button label="Abrir Maps" icon="pi pi-map-marker" styleClass="p-button-text p-button-success font-bold" (onClick)="openMaps()"></p-button>
+                <p-button label="Abrir Maps" icon="pi pi-map-marker" styleClass="p-button-success border-round-2xl font-bold" (onClick)="openMaps()"></p-button>
             </div>
             <iframe *ngIf="mapUrl()" [src]="mapUrl()" class="map-frame" loading="lazy"></iframe>
         </section>
@@ -180,12 +182,13 @@
         </ng-template>
     </p-dialog>
 
-    <p-dialog [(visible)]="treatmentDialog" [modal]="true" [style]="{width: '900px', maxWidth: '96vw'}" styleClass="custom-dialog" [draggable]="false" [resizable]="false" [dismissableMask]="true" header="Tratamiento oficial">
+    <p-dialog [(visible)]="treatmentDialog" [modal]="true" [style]="{width: '900px', maxWidth: '96vw'}" styleClass="custom-dialog" [draggable]="false" [resizable]="false" [dismissableMask]="true" [header]="existingTratamiento() ? 'Editar tratamiento oficial' : 'Nuevo tratamiento oficial'">
         <app-tratamiento-form
             [reporteId]="item.id"
             [cultivoId]="item.cultivoId"
             [plagaId]="item.plagaId || undefined"
-            submitLabel="Emitir y validar reporte"
+            [tratamientoExistente]="existingTratamiento()"
+            [submitLabel]="existingTratamiento() ? 'Actualizar tratamiento' : 'Emitir y validar reporte'"
             (saved)="onTratamientoSaved($event)"
             (cancelled)="treatmentDialog.set(false)">
         </app-tratamiento-form>

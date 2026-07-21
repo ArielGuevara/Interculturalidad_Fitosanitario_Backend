@@ -21,6 +21,7 @@ import { ImageViewerModal } from '../../../presentation/components/ImageViewerMo
 import { SearchBar } from '../../../presentation/components/SearchBar';
 
 const CACHE_KEY = 'cultivos.list';
+const PAGE_SIZE = 5;
 
 export function CultivosScreen() {
   const [items, setItems] = useState<Cultivo[]>([]);
@@ -29,6 +30,7 @@ export function CultivosScreen() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedItem, setSelectedItem] = useState<Cultivo | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(1);
 
   const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   const filteredItems = useMemo(() => {
@@ -39,6 +41,11 @@ export function CultivosScreen() {
       (i.descripcion && normalize(i.descripcion.toLowerCase()).includes(q))
     );
   }, [items, searchQuery]);
+
+  const displayedItems = useMemo(() => filteredItems.slice(0, page * PAGE_SIZE), [filteredItems, page]);
+  const hasMore = displayedItems.length < filteredItems.length;
+
+  useEffect(() => { setPage(1); }, [searchQuery]);
 
   const loadData = async (isRefreshing = false) => {
     if (isRefreshing) setRefreshing(true);
@@ -122,18 +129,23 @@ export function CultivosScreen() {
         </View>
       ) : (
         <FlatList
-          data={filteredItems}
+          data={displayedItems}
           keyExtractor={(i) => String(i.id)}
           renderItem={renderItem}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={renderEmptyComponent}
+          ListFooterComponent={hasMore ? (
+            <Pressable style={styles.loadMoreBtn} onPress={() => setPage(p => p + 1)}>
+              <Text style={styles.loadMoreText}>Ver más ({filteredItems.length - displayedItems.length} restantes)</Text>
+            </Pressable>
+          ) : null}
           refreshControl={
             <RefreshControl 
               refreshing={refreshing} 
               onRefresh={() => loadData(true)} 
               tintColor="#10b981"
-              colors={['#10b981']} // Color para Android
+              colors={['#10b981']}
             />
           }
         />
@@ -145,19 +157,20 @@ export function CultivosScreen() {
         onClose={() => setSelectedImage(null)}
       />
 
-      <Modal visible={selectedItem !== null} animationType="fade" transparent>
-        <View style={styles.modalOverlay}>
-          <ScrollView contentContainerStyle={styles.modalContent}>
+      <Modal visible={selectedItem !== null} animationType="fade" transparent onRequestClose={() => setSelectedItem(null)}>
+        <Pressable style={styles.modalOverlay} onPress={() => setSelectedItem(null)}>
+          <Pressable style={styles.modalContent} onPress={() => {}}>
             {selectedItem?.imagenUrl && (
-              <Image source={{ uri: selectedItem.imagenUrl }} style={styles.modalImage} resizeMode="cover" />
+              <Image source={{ uri: selectedItem.imagenUrl }} style={styles.modalImage} resizeMode="contain" />
+
             )}
             <Text style={styles.modalTitle}>{selectedItem?.nombre}</Text>
             <Text style={styles.modalDescription}>{selectedItem?.descripcion || 'Sin descripción disponible'}</Text>
             <Pressable style={styles.modalCloseBtn} onPress={() => setSelectedItem(null)}>
               <Text style={styles.modalCloseText}>Cerrar</Text>
             </Pressable>
-          </ScrollView>
-        </View>
+          </Pressable>
+        </Pressable>
       </Modal>
     </SafeAreaView>
   );
@@ -242,6 +255,22 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
 
+  loadMoreBtn: {
+    paddingVertical: 14,
+    alignItems: 'center',
+    backgroundColor: '#f0fdf4',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#bbf7d0',
+    marginTop: 4,
+    marginBottom: 16,
+  },
+  loadMoreText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#059669',
+  },
+
   // Estados de carga y vacío
   loadingContainer: {
     flex: 1,
@@ -280,42 +309,44 @@ const styles = StyleSheet.create({
 
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
-    padding: 24,
+    padding: 40,
   },
   modalContent: {
     backgroundColor: '#fff',
     borderRadius: 20,
-    padding: 24,
+    padding: 20,
+    maxHeight: '70%',
   },
   modalImage: {
     width: '100%',
-    height: 200,
+    height: 160,
     borderRadius: 12,
-    marginBottom: 16,
+    backgroundColor: '#f1f5f9',
+    marginBottom: 12,
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '800',
     color: '#0f172a',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   modalDescription: {
-    fontSize: 15,
+    fontSize: 14,
     color: '#334155',
-    lineHeight: 22,
-    marginBottom: 20,
+    lineHeight: 20,
+    marginBottom: 16,
   },
   modalCloseBtn: {
     backgroundColor: '#059669',
     borderRadius: 12,
-    paddingVertical: 14,
+    paddingVertical: 12,
     alignItems: 'center',
   },
   modalCloseText: {
     color: '#fff',
     fontWeight: '700',
-    fontSize: 16,
+    fontSize: 15,
   },
 });

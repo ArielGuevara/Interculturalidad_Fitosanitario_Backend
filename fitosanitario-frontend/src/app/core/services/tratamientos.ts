@@ -22,4 +22,16 @@ export class TratamientosService {
   create(dto: CreateTratamientoDto): Observable<TratamientoOficial> {
     return this.http.post<TratamientoOficial>(this.apiUrl, dto);
   }
+
+  findByReporte(reporteId: number): Observable<TratamientoOficial | null> {
+    return this.http.get<TratamientoOficial | null>(`${this.apiUrl}/por-reporte/${reporteId}`);
+  }
+
+  update(id: number, dto: Partial<CreateTratamientoDto>): Observable<TratamientoOficial> {
+    return this.http.patch<TratamientoOficial>(`${this.apiUrl}/${id}`, dto);
+  }
+
+  delete(id: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/${id}`);
+  }
 }

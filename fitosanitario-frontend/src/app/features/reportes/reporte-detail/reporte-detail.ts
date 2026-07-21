@@ -15,13 +15,14 @@ import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ReportesService } from '../../../core/services/reportes';
+import { TratamientosService } from '../../../core/services/tratamientos';
 import { MultimediaService } from '../../../core/services/multimedia';
 import { CultivosService } from '../../../core/services/cultivos';
 import { PlagasService } from '../../../core/services/plagas';
 import { RecomendacionesService } from '../../../core/services/recomendaciones';
 import { EstadoReporte, Reporte, ReporteHistorialEstado } from '../../../core/models/reporte.model';
 import { TratamientoForm } from '../../tratamientos/tratamiento-form/tratamiento-form';
-import { TratamientoOficial } from '../../../core/models/tratamiento.model';
+import { TratamientoOficial, CreateTratamientoDto } from '../../../core/models/tratamiento.model';
 
 @Component({
   selector: 'app-reporte-detail',
@@ -51,6 +52,7 @@ export class ReporteDetail implements OnInit {
   private router = inject(Router);
   private sanitizer = inject(DomSanitizer);
   private reportesService = inject(ReportesService);
+  private tratamientosService = inject(TratamientosService);
   private multimediaService = inject(MultimediaService);
   private cultivosService = inject(CultivosService);
   private plagasService = inject(PlagasService);
@@ -62,8 +64,14 @@ export class ReporteDetail implements OnInit {
   historial = signal<ReporteHistorialEstado[]>([]);
   loading = signal(false);
   treatmentDialog = signal(false);
+  existingTratamiento = signal<TratamientoOficial | null>(null);
+  suspensionActiva = signal<any>(null);
   cultivosMap = signal<Record<number, string>>({});
   plagasMap = signal<Record<number, string>>({});
+
+  treatmentLabel = computed(() => this.existingTratamiento() ? 'Editar tratamiento' : 'Emitir tratamiento');
+  canVolverAReportar = computed(() => this.reporte()?.estado !== 'VOLVER_A_REPORTAR');
+  canSuspender = computed(() => !this.suspensionActiva());
 
   volverAReportarDialog = signal(false);
   volverMotivo = signal('');
@@ -105,6 +113,8 @@ export class ReporteDetail implements OnInit {
         this.reporte.set(data);
         this.loading.set(false);
         this.loadHistorial(id);
+        this.loadTratamientoExistente(id);
+        this.loadSuspension(data.usuarioId);
       },
       error: () => {
         this.messageService.add({ severity: 'error', summary: 'No encontrado', detail: 'No se pudo cargar el reporte.' });
@@ -120,6 +130,20 @@ export class ReporteDetail implements OnInit {
     });
   }
 
+  loadTratamientoExistente(reporteId: number) {
+    this.tratamientosService.findByReporte(reporteId).subscribe({
+      next: data => this.existingTratamiento.set(data),
+      error: () => this.existingTratamiento.set(null)
+    });
+  }
+
+  loadSuspension(usuarioId: number) {
+    this.reportesService.getSuspensionActivaByUser(usuarioId).subscribe({
+      next: data => this.suspensionActiva.set(data),
+      error: () => this.suspensionActiva.set(null)
+    });
+  }
+
   volver() {
     this.router.navigate(['/reportes']);
   }
@@ -130,12 +154,17 @@ export class ReporteDetail implements OnInit {
     window.open(`https://www.google.com/maps?q=${item.latitud},${item.longitud}`, '_blank');
   }
 
-  onTratamientoSaved(_tratamiento: TratamientoOficial) {
-    const item = this.reporte();
+  onTratamientoSaved(tratamiento: TratamientoOficial) {
     this.treatmentDialog.set(false);
+    const item = this.reporte();
     if (!item) return;
-    this.messageService.add({ severity: 'success', summary: 'Reporte validado', detail: 'El tratamiento oficial fue emitido correctamente.' });
+    this.existingTratamiento.set(tratamiento);
+    this.messageService.add({ severity: 'success', summary: 'Tratamiento guardado', detail: 'El tratamiento oficial fue procesado correctamente.' });
     this.loadReporte();
+  }
+
+  openTreatmentDialog() {
+    this.treatmentDialog.set(true);
   }
 
   cultivoNombre(id?: number) {
@@ -148,12 +177,12 @@ export class ReporteDetail implements OnInit {
 
   estadoSeverity(estado?: EstadoReporte): 'warn' | 'info' | 'success' | 'danger' | 'secondary' | 'contrast' {
     if (!estado) return 'secondary';
-    const map: Record<EstadoReporte, 'warn' | 'info' | 'success' | 'danger'> = {
+    const map: Record<EstadoReporte, 'warn' | 'info' | 'success' | 'danger' | 'contrast'> = {
       PENDIENTE: 'warn',
       COMUNIDAD: 'info',
       VALIDADO: 'success',
       RECHAZADO: 'danger',
-      VOLVER_A_REPORTAR: 'warn'
+      VOLVER_A_REPORTAR: 'contrast'
     };
     return map[estado];
   }
@@ -162,10 +191,10 @@ export class ReporteDetail implements OnInit {
     if (!estado) return '';
     const map: Record<EstadoReporte, string> = {
       PENDIENTE: 'Pendiente',
-      COMUNIDAD: 'Comunidad',
+      COMUNIDAD: 'En comunidad',
       VALIDADO: 'Validado',
       RECHAZADO: 'Rechazado',
-      VOLVER_A_REPORTAR: 'Volver a reportar'
+      VOLVER_A_REPORTAR: 'Devuelto'
     };
     return map[estado];
   }
@@ -284,6 +313,7 @@ export class ReporteDetail implements OnInit {
     }).subscribe({
       next: () => {
         this.suspenderDialog.set(false);
+        this.suspensionActiva.set({ activa: true });
         this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Cuenta suspendida.' });
       },
       error: (err) => {

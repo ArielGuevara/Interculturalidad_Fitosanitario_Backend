@@ -1,90 +1,356 @@
 <p-toast></p-toast>
 
-<div class="treatment-form">
-    <div class="form-grid">
-        <div class="field">
-            <label>Cultivo</label>
-            <p-select [options]="cultivos()" optionLabel="nombre" optionValue="id" [(ngModel)]="form.cultivoId" placeholder="Seleccione cultivo" class="w-full"></p-select>
+<div class="tf-container">
+  <form class="tf-form" (ngSubmit)="save()">
+    <!-- SECCIÓN 1: Información general -->
+    <section class="tf-section">
+      <div class="tf-section-header">
+        <i class="pi pi-info-circle tf-section-icon"></i>
+        <div>
+          <h3 class="tf-section-title">Información general</h3>
+          <p class="tf-section-desc">Cultivo afectado, plaga detectada y producto a aplicar.</p>
+        </div>
+      </div>
+      <div class="tf-grid-2cols">
+        <div class="tf-field tf-span-2">
+          <label class="tf-label" for="nombre">Nombre del tratamiento</label>
+          <input
+            id="nombre"
+            type="text"
+            pInputText
+            [(ngModel)]="form.nombre"
+            [ngModelOptions]="{standalone: true}"
+            placeholder="Ej: Control de roya en café"
+            class="w-full" />
+          <small class="tf-hint">Nombre visible en la enciclopedia de tratamientos oficiales.</small>
+        </div>
+        <div class="tf-field tf-span-2">
+          <label class="tf-label" for="descripcion">Descripción</label>
+          <textarea
+            id="descripcion"
+            pTextarea
+            [(ngModel)]="form.descripcion"
+            [ngModelOptions]="{standalone: true}"
+            rows="2"
+            placeholder="Describa el propósito y alcance del tratamiento."
+            class="w-full">
+          </textarea>
+          <small class="tf-hint">Descripción breve para identificar el tratamiento en la enciclopedia.</small>
+        </div>
+        <div class="tf-field" [class.tf-field-error]="fieldErrors().cultivoIds">
+          <label class="tf-label" for="cultivo">Cultivos <span class="tf-required">*</span></label>
+          <p-multiselect
+            id="cultivo"
+            name="cultivoIds"
+            [options]="cultivos()"
+            optionLabel="nombre"
+            optionValue="id"
+            [(ngModel)]="form.cultivoIds"
+            [ngModelOptions]="{standalone: true}"
+            placeholder="Ej: Tomate, Maíz, Café"
+            class="w-full"
+            [showClear]="true"
+            [maxSelectedLabels]="3"
+            (onChange)="markTouched('cultivoIds')"
+            (onBlur)="markTouched('cultivoIds')">
+          </p-multiselect>
+          <small *ngIf="fieldErrors().cultivoIds" class="tf-error-msg">{{ fieldErrors().cultivoIds }}</small>
+        </div>
+        <div class="tf-field" [class.tf-field-error]="fieldErrors().plagaId">
+          <label class="tf-label" for="plaga">Plaga o enfermedad <span class="tf-required">*</span></label>
+          <p-select
+            id="plaga"
+            name="plagaId"
+            [options]="plagas()"
+            optionLabel="nombre"
+            optionValue="id"
+            [(ngModel)]="form.plagaId"
+            [ngModelOptions]="{standalone: true}"
+            placeholder="Ej: Mosca blanca, Roya"
+            class="w-full"
+            [showClear]="true"
+            (onChange)="markTouched('plagaId')"
+            (onBlur)="markTouched('plagaId')">
+          </p-select>
+          <small *ngIf="fieldErrors().plagaId" class="tf-error-msg">{{ fieldErrors().plagaId }}</small>
+        </div>
+        <div class="tf-field tf-span-2" [class.tf-field-error]="fieldErrors().productoId">
+          <label class="tf-label" for="producto">Producto fitosanitario <span class="tf-required">*</span></label>
+          <p-select
+            id="producto"
+            name="productoId"
+            [options]="productos()"
+            optionLabel="nombreComercial"
+            optionValue="id"
+            [(ngModel)]="form.productoId"
+            [ngModelOptions]="{standalone: true}"
+            placeholder="Seleccione un producto registrado"
+            class="w-full"
+            [showClear]="true"
+            [filter]="true"
+            filterBy="nombreComercial,ingredienteActivo"
+            (onChange)="markTouched('productoId')"
+            (onBlur)="markTouched('productoId')">
+          </p-select>
+          <small *ngIf="fieldErrors().productoId" class="tf-error-msg">{{ fieldErrors().productoId }}</small>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECCIÓN 2: Dosificación y aplicación -->
+    <section class="tf-section">
+      <div class="tf-section-header">
+        <i class="pi pi-sliders-h tf-section-icon"></i>
+        <div>
+          <h3 class="tf-section-title">Dosificación y aplicación</h3>
+          <p class="tf-section-desc">Concentración del producto, método y volumen de agua recomendado.</p>
+        </div>
+      </div>
+      <div class="tf-grid-2cols">
+        <div class="tf-field" [class.tf-field-error]="fieldErrors().dosis">
+          <label class="tf-label" for="dosis">Dosis <span class="tf-required">*</span></label>
+          <p-inputGroup>
+            <input
+              id="dosis"
+              type="number"
+              pInputText
+              [(ngModel)]="form.dosis"
+              [ngModelOptions]="{standalone: true}"
+              (ngModelChange)="markTouched('dosis')"
+              (blur)="markTouched('dosis')"
+              min="0.01" step="0.01"
+              placeholder="0.00"
+              class="w-full" />
+            <p-inputGroupAddon>
+              <input
+                type="text"
+                [(ngModel)]="form.unidadDosis"
+                [ngModelOptions]="{standalone: true}"
+                (ngModelChange)="markTouched('unidadDosis')"
+                (blur)="markTouched('unidadDosis')"
+                placeholder="ml/L"
+                class="tf-unit-input"
+              />
+            </p-inputGroupAddon>
+          </p-inputGroup>
+          <small *ngIf="fieldErrors().dosis" class="tf-error-msg">{{ fieldErrors().dosis }}</small>
+          <small *ngIf="fieldErrors().unidadDosis" class="tf-error-msg">{{ fieldErrors().unidadDosis }}</small>
+        </div>
+        <div class="tf-field" [class.tf-field-error]="fieldErrors().metodoAplicacion">
+          <label class="tf-label" for="metodo">Método de aplicación <span class="tf-required">*</span></label>
+          <p-select
+            id="metodo"
+            [options]="metodos"
+            optionLabel="label"
+            optionValue="value"
+            [(ngModel)]="form.metodoAplicacion"
+            class="w-full"
+            (onChange)="markTouched('metodoAplicacion')"
+            (onBlur)="markTouched('metodoAplicacion')">
+          </p-select>
+          <small *ngIf="fieldErrors().metodoAplicacion" class="tf-error-msg">{{ fieldErrors().metodoAplicacion }}</small>
+        </div>
+        <div class="tf-field" [class.tf-field-error]="fieldErrors().volumenAgua">
+          <label class="tf-label" for="volumenAgua">Volumen de agua</label>
+          <p-inputGroup>
+            <input
+              id="volumenAgua"
+              type="number"
+              pInputText
+              [(ngModel)]="form.volumenAgua"
+              [ngModelOptions]="{standalone: true}"
+              (ngModelChange)="markTouched('volumenAgua')"
+              (blur)="markTouched('volumenAgua')"
+              min="0" step="1"
+              placeholder="0"
+              class="w-full" />
+            <p-inputGroupAddon>
+              <input
+                type="text"
+                [(ngModel)]="form.unidadVolumen"
+                [ngModelOptions]="{standalone: true}"
+                placeholder="L/ha"
+                class="tf-unit-input"
+              />
+            </p-inputGroupAddon>
+          </p-inputGroup>
+          <small *ngIf="fieldErrors().volumenAgua" class="tf-error-msg">{{ fieldErrors().volumenAgua }}</small>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECCIÓN 3: Plan de tratamiento -->
+    <section class="tf-section">
+      <div class="tf-section-header">
+        <i class="pi pi-calendar tf-section-icon"></i>
+        <div>
+          <h3 class="tf-section-title">Plan de tratamiento</h3>
+          <p class="tf-section-desc">Frecuencia, duración y tiempos de seguridad.</p>
+        </div>
+      </div>
+      <div class="tf-plan-grid">
+        <div class="tf-field tf-plan-item" [class.tf-field-error]="fieldErrors().intervaloDias">
+          <label class="tf-label" for="intervalo">Intervalo <span class="tf-required">*</span></label>
+          <p-inputGroup>
+            <input
+              id="intervalo"
+              type="number"
+              pInputText
+              [(ngModel)]="form.intervaloDias"
+              [ngModelOptions]="{standalone: true}"
+              (ngModelChange)="markTouched('intervaloDias')"
+              (blur)="markTouched('intervaloDias')"
+              min="1" step="1"
+              class="w-full" />
+            <p-inputGroupAddon>días</p-inputGroupAddon>
+          </p-inputGroup>
+          <small *ngIf="fieldErrors().intervaloDias" class="tf-error-msg">{{ fieldErrors().intervaloDias }}</small>
         </div>
 
-        <div class="field">
-            <label>Plaga o enfermedad</label>
-            <p-select [options]="plagas()" optionLabel="nombre" optionValue="id" [(ngModel)]="form.plagaId" placeholder="Seleccione plaga" class="w-full"></p-select>
+        <div class="tf-field tf-plan-item" [class.tf-field-error]="fieldErrors().numeroAplicaciones">
+          <label class="tf-label" for="aplicaciones">Aplicaciones <span class="tf-required">*</span></label>
+          <p-inputGroup>
+            <input
+              id="aplicaciones"
+              type="number"
+              pInputText
+              [(ngModel)]="form.numeroAplicaciones"
+              [ngModelOptions]="{standalone: true}"
+              (ngModelChange)="markTouched('numeroAplicaciones')"
+              (blur)="markTouched('numeroAplicaciones')"
+              min="1" step="1"
+              class="w-full" />
+            <p-inputGroupAddon>veces</p-inputGroupAddon>
+          </p-inputGroup>
+          <small *ngIf="fieldErrors().numeroAplicaciones" class="tf-error-msg">{{ fieldErrors().numeroAplicaciones }}</small>
         </div>
 
-        <div class="field field-wide">
-            <label>Producto fitosanitario</label>
-            <p-select [options]="productos()" optionLabel="nombreComercial" optionValue="id" [(ngModel)]="form.productoId" placeholder="Seleccione producto" class="w-full"></p-select>
+        <div class="tf-field tf-plan-item" [class.tf-field-error]="fieldErrors().duracionTotalDias">
+          <label class="tf-label" for="duracion">Duración <span class="tf-required">*</span></label>
+          <p-inputGroup>
+            <input
+              id="duracion"
+              type="number"
+              pInputText
+              [(ngModel)]="form.duracionTotalDias"
+              [ngModelOptions]="{standalone: true}"
+              (ngModelChange)="markTouched('duracionTotalDias')"
+              (blur)="markTouched('duracionTotalDias')"
+              min="1" step="1"
+              class="w-full" />
+            <p-inputGroupAddon>días</p-inputGroupAddon>
+          </p-inputGroup>
+          <small *ngIf="fieldErrors().duracionTotalDias" class="tf-error-msg">{{ fieldErrors().duracionTotalDias }}</small>
         </div>
 
-        <div class="field">
-            <label>Dosis</label>
-            <input type="number" pInputText [(ngModel)]="form.dosis" min="0.01" step="0.01" class="w-full">
+        <div class="tf-field tf-plan-item" [class.tf-field-error]="fieldErrors().diasCarencia">
+          <label class="tf-label" for="carencia">Carencia <span class="tf-required">*</span></label>
+          <p-inputGroup>
+            <input
+              id="carencia"
+              type="number"
+              pInputText
+              [(ngModel)]="form.diasCarencia"
+              [ngModelOptions]="{standalone: true}"
+              (ngModelChange)="markTouched('diasCarencia')"
+              (blur)="markTouched('diasCarencia')"
+              min="0" step="1"
+              class="w-full" />
+            <p-inputGroupAddon>días</p-inputGroupAddon>
+          </p-inputGroup>
+          <small *ngIf="fieldErrors().diasCarencia" class="tf-error-msg">{{ fieldErrors().diasCarencia }}</small>
         </div>
 
-        <div class="field">
-            <label>Unidad de dosis</label>
-            <input type="text" pInputText [(ngModel)]="form.unidadDosis" placeholder="Ej: ml/L, kg/ha" class="w-full">
+        <div class="tf-field tf-plan-item" [class.tf-field-error]="fieldErrors().periodoReingresoHoras">
+          <label class="tf-label" for="reingreso">Reingreso</label>
+          <p-inputGroup>
+            <input
+              id="reingreso"
+              type="number"
+              pInputText
+              [(ngModel)]="form.periodoReingresoHoras"
+              [ngModelOptions]="{standalone: true}"
+              (ngModelChange)="markTouched('periodoReingresoHoras')"
+              (blur)="markTouched('periodoReingresoHoras')"
+              min="0" step="1"
+              class="w-full" />
+            <p-inputGroupAddon>hrs</p-inputGroupAddon>
+          </p-inputGroup>
+          <small *ngIf="fieldErrors().periodoReingresoHoras" class="tf-error-msg">{{ fieldErrors().periodoReingresoHoras }}</small>
         </div>
+      </div>
+    </section>
 
-        <div class="field">
-            <label>Volumen de agua</label>
-            <input type="number" pInputText [(ngModel)]="form.volumenAgua" min="0" class="w-full">
+    <!-- SECCIÓN 4: Información adicional -->
+    <section class="tf-section">
+      <div class="tf-section-header">
+        <i class="pi pi-file-edit tf-section-icon"></i>
+        <div>
+          <h3 class="tf-section-title">Información adicional</h3>
+          <p class="tf-section-desc">Detalles opcionales para precisar la recomendación.</p>
         </div>
+      </div>
+      <div class="tf-grid-2cols">
+        <div class="tf-field tf-span-2">
+          <label class="tf-label" for="etapa">Etapa del cultivo</label>
+          <p-select
+            id="etapa"
+            [options]="etapas"
+            optionLabel="label"
+            optionValue="value"
+            [(ngModel)]="form.etapaCultivo"
+            [ngModelOptions]="{standalone: true}"
+            placeholder="🌱 Seleccione la etapa fenológica"
+            class="w-full"
+            [showClear]="true">
+          </p-select>
+          <small class="tf-hint">Indica la fase fenológica en la que se encuentra el cultivo.</small>
+        </div>
+        <div class="tf-field tf-span-2">
+          <label class="tf-label" for="condiciones">Condiciones de aplicación</label>
+          <textarea
+            id="condiciones"
+            pTextarea
+            [(ngModel)]="form.condicionesAplicacion"
+            [ngModelOptions]="{standalone: true}"
+            rows="4"
+            placeholder="Ej: Aplicar en horas de la mañana (6-9am), evitar vientos >15 km/h, usar equipo de protección personal (EPP), no aplicar en días lluviosos."
+            class="w-full">
+          </textarea>
+          <small class="tf-hint">Incluye condiciones climáticas, horario recomendado, equipo de protección y cualquier otra instrucción relevante.</small>
+        </div>
+      </div>
+    </section>
 
-        <div class="field">
-            <label>Unidad de volumen</label>
-            <input type="text" pInputText [(ngModel)]="form.unidadVolumen" placeholder="Ej: L/ha" class="w-full">
+    <!-- SECCIÓN 5: Enciclopedia -->
+    <section class="tf-section tf-section-compact">
+      <div class="tf-switch-row">
+        <div class="tf-switch-info">
+          <i class="pi pi-book tf-section-icon-sm"></i>
+          <div>
+            <span class="tf-switch-label">Agregar a la enciclopedia</span>
+            <span class="tf-switch-desc">Si activas esta opción, el tratamiento estará disponible en la enciclopedia offline para todos los agricultores.</span>
+          </div>
         </div>
+        <p-toggleswitch [(ngModel)]="form.enEnciclopedia" [ngModelOptions]="{standalone: true}"></p-toggleswitch>
+      </div>
+    </section>
 
-        <div class="field">
-            <label>Método</label>
-            <p-select [options]="metodos" optionLabel="label" optionValue="value" [(ngModel)]="form.metodoAplicacion" class="w-full"></p-select>
-        </div>
-
-        <div class="field">
-            <label>Intervalo días</label>
-            <input type="number" pInputText [(ngModel)]="form.intervaloDias" min="1" class="w-full">
-        </div>
-
-        <div class="field">
-            <label>N. aplicaciones</label>
-            <input type="number" pInputText [(ngModel)]="form.numeroAplicaciones" min="1" class="w-full">
-        </div>
-
-        <div class="field">
-            <label>Duración total</label>
-            <input type="number" pInputText [(ngModel)]="form.duracionTotalDias" min="1" class="w-full">
-        </div>
-
-        <div class="field">
-            <label>Días de carencia</label>
-            <input type="number" pInputText [(ngModel)]="form.diasCarencia" min="0" class="w-full">
-        </div>
-
-        <div class="field">
-            <label>Reingreso horas</label>
-            <input type="number" pInputText [(ngModel)]="form.periodoReingresoHoras" min="0" class="w-full">
-        </div>
-
-        <div class="field field-wide">
-            <label>Etapa del cultivo</label>
-            <input type="text" pInputText [(ngModel)]="form.etapaCultivo" placeholder="Ej: floración, crecimiento vegetativo" class="w-full">
-        </div>
-
-        <div class="field field-wide">
-            <label>Condiciones de aplicación</label>
-            <textarea pTextarea [(ngModel)]="form.condicionesAplicacion" rows="4" placeholder="Indicaciones técnicas, clima, horario, protección personal..." class="w-full"></textarea>
-        </div>
-
-        <div class="field encyclopedia-field">
-            <label>Agregar a enciclopedia</label>
-            <p-toggleswitch [(ngModel)]="form.enEnciclopedia"></p-toggleswitch>
-        </div>
+    <!-- Botón fijo inferior -->
+    <div class="tf-sticky-bar">
+      <p-button
+        type="button"
+        label="Cancelar"
+        styleClass="p-button-text p-button-secondary font-bold"
+        (onClick)="cancelled.emit()">
+      </p-button>
+      <p-button
+        type="submit"
+        [label]="submitLabel"
+        icon="pi pi-check"
+        styleClass="p-button-success border-round-2xl px-5 font-bold shadow-3"
+        [loading]="saving()">
+      </p-button>
     </div>
-
-    <div class="form-actions">
-        <p-button label="Cancelar" styleClass="p-button-text p-button-secondary font-bold" (onClick)="cancelled.emit()"></p-button>
-        <p-button [label]="submitLabel" icon="pi pi-check" styleClass="p-button-success border-round-2xl px-5 font-bold" [loading]="saving()" (onClick)="save()"></p-button>
-    </div>
+  </form>
 </div>

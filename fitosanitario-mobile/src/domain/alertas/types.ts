@@ -21,6 +21,14 @@ export interface Notificacion {
   titulo: string;
   cuerpo: string;
   leida: boolean;
+  esGlobal?: boolean;
+  tipo?: string;
+  data?: {
+    type?: string;
+    reporteId?: number;
+    tratamientoId?: number;
+    recomendacionId?: number;
+  };
   createdAt: string;
 }
 

@@ -15,6 +15,11 @@ async function init(db: SQLite.SQLiteDatabase) {
       payload TEXT NOT NULL,
       createdAt INTEGER NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS pending_recomendaciones (
+      id TEXT PRIMARY KEY NOT NULL,
+      payload TEXT NOT NULL,
+      createdAt INTEGER NOT NULL
+    );
   `);
 }
 

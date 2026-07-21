@@ -23,6 +23,7 @@ type AuthState = {
     rol?: Rol;
   }) => Promise<void>;
   logout: () => Promise<void>;
+  updateProfile: (data: Partial<Usuario>) => Promise<void>;
 };
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -78,6 +79,14 @@ export const useAuthStore = create<AuthState>((set) => ({
       AsyncStorage.removeItem(STORAGE_USER_KEY),
     ]);
     set({ status: 'unauthenticated', accessToken: null, usuario: null });
+  },
+
+  updateProfile: async (data) => {
+    const current = useAuthStore.getState().usuario;
+    if (!current) return;
+    const updated = { ...current, ...data };
+    await AsyncStorage.setItem(STORAGE_USER_KEY, JSON.stringify(updated));
+    set({ usuario: updated });
   },
 }));
 

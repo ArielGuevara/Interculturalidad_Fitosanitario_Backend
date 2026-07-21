@@ -23,11 +23,21 @@ export class PushService {
   private initFirebase() {
     try {
       const path = this.configService.get<string>('firebase.serviceAccountPath');
-      if (path) {
+      const jsonEnv = this.configService.get<string>('firebase.serviceAccountJson');
+      let serviceAccount: any = null;
+
+      if (jsonEnv) {
+        serviceAccount = JSON.parse(jsonEnv);
+        this.logger.log('Firebase service account loaded from env var');
+      } else if (path) {
+        const resolvedPath = require('path').resolve(process.cwd(), path);
+        serviceAccount = require(resolvedPath);
+        this.logger.log('Firebase service account loaded from file');
+      }
+
+      if (serviceAccount) {
         const admin = require('firebase-admin');
         if (admin.getApps().length === 0) {
-          const resolvedPath = require('path').resolve(process.cwd(), path);
-          const serviceAccount = require(resolvedPath);
           admin.initializeApp({
             credential: admin.cert(serviceAccount),
           });
@@ -35,7 +45,7 @@ export class PushService {
         }
         this.firebaseApp = admin.getApp();
       } else {
-        this.logger.warn('FIREBASE_SERVICE_ACCOUNT_PATH not set — falling back to Expo Push API');
+        this.logger.warn('Firebase not configured — falling back to Expo Push API');
       }
     } catch (err: any) {
       this.logger.warn('Firebase init failed, falling back to Expo Push API:', err?.message ?? err);

@@ -33,9 +33,10 @@ export function TratamientosScreen() {
     const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     const q = normalize(searchQuery.toLowerCase());
     return items.filter(i =>
-      normalize(i.producto.nombreComercial.toLowerCase()).includes(q) ||
-      normalize(i.cultivo.nombre.toLowerCase()).includes(q) ||
+      normalize((i.nombre || i.producto.nombreComercial).toLowerCase()).includes(q) ||
+      (i.cultivos ?? []).some(c => normalize(c.nombre.toLowerCase()).includes(q)) ||
       normalize(i.plaga.nombre.toLowerCase()).includes(q) ||
+      normalize(i.producto.nombreComercial.toLowerCase()).includes(q) ||
       (i.metodoAplicacion && normalize(i.metodoAplicacion.toLowerCase()).includes(q))
     );
   }, [items, searchQuery]);
@@ -80,20 +81,15 @@ export function TratamientosScreen() {
       </View>
       
       <View style={styles.textContainer}>
-        <View style={styles.titleRow}>
-          <Text style={styles.title} numberOfLines={1}>
-            {item.producto.nombreComercial}
-          </Text>
-          <View style={[styles.badge, { backgroundColor: metodoBadgeColor(item.metodoAplicacion) + '20' }]}>
-            <Text style={[styles.badgeText, { color: metodoBadgeColor(item.metodoAplicacion) }]}>
-              {item.metodoAplicacion}
-            </Text>
-          </View>
-        </View>
+        <Text style={styles.title} numberOfLines={2}>
+          {item.nombre || item.producto.nombreComercial}
+        </Text>
 
         <View style={styles.detailRow}>
           <Ionicons name="leaf-outline" size={14} color="#64748b" />
-          <Text style={styles.detailText}>{item.cultivo.nombre}</Text>
+          <Text style={styles.detailText}>
+            {(item.cultivos ?? []).map(c => c.nombre).join(', ') || item.cultivo?.nombre || '—'}
+          </Text>
         </View>
 
         <View style={styles.detailRow}>
@@ -103,9 +99,7 @@ export function TratamientosScreen() {
 
         <View style={styles.detailRow}>
           <Ionicons name="flask-outline" size={14} color="#64748b" />
-          <Text style={styles.detailText}>
-            {item.dosis} {item.unidadDosis}{item.volumenAgua ? ` / ${item.volumenAgua} ${item.unidadVolumen}` : ''}
-          </Text>
+          <Text style={styles.detailText}>{item.producto.nombreComercial}</Text>
         </View>
 
         <View style={styles.detailRow}>
@@ -113,6 +107,14 @@ export function TratamientosScreen() {
           <Text style={styles.detailText}>
             {item.intervaloDias}d · {item.numeroAplicaciones} aplicaciones · Carencia: {item.diasCarencia}d
           </Text>
+        </View>
+
+        <View style={styles.methodBadgeRow}>
+          <View style={[styles.badge, { backgroundColor: metodoBadgeColor(item.metodoAplicacion) + '20' }]}>
+            <Text style={[styles.badgeText, { color: metodoBadgeColor(item.metodoAplicacion) }]}>
+              {item.metodoAplicacion}
+            </Text>
+          </View>
         </View>
       </View>
     </Pressable>
@@ -236,11 +238,15 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   title: {
-    flex: 1,
-    fontSize: 17,
-    fontWeight: '800',
+    fontSize: 20,
+    fontWeight: '900',
     color: '#0f172a',
-    marginRight: 8,
+    marginBottom: 8,
+    lineHeight: 24,
+  },
+  methodBadgeRow: {
+    flexDirection: 'row',
+    marginTop: 6,
   },
   badge: {
     paddingHorizontal: 8,

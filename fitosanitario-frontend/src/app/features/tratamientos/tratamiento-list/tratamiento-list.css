@@ -102,6 +102,13 @@
     margin-bottom: 0.45rem;
 }
 
+.treatment-name {
+    color: var(--slate-900);
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 0.35rem;
+}
+
 small {
     color: var(--slate-400);
     display: block;
@@ -166,6 +173,11 @@ small {
     margin: 0;
 }
 
+.detail-desc {
+    font-size: 0.95rem;
+    margin-top: 0.35rem !important;
+}
+
 .detail-grid {
     display: grid;
     gap: 1rem;
@@ -177,6 +189,10 @@ small {
     background: var(--slate-50);
     border-radius: 18px;
     padding: 1rem;
+}
+
+.detail-full {
+    grid-column: 1 / -1;
 }
 
 .detail-grid strong {

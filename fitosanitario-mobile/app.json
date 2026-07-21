@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
@@ -23,6 +23,7 @@
       "notificationIcon": "./assets/notification-icon.png",
       "notificationColor": "#10b981",
       "edgeToEdgeEnabled": true,
+      "softwareKeyboardLayoutMode": "resize",
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "android.permission.CAMERA",
@@ -37,6 +38,13 @@
     "plugins": [
       "expo-sqlite",
       "expo-audio",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Seleccionar fotos para adjuntar a reportes y comentarios.",
+          "cameraPermission": "Tomar fotos para adjuntar a reportes y comentarios."
+        }
+      ],
       [
         "expo-notifications",
         {

@@ -21,7 +21,6 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Audio, AVPlaybackSource } from 'expo-av';
 import * as FileSystem from 'expo-file-system/legacy';
 import { enqueueReporte } from '../../../infrastructure/offline/pendingReportes';
-import { syncPendingReportes } from '../../../infrastructure/offline/sync';
 import { getCache, setCache } from '../../../infrastructure/offline/cache';
 import { getCultivos } from '../../../infrastructure/data/catalogos/cultivosApi';
 import type { Cultivo } from '../../../domain/catalogos/types';
@@ -214,6 +213,7 @@ export function CreateReporteScreen() {
   const [cultivosLoading, setCultivosLoading] = useState(true);
   const [cultivoStep, setCultivoStep] = useState<'selecting' | 'confirmed'>('selecting');
   const lastSpokenCultivo = useRef(-1);
+  const savingRef = useRef(false);
 
   const [latitud, setLatitud] = useState<number | null>(editData?.latitud ?? null);
   const [longitud, setLongitud] = useState<number | null>(editData?.longitud ?? null);
@@ -256,7 +256,10 @@ export function CreateReporteScreen() {
   useEffect(() => {
     const load = async () => {
       try {
-        const data = await getCultivos();
+        const data = await Promise.race([
+          getCultivos(),
+          new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), 2000)),
+        ]);
         setCultivos(data);
         await setCache('cultivos.list', data);
       } catch {
@@ -441,12 +444,7 @@ export function CreateReporteScreen() {
   };
 
   const saveOfflineAndSync = async () => {
-    const suspension = await reportesApi.getSuspensionActiva();
-    if (suspension) {
-      const fin = new Date(suspension.fechaFin).toLocaleDateString();
-      Alert.alert('Cuenta suspendida', `Tu cuenta está suspendida hasta el ${fin}. Motivo: ${suspension.motivo}`);
-      return;
-    }
+    if (savingRef.current) return;
     if (!titulo.trim()) {
       if (easyMode) { speak('Escriba un título para el reporte'); }
       Alert.alert('Falta información', 'El título es obligatorio.');
@@ -462,10 +460,10 @@ export function CreateReporteScreen() {
       Alert.alert('Falta información', 'La ubicación no está disponible. Espera a que se obtenga o actualícela.');
       return;
     }
-    setIsSaving(true);
-    try {
-      if (isEditing && editData) {
-        // Upload new images and audio, then PATCH
+
+    if (isEditing && editData) {
+      setIsSaving(true);
+      try {
         const finalUrls: string[] = [];
         for (const uri of imageUris) {
           if (uri.startsWith('file://') || uri.startsWith(FileSystem.documentDirectory ?? '')) {
@@ -492,41 +490,37 @@ export function CreateReporteScreen() {
         if (easyMode) speak('Reporte actualizado');
         Alert.alert('Actualizado', 'El reporte ha sido actualizado.');
         navigation.goBack();
-        return;
+      } finally {
+        setIsSaving(false);
       }
-      await enqueueReporte({
-        titulo: titulo.trim(),
-        descripcion: descripcion.trim() || undefined,
-        cultivoId,
-        latitud,
-        longitud,
-        imageUris,
-        audioUri: audioUri ?? undefined,
-      });
-      try {
-        const result = await syncPendingReportes();
-        if (easyMode) { speak('Reporte enviado correctamente'); }
-        Alert.alert(
-          '✓ Reporte enviado',
-          `Guardado correctamente.\nEnviados: ${result.synced}  |  Fallidos: ${result.failed}`
-        );
-      } catch {
-        if (easyMode) { speak('Reporte guardado sin conexión'); }
-        Alert.alert(
-          '📡 Sin conexión',
-          'El reporte se guardó en tu dispositivo.\n\nSe enviará automáticamente cuando tengas conexión a internet o WiFi.'
-        );
-      }
-      setTitulo('');
-      setDescripcion('');
-      setCultivoId(0);
-      setImageUris([]);
-      setAudioUri(null);
-      setWizardStep(1);
-      getLocation();
-    } finally {
-      setIsSaving(false);
+      return;
     }
+
+    savingRef.current = true;
+    await enqueueReporte({
+      titulo: titulo.trim(),
+      descripcion: descripcion.trim() || undefined,
+      cultivoId,
+      latitud,
+      longitud,
+      imageUris,
+      audioUri: audioUri ?? undefined,
+    });
+    if (easyMode) { speak('Reporte guardado correctamente'); }
+    Alert.alert(
+      'Guardado correctamente',
+      'Se enviará automáticamente cuando tengas conexión a internet.'
+    );
+    setTitulo('');
+    setDescripcion('');
+    setCultivoId(0);
+    setImageUris([]);
+    setAudioUri(null);
+    setWizardStep(1);
+    getLocation();
+    savingRef.current = false;
+
+    reportesApi.getSuspensionActiva().catch(() => {});
   };
 
   // ── Camera View ──────────────────────────────────────────────────────────

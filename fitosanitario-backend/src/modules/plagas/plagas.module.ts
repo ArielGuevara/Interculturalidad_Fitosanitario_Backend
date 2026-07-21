@@ -6,5 +6,6 @@ import { PlagasRepository } from './plagas.repository';
 @Module({
   controllers: [PlagasController],
   providers: [PlagasService, PlagasRepository],
+  exports: [PlagasService],
 })
 export class PlagasModule {}

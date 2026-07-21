@@ -18,6 +18,7 @@ interface AccessibleButtonProps {
   label: string;
   onPress: () => void;
   color?: string;
+  textColor?: string;
   style?: StyleProp<ViewStyle>;
   disabled?: boolean;
 }
@@ -27,6 +28,7 @@ export function AccessibleButton({
   label,
   onPress,
   color = '#10b981',
+  textColor = '#fff',
   style,
   disabled,
 }: AccessibleButtonProps) {
@@ -70,8 +72,8 @@ export function AccessibleButton({
           easyMode && styles.buttonEasy,
         ]}
       >
-        <Ionicons name={icon} size={easyMode ? 32 : 24} color="#fff" />
-        <Text style={[styles.label, easyMode && styles.labelEasy]}>{label}</Text>
+        <Ionicons name={icon} size={easyMode ? 32 : 24} color={textColor} />
+        <Text style={[styles.label, easyMode && styles.labelEasy, { color: textColor }]}>{label}</Text>
       </Animated.View>
     </Pressable>
   );

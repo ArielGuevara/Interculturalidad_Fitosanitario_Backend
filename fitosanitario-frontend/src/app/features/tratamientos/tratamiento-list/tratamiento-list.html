@@ -5,7 +5,7 @@
         <h2 class="title m-0">Tratamientos Oficiales</h2>
         <p class="subtitle m-0">Recetas técnicas validadas por moderadores y agrónomos.</p>
     </div>
-    <p-button label="Actualizar" icon="pi pi-refresh" styleClass="p-button-success border-round-2xl py-3 px-5 shadow-3" (onClick)="loadTratamientos()"></p-button>
+    <p-button label="Nuevo tratamiento" icon="pi pi-plus" styleClass="p-button-success border-round-2xl py-3 px-5 shadow-3 font-bold" (onClick)="openNewForm()"></p-button>
 </div>
 
 <div class="stats-grid">
@@ -38,23 +38,32 @@
              styleClass="premium-table">
         <ng-template pTemplate="header">
             <tr>
-                <th>Tratamiento</th>
-                <th>Cultivo</th>
+                <th>Nombre</th>
+                <th>Cultivos</th>
                 <th>Plaga</th>
                 <th>Producto</th>
                 <th>Dosis</th>
                 <th>Seguridad</th>
                 <th>Validación</th>
-                <th style="width: 120px" class="text-center">Acción</th>
+                <th style="width: 140px" class="text-center">Acción</th>
             </tr>
         </ng-template>
         <ng-template pTemplate="body" let-tratamiento>
             <tr>
                 <td>
-                    <div class="treatment-id">#{{tratamiento.id}}</div>
+                    <div class="treatment-name">{{tratamiento.nombre || 'Tratamiento #' + tratamiento.id}}</div>
                     <p-tag [value]="metodoLabel(tratamiento.metodoAplicacion)" [severity]="metodoSeverity(tratamiento.metodoAplicacion)"></p-tag>
                 </td>
-                <td>{{tratamiento.cultivo?.nombre || 'Cultivo #' + tratamiento.cultivoId}}</td>
+                <td>
+                    <ng-container *ngIf="tratamiento.cultivos?.length; else cultivoUnico">
+                        <div class="flex flex-wrap gap-1">
+                            <p-tag *ngFor="let c of tratamiento.cultivos" [value]="c.nombre" severity="info" styleClass="text-xs py-1"></p-tag>
+                        </div>
+                    </ng-container>
+                    <ng-template #cultivoUnico>
+                        {{tratamiento.cultivo?.nombre || 'Cultivo #' + tratamiento.cultivoId}}
+                    </ng-template>
+                </td>
                 <td>
                     <div class="font-black text-slate-900">{{tratamiento.plaga?.nombre || 'Plaga #' + tratamiento.plagaId}}</div>
                     <small>{{tratamiento.plaga?.tipo || 'Sin tipo'}}</small>
@@ -76,8 +85,10 @@
                     <small>{{tratamiento.moderador?.nombre || 'Moderador'}}</small>
                 </td>
                 <td>
-                    <div class="flex justify-content-center">
+                    <div class="flex justify-content-center gap-2">
                         <p-button icon="pi pi-eye" styleClass="btn-icon" (onClick)="openDetail(tratamiento)"></p-button>
+                        <p-button icon="pi pi-pencil" styleClass="btn-icon p-button-warning" (onClick)="openEditForm(tratamiento)"></p-button>
+                        <p-button icon="pi pi-trash" styleClass="btn-icon p-button-danger" (onClick)="confirmDelete(tratamiento)"></p-button>
                     </div>
                 </td>
             </tr>
@@ -96,30 +107,68 @@
     </p-table>
 </div>
 
-<p-dialog [(visible)]="detailDialog" [modal]="true" [style]="{width: '780px', maxWidth: '96vw'}" styleClass="custom-dialog" [draggable]="false" [resizable]="false" [dismissableMask]="true" header="Detalle del tratamiento">
+<p-dialog [(visible)]="detailDialog" [modal]="true" [style]="{width: '860px', maxWidth: '96vw'}" styleClass="custom-dialog" [draggable]="false" [resizable]="false" [dismissableMask]="true" header="Detalle del tratamiento">
     <ng-container *ngIf="selectedTratamiento() as t">
         <div class="detail-card">
-            <div class="detail-head">
-                <div>
-                    <span>Tratamiento oficial #{{t.id}}</span>
-                    <h3>{{t.producto?.nombreComercial || 'Producto #' + t.productoId}}</h3>
-                    <p>{{t.cultivo?.nombre || 'Cultivo #' + t.cultivoId}} · {{t.plaga?.nombre || 'Plaga #' + t.plagaId}}</p>
-                </div>
-                <p-tag [value]="metodoLabel(t.metodoAplicacion)" [severity]="metodoSeverity(t.metodoAplicacion)"></p-tag>
+            <!-- ID secundario (gris, pequeño) -->
+            <span style="font-size: 0.75rem; color: #94a3b8; font-weight: 500;">Tratamiento Oficial #{{t.id}}</span>
+
+            <!-- Nombre — elemento principal -->
+            <h3 style="font-size: 1.5rem; font-weight: 900; color: #059669; margin: 4px 0 10px; line-height: 1.3;">
+                {{t.nombre || t.producto?.nombreComercial || 'Tratamiento #' + t.id}}
+            </h3>
+
+            <!-- Cultivos + Plaga como chips -->
+            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 12px;">
+                <ng-container *ngIf="t.cultivos?.length; else detalleCultivoUnico">
+                    <span style="font-size: 0.75rem; font-weight: 700; color: #059669; letter-spacing: 0.5px;">{{t.cultivos!.map(c => c.nombre.toUpperCase()).join(' • ')}}</span>
+                </ng-container>
+                <ng-template #detalleCultivoUnico>
+                    <span style="font-size: 0.75rem; font-weight: 700; color: #059669; letter-spacing: 0.5px;">{{(t.cultivo?.nombre || '').toUpperCase()}}</span>
+                </ng-template>
+                <span *ngIf="t.plaga" style="font-size: 1rem; color: #059669; font-weight: 700;">·</span>
+                <span *ngIf="t.plaga" style="font-size: 0.75rem; font-weight: 700; color: #dc2626; letter-spacing: 0.5px;">{{t.plaga.nombre.toUpperCase()}}</span>
             </div>
 
+            <!-- Descripción -->
+            <div *ngIf="t.descripcion" style="background: #f0fdf4; border-radius: 12px; padding: 14px; margin-bottom: 16px;">
+                <p style="font-size: 0.9rem; color: #166534; line-height: 1.6; margin: 0;">{{t.descripcion}}</p>
+            </div>
+
+            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 0 0 16px;">
+
+            <!-- Información técnica -->
             <div class="detail-grid">
-                <div><span>Dosis</span><strong>{{t.dosis}} {{t.unidadDosis}}</strong></div>
-                <div><span>Aplicaciones</span><strong>{{t.numeroAplicaciones}}</strong></div>
-                <div><span>Intervalo</span><strong>{{t.intervaloDias}} días</strong></div>
-                <div><span>Duración</span><strong>{{t.duracionTotalDias}} días</strong></div>
-                <div><span>Días carencia</span><strong>{{t.diasCarencia}}</strong></div>
-                <div><span>Enciclopedia</span><strong>{{t.enEnciclopedia ? 'Sí' : 'No'}}</strong></div>
+                <div><span><i class="pi pi-box" style="margin-right: 6px;"></i> Medicamento</span><strong>{{t.producto?.nombreComercial || '—'}}</strong></div>
+                <div><span><i class="pi pi-send" style="margin-right: 6px;"></i> Método de aplicación</span><strong>{{metodoLabel(t.metodoAplicacion)}}</strong></div>
+                <div><span><i class="pi pi-flask" style="margin-right: 6px;"></i> Dosis</span><strong>{{t.dosis}} {{t.unidadDosis}}</strong></div>
+                <div *ngIf="t.volumenAgua"><span><i class="pi pi-drop" style="margin-right: 6px;"></i> Volumen de agua</span><strong>{{t.volumenAgua}} {{t.unidadVolumen || 'L'}}</strong></div>
+                <div><span><i class="pi pi-calendar" style="margin-right: 6px;"></i> Aplicaciones</span><strong>{{t.numeroAplicaciones}}</strong></div>
+                <div><span><i class="pi pi-clock" style="margin-right: 6px;"></i> Intervalo</span><strong>{{t.intervaloDias}} día(s)</strong></div>
+                <div><span><i class="pi pi-hourglass" style="margin-right: 6px;"></i> Duración total</span><strong>{{t.duracionTotalDias}} día(s)</strong></div>
+                <div><span><i class="pi pi-ban" style="margin-right: 6px;"></i> Días de carencia</span><strong>{{t.diasCarencia}}</strong></div>
+                <div *ngIf="t.periodoReingresoHoras != null"><span><i class="pi pi-stopwatch" style="margin-right: 6px;"></i> Reingreso</span><strong>{{t.periodoReingresoHoras}} h</strong></div>
+                <div *ngIf="t.etapaCultivo"><span><i class="pi pi-leaf" style="margin-right: 6px;"></i> Etapa del cultivo</span><strong>{{t.etapaCultivo}}</strong></div>
+                <div><span><i class="pi pi-book" style="margin-right: 6px;"></i> Enciclopedia</span><strong>{{t.enEnciclopedia ? 'Sí' : 'No'}}</strong></div>
+                <div class="detail-full" *ngIf="t.condicionesAplicacion"><span><i class="pi pi-sun" style="margin-right: 6px;"></i> Condiciones de aplicación</span><strong>{{t.condicionesAplicacion}}</strong></div>
             </div>
 
             <div class="detail-footer">
                 <span>Validado por {{t.moderador?.nombre || 'moderador'}} el {{t.fechaValidacion | date:'medium'}}</span>
+                <span *ngIf="t.fechaUltimaActualizacion"> · Actualizado {{t.fechaUltimaActualizacion | date:'medium'}}</span>
             </div>
         </div>
     </ng-container>
 </p-dialog>
+
+<p-dialog [(visible)]="showForm" [modal]="true" [style]="{width: '900px', maxWidth: '96vw'}" styleClass="custom-dialog" [draggable]="false" [resizable]="false" [dismissableMask]="true" [header]="editando() ? 'Editar tratamiento oficial' : 'Nuevo tratamiento oficial'" (onHide)="onFormCancelado()">
+    <app-tratamiento-form
+        *ngIf="showForm()"
+        [tratamientoExistente]="editando()"
+        [submitLabel]="editando() ? 'Actualizar tratamiento' : 'Crear tratamiento'"
+        (saved)="onTratamientoGuardado($event)"
+        (cancelled)="onFormCancelado()">
+    </app-tratamiento-form>
+</p-dialog>
+
+<p-confirmdialog></p-confirmdialog>

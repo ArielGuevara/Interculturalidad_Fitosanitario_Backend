@@ -35,6 +35,7 @@ export const envConfig = () => ({
   },
   firebase: {
     serviceAccountPath: process.env.FIREBASE_SERVICE_ACCOUNT_PATH || '',
+    serviceAccountJson: process.env.FIREBASE_SERVICE_ACCOUNT_JSON || '',
   },
   uploads: {
     // Límites por archivo (en bytes). Si no se setean, se usan defaults seguros en código.

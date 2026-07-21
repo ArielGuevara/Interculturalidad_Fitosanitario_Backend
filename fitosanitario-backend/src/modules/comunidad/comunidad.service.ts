@@ -137,7 +137,7 @@ export class ComunidadService {
   async createComentario(
     recomendacionId: number,
     usuarioId: number,
-    dto: CreateComentarioDto & { audioUrl?: string | null },
+    dto: CreateComentarioDto & { audioUrl?: string | null; imagenUrl?: string | null },
   ) {
     const recomendacion =
       await this.comunidadRepo.findRecomendacionById(recomendacionId);
@@ -154,11 +154,6 @@ export class ComunidadService {
       if (!padre || !padre.activo) {
         throw new NotFoundException(
           'El comentario al que intentas responder no existe',
-        );
-      }
-      if (padre.comentarioPadreId) {
-        throw new BadRequestException(
-          'Solo se permite un nivel de respuestas anidadas',
         );
       }
     }
@@ -188,10 +183,13 @@ export class ComunidadService {
     return this.comunidadRepo.findComentariosByRecomendacion(recomendacionId);
   }
 
-  async desactivarComentario(id: number, moderadorId: number) {
+  async desactivarComentario(id: number, usuarioId: number, userRol: string) {
     const comentario = await this.comunidadRepo.findComentarioById(id);
     if (!comentario)
       throw new NotFoundException(`Comentario #${id} no encontrado`);
-    return this.comunidadRepo.desactivarComentario(id, moderadorId);
+    if (comentario.usuarioId !== usuarioId && userRol !== 'MODERADOR' && userRol !== 'ADMIN') {
+      throw new ForbiddenException('No tienes permiso para eliminar este comentario');
+    }
+    return this.comunidadRepo.desactivarComentario(id, usuarioId);
   }
 }

@@ -21,6 +21,7 @@ import { getCache, setCache } from '../../../infrastructure/offline/cache';
 import { SearchBar } from '../../../presentation/components/SearchBar';
 
 const CACHE_KEY = 'productos.list';
+const PAGE_SIZE = 5;
 
 export function ProductosScreen() {
   const [items, setItems] = useState<Producto[]>([]);
@@ -32,6 +33,7 @@ export function ProductosScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPlagaId, setSelectedPlagaId] = useState<number | null>(null);
   const [selectedCultivoId, setSelectedCultivoId] = useState<number | null>(null);
+  const [page, setPage] = useState(1);
 
   const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
@@ -59,6 +61,11 @@ export function ProductosScreen() {
       (i.tipo && normalize(i.tipo.toLowerCase()).includes(q))
     );
   }, [filteredByCultivo, searchQuery]);
+
+  const displayedItems = useMemo(() => filteredItems.slice(0, page * PAGE_SIZE), [filteredItems, page]);
+  const hasMore = displayedItems.length < filteredItems.length;
+
+  useEffect(() => { setPage(1); }, [searchQuery, selectedPlagaId, selectedCultivoId]);
 
   const loadData = async (isRefreshing = false) => {
     if (isRefreshing) setRefreshing(true);
@@ -198,12 +205,17 @@ export function ProductosScreen() {
         </View>
       ) : (
         <FlatList
-          data={filteredItems}
+          data={displayedItems}
           keyExtractor={(i) => String(i.id)}
           renderItem={renderItem}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={renderEmptyComponent}
+          ListFooterComponent={hasMore ? (
+            <Pressable style={styles.loadMoreBtn} onPress={() => setPage(p => p + 1)}>
+              <Text style={styles.loadMoreText}>Ver más ({filteredItems.length - displayedItems.length} restantes)</Text>
+            </Pressable>
+          ) : null}
           refreshControl={
             <RefreshControl 
               refreshing={refreshing} 
@@ -215,48 +227,50 @@ export function ProductosScreen() {
         />
       )}
 
-      <Modal visible={selectedItem !== null} animationType="fade" transparent>
-        <View style={styles.modalOverlay}>
-          <ScrollView contentContainerStyle={styles.modalContent}>
-            <Text style={styles.modalTitle}>{selectedItem?.nombreComercial}</Text>
-            {selectedItem?.tipo && (
-              <View style={styles.modalBadge}><Text style={styles.modalBadgeText}>{selectedItem.tipo}</Text></View>
-            )}
-            {!!selectedItem?.ingredienteActivo && (
-              <Text style={styles.modalDetail}><Text style={styles.modalLabel}>Activo:</Text> {selectedItem.ingredienteActivo}</Text>
-            )}
-            {!!selectedItem?.unidadBase && (
-              <Text style={styles.modalDetail}><Text style={styles.modalLabel}>Presentación:</Text> {selectedItem.unidadBase}</Text>
-            )}
+      <Modal visible={selectedItem !== null} animationType="fade" transparent onRequestClose={() => setSelectedItem(null)}>
+        <Pressable style={styles.modalOverlay} onPress={() => setSelectedItem(null)}>
+          <Pressable style={styles.modalContent} onPress={() => {}}>
+            <ScrollView contentContainerStyle={styles.modalContentInner}>
+              <Text style={styles.modalTitle}>{selectedItem?.nombreComercial}</Text>
+              {selectedItem?.tipo && (
+                <View style={styles.modalBadge}><Text style={styles.modalBadgeText}>{selectedItem.tipo}</Text></View>
+              )}
+              {!!selectedItem?.ingredienteActivo && (
+                <Text style={styles.modalDetail}><Text style={styles.modalLabel}>Activo:</Text> {selectedItem.ingredienteActivo}</Text>
+              )}
+              {!!selectedItem?.unidadBase && (
+                <Text style={styles.modalDetail}><Text style={styles.modalLabel}>Presentación:</Text> {selectedItem.unidadBase}</Text>
+              )}
 
-            {selectedItem?.pairs && selectedItem.pairs.length > 0 && (
-              <>
-                <Text style={styles.modalSectionTitle}>Plagas / Cultivos Asociados</Text>
-                {(() => {
-                  const grouped = new Map<number, { nombre: string; cultivos: string[] }>();
-                  for (const p of selectedItem.pairs) {
-                    if (!grouped.has(p.plagaId)) grouped.set(p.plagaId, { nombre: p.plagaNombre, cultivos: [] });
-                    grouped.get(p.plagaId)!.cultivos.push(p.cultivoNombre);
-                  }
-                  return Array.from(grouped.entries()).map(([plagaId, g]) => (
-                    <View key={plagaId} style={styles.modalPairGroup}>
-                      <Text style={styles.modalPlagaName}>{g.nombre}</Text>
-                      <View style={styles.modalChipRow}>
-                        {g.cultivos.map(cn => (
-                          <View key={cn} style={styles.modalChip}><Text style={styles.modalChipText}>{cn}</Text></View>
-                        ))}
+              {selectedItem?.pairs && selectedItem.pairs.length > 0 && (
+                <>
+                  <Text style={styles.modalSectionTitle}>Plagas / Cultivos Asociados</Text>
+                  {(() => {
+                    const grouped = new Map<number, { nombre: string; cultivos: string[] }>();
+                    for (const p of selectedItem.pairs) {
+                      if (!grouped.has(p.plagaId)) grouped.set(p.plagaId, { nombre: p.plagaNombre, cultivos: [] });
+                      grouped.get(p.plagaId)!.cultivos.push(p.cultivoNombre);
+                    }
+                    return Array.from(grouped.entries()).map(([plagaId, g]) => (
+                      <View key={plagaId} style={styles.modalPairGroup}>
+                        <Text style={styles.modalPlagaName}>{g.nombre}</Text>
+                        <View style={styles.modalChipRow}>
+                          {g.cultivos.map(cn => (
+                            <View key={cn} style={styles.modalChip}><Text style={styles.modalChipText}>{cn}</Text></View>
+                          ))}
+                        </View>
                       </View>
-                    </View>
-                  ));
-                })()}
-              </>
-            )}
+                    ));
+                  })()}
+                </>
+              )}
 
-            <Pressable style={styles.modalCloseBtn} onPress={() => setSelectedItem(null)}>
-              <Text style={styles.modalCloseText}>Cerrar</Text>
-            </Pressable>
-          </ScrollView>
-        </View>
+              <Pressable style={styles.modalCloseBtn} onPress={() => setSelectedItem(null)}>
+                <Text style={styles.modalCloseText}>Cerrar</Text>
+              </Pressable>
+            </ScrollView>
+          </Pressable>
+        </Pressable>
       </Modal>
     </SafeAreaView>
   );
@@ -433,6 +447,22 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
 
+  loadMoreBtn: {
+    paddingVertical: 14,
+    alignItems: 'center',
+    backgroundColor: '#f0f9ff',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#bae6fd',
+    marginTop: 4,
+    marginBottom: 16,
+  },
+  loadMoreText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0284c7',
+  },
+
   loadingContainer: {
     flex: 1,
     alignItems: 'center',
@@ -465,20 +495,23 @@ const styles = StyleSheet.create({
 
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
-    padding: 24,
+    padding: 40,
   },
   modalContent: {
     backgroundColor: '#fff',
     borderRadius: 20,
-    padding: 24,
+    maxHeight: '70%',
+  },
+  modalContentInner: {
+    padding: 20,
   },
   modalTitle: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: '800',
     color: '#0f172a',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   modalBadge: {
     backgroundColor: '#f1f5f9',
@@ -486,7 +519,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 8,
     alignSelf: 'flex-start',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   modalBadgeText: {
     fontSize: 12,
@@ -496,24 +529,24 @@ const styles = StyleSheet.create({
   modalDetail: {
     fontSize: 14,
     color: '#334155',
-    lineHeight: 22,
+    lineHeight: 20,
   },
   modalLabel: {
     fontWeight: '700',
     color: '#0f172a',
   },
   modalSectionTitle: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '800',
     color: '#0f172a',
-    marginTop: 16,
-    marginBottom: 8,
+    marginTop: 12,
+    marginBottom: 6,
   },
   modalPairGroup: {
-    marginBottom: 12,
+    marginBottom: 8,
     backgroundColor: '#f8fafc',
     borderRadius: 12,
-    padding: 12,
+    padding: 10,
   },
   modalPlagaName: {
     fontSize: 15,
@@ -542,13 +575,13 @@ const styles = StyleSheet.create({
   modalCloseBtn: {
     backgroundColor: '#059669',
     borderRadius: 12,
-    paddingVertical: 14,
+    paddingVertical: 12,
     alignItems: 'center',
-    marginTop: 16,
+    marginTop: 12,
   },
   modalCloseText: {
     color: '#fff',
     fontWeight: '700',
-    fontSize: 16,
+    fontSize: 15,
   },
 });

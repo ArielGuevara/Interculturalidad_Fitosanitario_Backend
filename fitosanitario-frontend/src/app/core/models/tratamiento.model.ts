@@ -3,7 +3,8 @@ export type MetodoAplicacion = 'FOLIAR' | 'SUELO' | 'RIEGO';
 export interface CreateTratamientoDto {
     reporteId?: number;
     recomendacionOrigenId?: number;
-    cultivoId: number;
+    cultivoId?: number;
+    cultivoIds?: number[];
     plagaId: number;
     productoId: number;
     dosis: number;
@@ -19,6 +20,8 @@ export interface CreateTratamientoDto {
     etapaCultivo?: string;
     condicionesAplicacion?: string;
     enEnciclopedia?: boolean;
+    nombre?: string;
+    descripcion?: string;
 }
 
 export interface TratamientoOficial extends CreateTratamientoDto {
@@ -26,6 +29,10 @@ export interface TratamientoOficial extends CreateTratamientoDto {
     moderadorId?: number;
     fechaValidacion: string;
     fechaUltimaActualizacion?: string;
+    cultivos?: {
+        id: number;
+        nombre: string;
+    }[];
     cultivo?: {
         id: number;
         nombre: string;

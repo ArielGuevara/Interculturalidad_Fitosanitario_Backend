@@ -1,144 +1,653 @@
 <p-toast></p-toast>
 <p-confirmDialog></p-confirmDialog>
 
-<div class="page-header flex flex-column md:flex-row justify-content-between align-items-end gap-4">
-    <div>
-        <h2 class="title m-0">Moderación Comunitaria</h2>
-        <p class="subtitle m-0">Revisión de recomendaciones, consultas y conocimiento ancestral.</p>
-    </div>
-    <div class="flex gap-3 align-items-center">
-        <p-select [options]="tipos" optionLabel="label" optionValue="value" [ngModel]="selectedTipo()" (ngModelChange)="onTipoChange($event)" placeholder="Filtrar" styleClass="filter-select"></p-select>
-        <p-button label="Actualizar" icon="pi pi-refresh" styleClass="p-button-success border-round-2xl py-3 px-5 shadow-3" (onClick)="loadRecomendaciones()"></p-button>
-    </div>
+<div class="page-header">
+    <h2 class="title">Moderación Comunitaria</h2>
+    <p class="subtitle">Revise y administre las publicaciones del sistema.</p>
 </div>
 
-<div class="table-wrapper">
-    <p-table [value]="recomendaciones()" [loading]="loading()" [rows]="10" [paginator]="true" responsiveLayout="stack" [breakpoint]="'960px'" styleClass="premium-table">
-        <ng-template pTemplate="header">
-            <tr>
-                <th>Contenido</th>
-                <th>Autor</th>
-                <th>Contexto</th>
-                <th>Valoración</th>
-                <th>Estado</th>
-                <th style="width: 280px" class="text-center">Acciones</th>
-            </tr>
-        </ng-template>
-        <ng-template pTemplate="body" let-rec>
-            <tr>
-                <td>
-                    <div class="font-black text-xl text-slate-900">{{rec.titulo}}</div>
-                    <p class="rec-desc">{{rec.descripcion}}</p>
-                    <p-tag [value]="tipoLabel(rec.tipo)" severity="info"></p-tag>
-                </td>
-                <td>{{rec.usuario?.nombre || 'Anónimo'}}</td>
-                <td>
-                    <div class="context-pill">{{rec.cultivo?.nombre || 'Todos los cultivos'}}</div>
-                    <div class="context-sub">{{rec.plaga?.nombre || 'Sin plaga específica'}}</div>
-                </td>
-                <td>
-                    <div class="rating"><i class="pi pi-star-fill"></i> {{rec.valoracionPromedio | number:'1.1-1'}}</div>
-                    <small>{{rec.totalValoraciones}} valoraciones</small>
-                </td>
-                <td>
-                    <p-tag [value]="rec.moderado ? 'Revisada' : 'Pendiente'" [severity]="rec.moderado ? 'success' : 'warn'"></p-tag>
-                </td>
-                <td>
-                    <div class="flex justify-content-center gap-2 flex-wrap">
-                        <p-button icon="pi pi-check" styleClass="btn-icon" pTooltip="Marcar revisada" (onClick)="aprobar(rec)"></p-button>
-                        <p-button icon="pi pi-comments" styleClass="btn-icon btn-comments" pTooltip="Ver comentarios" (onClick)="verComentarios(rec)"></p-button>
-                        <p-button icon="pi pi-file-edit" styleClass="btn-icon btn-convert" pTooltip="Convertir en tratamiento" (onClick)="usarComoTratamiento(rec)"></p-button>
-                        <p-button [icon]="rec.activo ? 'pi pi-lock' : 'pi pi-lock-open'" [styleClass]="'btn-icon ' + (rec.activo ? 'btn-warning' : 'btn-success')" [pTooltip]="rec.activo ? 'Deshabilitar foro' : 'Habilitar foro'" (onClick)="toggleActivo(rec)"></p-button>
-                        <p-button icon="pi pi-trash" styleClass="btn-icon btn-delete" pTooltip="Desactivar" (onClick)="eliminar(rec)"></p-button>
-                    </div>
-                </td>
-            </tr>
-            <tr style="height: 1rem; background: transparent !important" class="spacer-row"></tr>
-        </ng-template>
-        <ng-template pTemplate="emptymessage">
-            <tr>
-                <td colspan="6" class="text-center p-8 bg-white border-round-3xl">
-                    <div class="flex flex-column align-items-center gap-3">
-                        <i class="pi pi-comments text-5xl text-slate-200"></i>
-                        <span class="text-slate-400 font-bold text-lg">No hay publicaciones comunitarias.</span>
-                    </div>
-                </td>
-            </tr>
-        </ng-template>
-    </p-table>
+<!-- Tabs -->
+<div class="tabs-bar">
+    <button class="tab-btn" [class.active]="tabActivo() === 'foro'" (click)="switchTab('foro')">
+        <i class="pi pi-comments"></i> Foro
+    </button>
+    <button class="tab-btn" [class.active]="tabActivo() === 'saberes'" (click)="switchTab('saberes')">
+        <i class="pi pi-leaf"></i> Saberes Ancestrales
+    </button>
 </div>
 
-<p-dialog [(visible)]="treatmentDialog" [modal]="true" [style]="{width: '900px', maxWidth: '96vw'}" styleClass="custom-dialog" [draggable]="false" [resizable]="false" [dismissableMask]="true" header="Convertir recomendación en tratamiento oficial">
-    <ng-container *ngIf="selectedRecomendacion() as rec">
-        <div class="source-card">
-            <strong>{{rec.titulo}}</strong>
-            <p>{{rec.descripcion}}</p>
-            <div class="context-warning" *ngIf="!rec.cultivo?.id || !rec.plaga?.id">
-                <i class="pi pi-info-circle"></i>
-                Esta recomendación no tiene cultivo o plaga completos. Selecciónelos manualmente en el formulario.
-            </div>
+<!-- ═══════════════ TAB: FORO ═══════════════ -->
+@if (tabActivo() === 'foro') {
+<div class="tab-content">
+    <div class="toolbar">
+        <div class="toolbar-left">
+            <p-select [options]="tiposForo" optionLabel="label" optionValue="value" [(ngModel)]="filtroTipoForo" placeholder="Filtrar tipo" styleClass="filter-select" (ngModelChange)="loadRecomendaciones()"></p-select>
         </div>
-        <app-tratamiento-form
-            [recomendacionOrigenId]="rec.id"
-            [cultivoId]="rec.cultivo?.id"
-            [plagaId]="rec.plaga?.id"
-            submitLabel="Crear tratamiento oficial"
-            (saved)="onTratamientoSaved()"
-            (cancelled)="treatmentDialog.set(false)">
-        </app-tratamiento-form>
-    </ng-container>
+        <div class="toolbar-right">
+            <p-button label="Actualizar" icon="pi pi-refresh" styleClass="p-button-success border-round-2xl py-3 px-5 shadow-3" (onClick)="loadRecomendaciones()"></p-button>
+        </div>
+    </div>
+
+    <div class="table-wrapper">
+        <p-table [value]="recomendaciones()" [loading]="loading()" [rows]="10" [paginator]="true" responsiveLayout="stack" [breakpoint]="'960px'" styleClass="premium-table">
+            <ng-template pTemplate="header">
+                <tr>
+                    <th>Contenido</th>
+                    <th>Autor</th>
+                    <th>Contexto</th>
+                    <th>Estado</th>
+                    <th>Vence</th>
+                    <th style="width: 320px" class="text-center">Acciones</th>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-rec>
+                <tr>
+                    <td>
+                        <div class="font-black text-xl text-slate-900">{{rec.titulo}}</div>
+                        <p class="rec-desc">{{rec.descripcion}}</p>
+                        <p-tag [value]="tipoLabel(rec.tipo)" severity="info"></p-tag>
+                    </td>
+                    <td>{{rec.usuario?.nombre || 'Anónimo'}}</td>
+                    <td>
+                        <div class="context-pill">{{rec.cultivo?.nombre || 'Todos los cultivos'}}</div>
+                        <div class="context-sub">{{rec.plaga?.nombre || 'Sin plaga específica'}}</div>
+                    </td>
+                    <td>
+                        @if (rec.motivoRechazo) {
+                            <p-tag value="Rechazado" severity="danger"></p-tag>
+                        } @else if (rec.moderado) {
+                            <p-tag value="Publicado" severity="success"></p-tag>
+                        } @else {
+                            <p-tag value="Pendiente" severity="warn"></p-tag>
+                        }
+                    </td>
+                    <td>
+                        @if (rec.fechaExpiracion) {
+                            <span class="text-sm text-slate-600">{{ rec.fechaExpiracion | date:'dd/MM/yyyy' }}</span>
+                        } @else {
+                            <span class="text-sm text-slate-400">&mdash;</span>
+                        }
+                    </td>
+                    <td>
+                        <div class="flex justify-content-center gap-2 flex-wrap">
+                            @if (!rec.moderado && !rec.motivoRechazo) {
+                                <p-button icon="pi pi-check" styleClass="btn-icon btn-approve" pTooltip="Aprobar" (onClick)="abrirAprobarForo(rec)"></p-button>
+                                <p-button icon="pi pi-times" styleClass="btn-icon btn-reject" pTooltip="Rechazar" (onClick)="abrirRechazarForo(rec)"></p-button>
+                            }
+                            <p-button icon="pi pi-eye" styleClass="btn-icon btn-view" pTooltip="Ver Foro" (onClick)="verForo(rec)"></p-button>
+                            <p-button icon="pi pi-pencil" styleClass="btn-icon btn-edit" pTooltip="Editar" (onClick)="abrirEditarForo(rec)"></p-button>
+                            <p-button icon="pi pi-trash" styleClass="btn-icon btn-delete" pTooltip="Eliminar" (onClick)="eliminar(rec)"></p-button>
+                        </div>
+                    </td>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="emptymessage">
+                <tr>
+                    <td colspan="6" class="text-center p-8 bg-white border-round-3xl">
+                        <div class="flex flex-column align-items-center gap-3">
+                            <i class="pi pi-comments text-5xl text-slate-200"></i>
+                            <span class="text-slate-400 font-bold text-lg">No hay publicaciones en el foro.</span>
+                        </div>
+                    </td>
+                </tr>
+            </ng-template>
+        </p-table>
+    </div>
+</div>
+}
+
+<!-- ── DIALOG: Aprobar Foro ── -->
+<p-dialog header="Aprobar Publicaci&oacute;n" [(visible)]="dialogAprobarForo" [modal]="true" styleClass="info-dialog" (onHide)="selectedForo.set(null)">
+    @if (selectedForo(); as foro) {
+    <div class="dialog-body">
+        <div class="dialog-icon" style="background:linear-gradient(135deg,#a7f3d0,#d1fae5);color:#16a34a">
+            <i class="pi pi-check-circle"></i>
+        </div>
+        <p class="dialog-desc">La publicaci&oacute;n <strong>"{{foro.titulo}}"</strong> se publicar&aacute; para todos los usuarios.</p>
+        <div class="dialog-filtro">
+            <label>Duraci&oacute;n en d&iacute;as h&aacute;biles</label>
+            <p-inputNumber [(ngModel)]="duracionDiasForo" [min]="1" [showButtons]="true" [style]="{'width':'100%'}"></p-inputNumber>
+            @if (foroDuracionDiasError) {
+                <small class="field-error">Debe ser al menos 1 d&iacute;a h&aacute;bil.</small>
+            }
+        </div>
+    </div>
+    <div class="dialog-actions">
+        <p-button label="Cancelar" severity="secondary" (click)="dialogAprobarForo = false; foroDuracionDiasError = false" />
+        <p-button label="Publicar" icon="pi pi-check" (click)="aprobarForo()" [loading]="cargandoAprobarForo" />
+    </div>
+    }
 </p-dialog>
 
-<p-dialog [(visible)]="commentsDialog" [modal]="true" [style]="{width: '760px', maxWidth: '96vw'}" styleClass="custom-dialog" [draggable]="false" [resizable]="false" [dismissableMask]="true" header="Moderación de comentarios">
-    <ng-container *ngIf="selectedComentariosRecomendacion() as rec">
-        <div class="source-card comments-source">
-            <span class="source-label">Publicación</span>
-            <strong>{{rec.titulo}}</strong>
-            <p>{{rec.descripcion}}</p>
+<!-- ── DIALOG: Rechazar Foro ── -->
+<p-dialog header="Rechazar Publicaci&oacute;n" [(visible)]="dialogRechazarForo" [modal]="true" styleClass="info-dialog" (onHide)="selectedForo.set(null)">
+    @if (selectedForo(); as foro) {
+    <div class="dialog-body">
+        <div class="dialog-icon" style="background:linear-gradient(135deg,#fee2e2,#fecaca);color:#dc2626">
+            <i class="pi pi-times-circle"></i>
         </div>
-
-        <div *ngIf="loadingComentarios(); else commentsContent" class="comments-loading">
-            <i class="pi pi-spin pi-spinner text-3xl text-primary"></i>
-            <span>Cargando comentarios...</span>
+        <p class="dialog-desc">La publicaci&oacute;n <strong>"{{foro.titulo}}"</strong> ser&aacute; rechazada. El autor recibir&aacute; una notificaci&oacute;n con el motivo.</p>
+        <div class="dialog-filtro">
+            <label>Motivo del rechazo *</label>
+            <textarea pTextarea [(ngModel)]="motivoRechazoForo" rows="4" placeholder="Escriba el motivo por el cual se rechaza esta publicaci&oacute;n..." [style]="{'width':'100%'}"></textarea>
+            @if (foroMotivoRechazoError) {
+                <small class="field-error">Debe escribir un motivo para rechazar.</small>
+            }
         </div>
+    </div>
+    <div class="dialog-actions">
+        <p-button label="Cancelar" severity="secondary" (click)="dialogRechazarForo = false; foroMotivoRechazoError = false" />
+        <p-button label="Rechazar" icon="pi pi-times" severity="danger" (click)="rechazarForo()" [loading]="cargandoRechazarForo" />
+    </div>
+    }
+</p-dialog>
 
-        <ng-template #commentsContent>
-            <div class="comments-list" *ngIf="comentarios().length; else noComments">
-                <div class="comment-card" *ngFor="let comentario of comentarios()">
-                    <div class="comment-main">
-                        <div class="comment-avatar">{{(comentario.usuario?.nombre || 'A').charAt(0)}}</div>
-                        <div class="comment-body">
-                            <div class="comment-head">
-                                <strong>{{comentario.usuario?.nombre || 'Anónimo'}}</strong>
-                                <small>{{comentario.fechaComentario | date:'short'}}</small>
-                            </div>
-                            <p>{{comentario.contenido}}</p>
-                        </div>
-                        <p-button icon="pi pi-trash" styleClass="btn-icon btn-delete" pTooltip="Desactivar comentario" (onClick)="eliminarComentario(comentario)"></p-button>
-                    </div>
+<!-- ═══════════════ TAB: SABERES ANCESTRALES ═══════════════ -->
+@if (tabActivo() === 'saberes') {
+<div class="tab-content">
+    <div class="toolbar">
+        <div class="toolbar-left">
+            <span class="p-input-icon-left search-box">
+                <i class="pi pi-search"></i>
+                <input pInputText type="text" [(ngModel)]="filtroQ" (ngModelChange)="loadSaberes()" placeholder="Buscar saber ancestral..." class="search-input" />
+            </span>
+            <p-select [options]="estadosOptions" optionLabel="label" optionValue="value" [(ngModel)]="filtroEstado" placeholder="Estado" styleClass="filter-select" (ngModelChange)="loadSaberes()"></p-select>
+            <p-select [options]="cultivosList" optionLabel="nombre" optionValue="id" [(ngModel)]="filtroCultivoId" placeholder="Cultivo" styleClass="filter-select" (ngModelChange)="loadSaberes()" [showClear]="true"></p-select>
+            <p-select [options]="plagasList" optionLabel="nombre" optionValue="id" [(ngModel)]="filtroPlagaId" placeholder="Plaga" styleClass="filter-select" (ngModelChange)="loadSaberes()" [showClear]="true"></p-select>
+        </div>
+        <div class="toolbar-right">
+            <p-button label="Actualizar" icon="pi pi-refresh" styleClass="p-button-success border-round-2xl py-3 px-5 shadow-3" (onClick)="loadSaberes()"></p-button>
+        </div>
+    </div>
 
-                    <div class="reply-list" *ngIf="comentario.respuestas?.length">
-                        <div class="reply-card" *ngFor="let respuesta of comentario.respuestas">
-                            <div class="comment-avatar small">{{(respuesta.usuario?.nombre || 'A').charAt(0)}}</div>
-                            <div class="comment-body">
-                                <div class="comment-head">
-                                    <strong>{{respuesta.usuario?.nombre || 'Anónimo'}}</strong>
-                                    <small>{{respuesta.fechaComentario | date:'short'}}</small>
-                                </div>
-                                <p>{{respuesta.contenido}}</p>
-                            </div>
-                            <p-button icon="pi pi-trash" styleClass="btn-icon btn-delete" pTooltip="Desactivar respuesta" (onClick)="eliminarComentario(respuesta)"></p-button>
-                        </div>
-                    </div>
+    <div class="saberes-grid">
+        @for (saber of saberes(); track saber.id) {
+        <div class="saber-card">
+            <div class="saber-card-head">
+                <div class="saber-card-titles">
+                    <h3 class="saber-card-title">{{saber.titulo}}</h3>
+                    @if (saber.solucion) {
+                        <p class="saber-card-desc">{{saber.solucion}}</p>
+                    } @else {
+                        <p class="saber-card-desc">{{saber.descripcion}}</p>
+                    }
+                </div>
+                @if (!saber.moderado && !saber.motivoRechazo) {
+                    <span class="saber-badge badge-pending">Pendiente</span>
+                } @else if (saber.motivoRechazo) {
+                    <span class="saber-badge badge-rejected">Rechazado</span>
+                } @else {
+                    <span class="saber-badge badge-approved">Publicado</span>
+                }
+            </div>
+            <div class="saber-card-meta">
+                <span class="saber-card-author"><i class="pi pi-user"></i> {{saber.usuario?.nombre || 'Anónimo'}}</span>
+                <div class="saber-card-tags">
+                    @if (saber.cultivo) {
+                        <p-tag [value]="saber.cultivo.nombre" severity="info"></p-tag>
+                    }
+                    @if (saber.plaga) {
+                        <p-tag [value]="saber.plaga.nombre" severity="warn"></p-tag>
+                    }
                 </div>
             </div>
-        </ng-template>
-
-        <ng-template #noComments>
-            <div class="empty-comments">
-                <i class="pi pi-comment text-5xl text-slate-200"></i>
-                <span>No hay comentarios activos en esta publicación.</span>
+            @if (saber.comentarioModerador) {
+                <div class="saber-card-moderator">
+                    <i class="pi pi-pencil"></i> {{saber.comentarioModerador}}
+                </div>
+            }
+            <div class="saber-card-footer">
+                <div class="valoracion-thumbs">
+                    <button class="thumb-btn" [class.thumb-active]="saber.miValoracion === 5" (click)="valorarSaber(saber, 5)" pTooltip="Me gusta">
+                        <i class="pi pi-thumbs-up"></i>
+                        <span class="thumb-count">{{saber.valoracionesBuenas ?? 0}}</span>
+                    </button>
+                    <button class="thumb-btn" [class.thumb-active-red]="saber.miValoracion === 1" (click)="valorarSaber(saber, 1)" pTooltip="No me gusta">
+                        <i class="pi pi-thumbs-down"></i>
+                        <span class="thumb-count">{{saber.valoracionesMalas ?? 0}}</span>
+                    </button>
+                </div>
+                <div class="saber-card-actions">
+                    @if (!saber.moderado && !saber.motivoRechazo) {
+                        <p-button icon="pi pi-check" styleClass="btn-icon btn-approve" pTooltip="Aceptar" (onClick)="abrirAceptar(saber)"></p-button>
+                        <p-button icon="pi pi-times" styleClass="btn-icon btn-reject" pTooltip="Rechazar" (onClick)="abrirRechazar(saber)"></p-button>
+                    }
+                    @if (saber.moderado && !saber.motivoRechazo) {
+                        <p-button icon="pi pi-eye" styleClass="btn-icon btn-view" pTooltip="Revisar interacciones" (onClick)="abrirRevisar(saber)"></p-button>
+                    }
+                    <p-button icon="pi pi-pencil" styleClass="btn-icon btn-edit" pTooltip="Editar" (onClick)="abrirEditar(saber)"></p-button>
+                    <p-button icon="pi pi-trash" styleClass="btn-icon btn-delete" pTooltip="Eliminar" (onClick)="eliminar(saber)"></p-button>
+                </div>
             </div>
-        </ng-template>
+        </div>
+        } @empty {
+        <div class="saberes-empty">
+            <i class="pi pi-leaf text-5xl text-slate-200"></i>
+            <span class="text-slate-400 font-bold text-lg">No hay saberes ancestrales.</span>
+        </div>
+        }
+    </div>
+</div>
+}
+
+<!-- ── DIALOG: Aceptar Saber ── -->
+<p-dialog header="Aceptar Saber Ancestral" [(visible)]="dialogAceptar" [modal]="true" styleClass="info-dialog" (onHide)="selectedSaber.set(null)">
+    <div class="dialog-body">
+        <div class="dialog-icon" style="background:linear-gradient(135deg,#a7f3d0,#d1fae5);color:#16a34a">
+            <i class="pi pi-check-circle"></i>
+        </div>
+        <p class="dialog-desc">El saber ancestral <strong>"{{selectedSaber()?.titulo}}"</strong> se publicar&aacute; para todos los usuarios.</p>
+        <div class="dialog-filtro">
+            <label>Duraci&oacute;n en d&iacute;as h&aacute;biles</label>
+            <p-inputNumber [(ngModel)]="duracionDias" [min]="1" [showButtons]="true" [style]="{'width':'100%'}"></p-inputNumber>
+            @if (duracionDiasError) {
+                <small class="field-error">Debe ser al menos 1 d&iacute;a h&aacute;bil.</small>
+            }
+        </div>
+    </div>
+    <div class="dialog-actions">
+        <p-button label="Cancelar" severity="secondary" (click)="dialogAceptar = false; duracionDiasError = false" />
+        <p-button label="Publicar" icon="pi pi-check" (click)="aceptarSaber()" [loading]="cargandoAceptar" />
+    </div>
+</p-dialog>
+
+<!-- ── DIALOG: Rechazar Saber ── -->
+<p-dialog header="Rechazar Saber Ancestral" [(visible)]="dialogRechazar" [modal]="true" styleClass="info-dialog" (onHide)="selectedSaber.set(null)">
+    <div class="dialog-body">
+        <div class="dialog-icon" style="background:linear-gradient(135deg,#fee2e2,#fecaca);color:#dc2626">
+            <i class="pi pi-times-circle"></i>
+        </div>
+        <p class="dialog-desc">El saber ancestral <strong>"{{selectedSaber()?.titulo}}"</strong> ser&aacute; rechazado. El autor recibir&aacute; una notificaci&oacute;n con el motivo.</p>
+        <div class="dialog-filtro">
+            <label>Motivo del rechazo *</label>
+            <textarea pTextarea [(ngModel)]="motivoRechazo" rows="4" placeholder="Escriba el motivo por el cual se rechaza este saber ancestral..." [style]="{'width':'100%'}"></textarea>
+            @if (motivoRechazoError) {
+                <small class="field-error">Debe escribir un motivo para rechazar.</small>
+            }
+        </div>
+    </div>
+    <div class="dialog-actions">
+        <p-button label="Cancelar" severity="secondary" (click)="dialogRechazar = false; motivoRechazoError = false" />
+        <p-button label="Rechazar" icon="pi pi-times" severity="danger" (click)="rechazarSaber()" [loading]="cargandoRechazar" />
+    </div>
+</p-dialog>
+
+<!-- ── DIALOG: Revisar Interacciones ── -->
+<p-dialog header="Revisar Interacciones" [(visible)]="dialogRevisar" [modal]="true" [style]="{width:'780px',maxWidth:'96vw'}" styleClass="custom-dialog" (onHide)="selectedSaber.set(null)">
+    @if (selectedSaber(); as saber) {
+    <div class="source-card comments-source">
+        <span class="source-label">Saber Ancestral</span>
+        <strong>{{saber.titulo}}</strong>
+        @if (saber.solucion) { <p>{{saber.solucion}}</p> }
+    </div>
+
+    @if (cargandoInteracciones()) {
+        <div class="comments-loading"><i class="pi pi-spin pi-spinner text-3xl text-primary"></i><span>Cargando...</span></div>
+    } @else {
+        <!-- Comentarios -->
+        <h4 class="interaccion-title"><i class="pi pi-comments"></i> Comentarios ({{interacciones().comentarios.length}})</h4>
+        @if (interacciones().comentarios.length === 0) {
+            <div class="empty-comments"><i class="pi pi-comment text-4xl text-slate-200"></i><span>No hay comentarios.</span></div>
+        }
+        <div class="comments-list">
+            @for (comentario of interacciones().comentarios; track comentario.id) {
+            <div class="comment-card">
+                <div class="comment-main">
+                    <div class="comment-avatar">{{(comentario.usuario?.nombre || 'A').charAt(0)}}</div>
+                    <div class="comment-body">
+                        <div class="comment-head">
+                            <strong>{{comentario.usuario?.nombre || 'Anónimo'}}</strong>
+                            @if (comentario.esModerador) {
+                                <span class="moderator-chip"><i class="pi pi-shield"></i> Moderador</span>
+                            }
+                            <small>{{comentario.fechaComentario | date:'short'}}</small>
+                        </div>
+                        <p>{{comentario.contenido}}</p>
+                    </div>
+                </div>
+                @if (comentario.respuestas?.length) {
+                <div class="reply-list">
+                    @for (resp of comentario.respuestas; track resp.id) {
+                    <div class="reply-card">
+                        <div class="comment-avatar small">{{(resp.usuario?.nombre || 'A').charAt(0)}}</div>
+                        <div class="comment-body">
+                            <div class="comment-head">
+                                <strong>{{resp.usuario?.nombre || 'Anónimo'}}</strong>
+                                @if (resp.esModerador) {
+                                    <span class="moderator-chip"><i class="pi pi-shield"></i> Moderador</span>
+                                }
+                                <small>{{resp.fechaComentario | date:'short'}}</small>
+                            </div>
+                            <p>{{resp.contenido}}</p>
+                        </div>
+                    </div>
+                    }
+                </div>
+                }
+            </div>
+            }
+        </div>
+
+        <hr class="interaccion-divider" />
+
+        <!-- Valoraciones -->
+        <h4 class="interaccion-title"><i class="pi pi-thumbs-up"></i> Reacciones ({{interacciones().valoraciones.length}})</h4>
+        @if (interacciones().valoraciones.length === 0) {
+            <div class="empty-comments"><i class="pi pi-thumbs-up text-4xl text-slate-200"></i><span>No hay reacciones.</span></div>
+        }
+        <div class="valoraciones-list">
+            @for (val of interacciones().valoraciones; track val.id) {
+            <div class="valoracion-item">
+                <div class="val-user">{{val.usuario?.nombre || 'Anónimo'}}</div>
+                <div class="val-thumbs">
+                    @if (val.puntuacion >= 4) {
+                        <i class="pi pi-thumbs-up-fill" style="color:#16a34a;font-size:1.5rem"></i>
+                        <span class="text-green-600 font-bold ml-1">Like</span>
+                    } @else if (val.puntuacion <= 2) {
+                        <i class="pi pi-thumbs-down-fill" style="color:#dc2626;font-size:1.5rem"></i>
+                        <span class="text-red-600 font-bold ml-1">Dislike</span>
+                    }
+                </div>
+                <small class="val-date">{{val.createdAt | date:'short'}}</small>
+            </div>
+            }
+        </div>
+    }
+    }
+</p-dialog>
+
+<!-- ── DIALOG: Promover Comentario ── -->
+<p-dialog header="Promover a Saber Ancestral" [(visible)]="dialogPromover" [modal]="true" styleClass="info-dialog" (onHide)="selectedComentario.set(null)">
+    @if (selectedSaber(); as saber) {
+    <div class="dialog-body">
+        <div class="dialog-icon" style="background:linear-gradient(135deg,#fbcfe8,#fce7f3);color:#db2777">
+            <i class="pi pi-lightbulb"></i>
+        </div>
+        <p class="dialog-desc">Se crear&aacute; un nuevo Saber Ancestral a partir del comentario de <strong>{{selectedComentario()?.usuario?.nombre}}</strong>.</p>
+        <div class="dialog-filtro">
+            <label>T&iacute;tulo (nombre de la plaga)</label>
+            <input pInputText type="text" [value]="saber.plaga?.nombre || (promoverPlagaId ? 'Plaga #' + promoverPlagaId : 'Saber Ancestral')" disabled class="w-full" />
+        </div>
+        <div class="dialog-filtro">
+            <label>Plaga *</label>
+            <p-select [options]="plagasList" optionLabel="nombre" optionValue="id" [(ngModel)]="promoverPlagaId" placeholder="Seleccionar plaga" styleClass="w-full" [showClear]="true"></p-select>
+            @if (!promoverPlagaId) {
+                <small class="field-error">Debes seleccionar una plaga para promover.</small>
+            }
+        </div>
+        <div class="dialog-filtro">
+            <label>Cultivo (opcional)</label>
+            <p-select [options]="cultivosList" optionLabel="nombre" optionValue="id" [(ngModel)]="promoverCultivoId" placeholder="Seleccionar cultivo" styleClass="w-full" [showClear]="true"></p-select>
+        </div>
+        <div class="dialog-filtro">
+            <label>Soluci&oacute;n (contenido del comentario)</label>
+            <textarea pTextarea [value]="selectedComentario()?.contenido || ''" disabled rows="3" [style]="{'width':'100%'}"></textarea>
+        </div>
+        <div class="dialog-filtro">
+            <label>Comentario del moderador (opcional)</label>
+            <textarea pTextarea [(ngModel)]="comentarioModeradorPromover" rows="2" placeholder="Agregue un comentario adicional si lo desea..." [style]="{'width':'100%'}"></textarea>
+        </div>
+    </div>
+    <div class="dialog-actions">
+        <p-button label="Cancelar" severity="secondary" (click)="dialogPromover = false" />
+        <p-button label="Promover" icon="pi pi-check" (click)="promoverComentario()" [loading]="cargandoPromover" [disabled]="!promoverPlagaId" />
+    </div>
+    }
+</p-dialog>
+
+<!-- ── DIALOG: Editar Saber ── -->
+<p-dialog header="Editar Saber Ancestral" [(visible)]="dialogEditar" [modal]="true" styleClass="info-dialog" (onHide)="selectedSaber.set(null)">
+    @if (editData(); as ed) {
+    <div class="dialog-body">
+        <div class="dialog-filtro">
+            <label>Comentario del moderador</label>
+            <textarea pTextarea [(ngModel)]="ed.comentarioModerador" rows="2" placeholder="Agregue información adicional sobre este saber..." [style]="{'width':'100%'}"></textarea>
+        </div>
+        <div class="dialog-filtro">
+            <label>Visibilidad</label>
+            <p-select [options]="[{label: 'Visible', value: true}, {label: 'Oculto', value: false}]" optionLabel="label" optionValue="value" [(ngModel)]="ed.activo" styleClass="w-full"></p-select>
+        </div>
+        @if (ed.fechaExpiracion) {
+        <div class="dialog-filtro">
+            <label>Extender fecha de expiraci&oacute;n (d&iacute;as h&aacute;biles adicionales)</label>
+            <p-inputNumber [(ngModel)]="editarDuracionExtra" [min]="0" [showButtons]="true" [style]="{'width':'100%'}"></p-inputNumber>
+        </div>
+        }
+    </div>
+    <div class="dialog-actions">
+        <p-button label="Cancelar" severity="secondary" (click)="dialogEditar = false" />
+        <p-button label="Guardar" icon="pi pi-check" (click)="guardarEdicion()" [loading]="cargandoEditar" />
+    </div>
+    }
+</p-dialog>
+
+<!-- ── DIALOG: Ver Foro (WhatsApp-style chat) ── -->
+<p-dialog [(visible)]="verForoDialog" [modal]="true" [style]="{width: '780px', maxWidth: '96vw'}" styleClass="chat-dialog" [draggable]="false" [resizable]="false" [dismissableMask]="true" header="Ver Foro" (onHide)="detenerPollingForo()">
+    <ng-container *ngIf="selectedForoVer() as foro">
+        <div class="foro-chat-header">
+            <strong class="text-lg">{{foro.titulo}}</strong>
+            <p class="text-sm text-slate-600 mt-1">{{foro.descripcion}}</p>
+            @if (foro.imagenUrl) {
+                <div class="foro-header-img">
+                    <img [src]="foro.imagenUrl" alt="Imagen" loading="lazy" />
+                </div>
+            }
+            <div class="flex gap-1 mt-2 flex-wrap">
+                <p-tag [value]="tipoLabel(foro.tipo)" severity="info" styleClass="text-xs"></p-tag>
+                @if (foro.cultivo) { <p-tag [value]="foro.cultivo.nombre" severity="info" styleClass="text-xs"></p-tag> }
+                @if (foro.plaga) { <p-tag [value]="foro.plaga.nombre" severity="warn" styleClass="text-xs"></p-tag> }
+            </div>
+            <small class="block mt-1 text-slate-400">Publicado por {{foro.usuario?.nombre || 'Anónimo'}} &mdash; {{foro.createdAt | date:'dd/MM/yyyy HH:mm'}}</small>
+        </div>
+
+        <div class="chat-messages" #chatMessages>
+            @if (loadingComentarios()) {
+                <div class="flex justify-content-center p-4"><i class="pi pi-spin pi-spinner text-3xl text-primary"></i></div>
+            } @else if (comentarios().length === 0) {
+                <div class="chat-empty">
+                    <i class="pi pi-comment text-4xl text-slate-200"></i>
+                    <span class="text-slate-400">Todavía no existen comentarios. Sé el primero en compartir una experiencia.</span>
+                </div>
+            } @else {
+                @for (comentario of comentarios(); track comentario.id) {
+                    <div class="chat-bubble-wrapper" [class.own]="comentario.usuario?.id === currentUserId" [class.other]="comentario.usuario?.id !== currentUserId">
+                        <div class="chat-bubble" [class.bubble-own]="comentario.usuario?.id === currentUserId" [class.bubble-other]="comentario.usuario?.id !== currentUserId">
+                            @if (comentario.usuario?.id !== currentUserId) {
+                                <div class="bubble-author">{{comentario.usuario?.nombre || 'Anónimo'}}</div>
+                            }
+                            @if (comentario.esModerador) {
+                                <div class="bubble-moderator-badge"><i class="pi pi-shield"></i> Comentario verificado</div>
+                            }
+                            @if (comentario.imagenUrl) {
+                                <div class="bubble-image-wrap">
+                                    <img [src]="comentario.imagenUrl" alt="Foto" loading="lazy" />
+                                </div>
+                            }
+                            <div class="bubble-text">{{comentario.contenido}}</div>
+                            @if (comentario.audioUrl) {
+                                <div class="wa-bubble-audio" [class.playing]="playingBubbleAudioId === comentario.id">
+                                    <button class="wa-bubble-audio-play" (click)="toggleBubbleAudio(comentario)">
+                                        <i [class]="playingBubbleAudioId === comentario.id ? 'pi pi-pause' : 'pi pi-play'"></i>
+                                    </button>
+                                    <div class="wa-bubble-audio-track" (click)="seekBubbleAudio($event, comentario)">
+                                        <div class="wa-bubble-audio-fill" [style.width.%]="getBubbleAudioProgress(comentario)"></div>
+                                        <div class="wa-bubble-audio-thumb" [style.left.%]="getBubbleAudioProgress(comentario)"></div>
+                                    </div>
+                                    <span class="wa-bubble-audio-time">{{getBubbleAudioTime(comentario)}}</span>
+                                </div>
+                            }
+                            <div class="bubble-time">{{comentario.fechaComentario | date:'HH:mm'}}</div>
+                        </div>
+                        <div class="bubble-actions">
+                            <p-button icon="pi pi-reply" styleClass="btn-icon btn-reply" pTooltip="Responder" (click)="responderComentario(comentario)"></p-button>
+                            <p-button icon="pi pi-lightbulb" styleClass="btn-icon btn-promote" pTooltip="Convertir en Saber" (click)="abrirPromoverForo(comentario)"></p-button>
+                            <p-button icon="pi pi-trash" styleClass="btn-icon btn-delete" pTooltip="Eliminar" (click)="eliminarComentario(comentario)"></p-button>
+                        </div>
+                    </div>
+                    @if (comentario.respuestas?.length) {
+                        @for (resp of comentario.respuestas; track resp.id) {
+                            <div class="chat-bubble-wrapper reply" [class.own]="resp.usuario?.id === currentUserId" [class.other]="resp.usuario?.id !== currentUserId">
+                                <div class="chat-bubble" [class.bubble-own]="resp.usuario?.id === currentUserId" [class.bubble-other]="resp.usuario?.id !== currentUserId">
+                                    @if (resp.usuario?.id !== currentUserId) {
+                                        <div class="bubble-author">{{resp.usuario?.nombre || 'Anónimo'}}</div>
+                                    }
+                                    @if (resp.esModerador) {
+                                        <div class="bubble-moderator-badge"><i class="pi pi-shield"></i> Comentario verificado</div>
+                                    }
+                                    <div class="bubble-reply-ref">
+                                        <div class="reply-ref-line"></div>
+                                        <div class="reply-ref-content">
+                                            <small class="reply-ref-author">{{comentario.usuario?.nombre || 'Anónimo'}}</small>
+                                            <small class="reply-ref-text">
+                                                @if (comentario.contenido) {
+                                                    {{comentario.contenido | slice:0:80}}{{comentario.contenido.length > 80 ? '...' : ''}}
+                                                } @else if (comentario.audioUrl) {
+                                                    <i class="pi pi-play"></i> Audio
+                                                } @else if (comentario.imagenUrl) {
+                                                    <i class="pi pi-image"></i> Foto
+                                                }
+                                            </small>
+                                        </div>
+                                    </div>
+                                    @if (resp.imagenUrl) {
+                                        <div class="bubble-image-wrap">
+                                            <img [src]="resp.imagenUrl" alt="Foto" loading="lazy" />
+                                        </div>
+                                    }
+                                    <div class="bubble-text">{{resp.contenido}}</div>
+                                    @if (resp.audioUrl) {
+                                        <div class="wa-bubble-audio" [class.playing]="playingBubbleAudioId === resp.id">
+                                            <button class="wa-bubble-audio-play" (click)="toggleBubbleAudio(resp)">
+                                                <i [class]="playingBubbleAudioId === resp.id ? 'pi pi-pause' : 'pi pi-play'"></i>
+                                            </button>
+                                            <div class="wa-bubble-audio-track" (click)="seekBubbleAudio($event, resp)">
+                                                <div class="wa-bubble-audio-fill" [style.width.%]="getBubbleAudioProgress(resp)"></div>
+                                                <div class="wa-bubble-audio-thumb" [style.left.%]="getBubbleAudioProgress(resp)"></div>
+                                            </div>
+                                            <span class="wa-bubble-audio-time">{{getBubbleAudioTime(resp)}}</span>
+                                        </div>
+                                    }
+                                    <div class="bubble-time">{{resp.fechaComentario | date:'HH:mm'}}</div>
+                                </div>
+                                <div class="bubble-actions">
+                                    <p-button icon="pi pi-reply" styleClass="btn-icon btn-reply p-button-sm" pTooltip="Responder" (click)="responderComentario(resp)"></p-button>
+                                    <p-button icon="pi pi-lightbulb" styleClass="btn-icon btn-promote p-button-sm" pTooltip="Convertir en Saber" (click)="abrirPromoverForo(resp)"></p-button>
+                                    <p-button icon="pi pi-trash" styleClass="btn-icon btn-delete p-button-sm" pTooltip="Eliminar" (click)="eliminarComentario(resp)"></p-button>
+                                </div>
+                            </div>
+                        }
+                    }
+                }
+            }
+        </div>
+
+        <div class="chat-input-area">
+            @if (replyToForo) {
+                <div class="wa-reply-indicator">
+                    <div class="wa-reply-line"></div>
+                    <div class="wa-reply-content">
+                        <span class="wa-reply-author">{{replyToForo.username}}</span>
+                        <span class="wa-reply-text">
+                            @if (replyToForo.contenido) {
+                                {{replyToForo.contenido | slice:0:50}}{{replyToForo.contenido.length > 50 ? '...' : ''}}
+                            } @else if (replyToForo.tipoMedia === 'audio') {
+                                <i class="pi pi-play"></i> Audio
+                            } @else if (replyToForo.tipoMedia === 'imagen') {
+                                <i class="pi pi-image"></i> Foto
+                            }
+                        </span>
+                    </div>
+                    <button class="wa-reply-close" (click)="cancelarRespuestaForo()"><i class="pi pi-times"></i></button>
+                </div>
+            }
+
+            @if (grabandoAudio || audioUriForo) {
+                <div class="wa-audio-bar">
+                    @if (grabandoAudio) {
+                        <button class="wa-abtn" (click)="cancelarAudioForo()"><i class="pi pi-times"></i></button>
+                    } @else {
+                        <button class="wa-abtn" (click)="reproducirAudioForo()">
+                            <i [class]="reproduciendoAudioForo ? 'pi pi-pause' : 'pi pi-play'"></i>
+                        </button>
+                    }
+
+                    @if (grabandoAudio) {
+                        <div class="wa-audio-wave" [class.paused]="pausaGrabacion">
+                            <span></span><span></span><span></span><span></span><span></span>
+                        </div>
+                        <span class="wa-audio-time">{{formatDuracion(tiempoGrabacion)}}</span>
+                        <button class="wa-abtn wa-abtn-primary" (click)="detenerGrabacion()"><i class="pi pi-stop"></i></button>
+                    } @else {
+                        <div class="wa-audio-seek" (click)="seekAudioPreview($event)">
+                            <div class="wa-audio-seek-bg">
+                                <div class="wa-audio-seek-fill" [style.width.%]="audioPreviewDuration ? (audioPreviewCurrentTime / audioPreviewDuration * 100) : 0"></div>
+                            </div>
+                        </div>
+                        <span class="wa-audio-time">{{formatDuracion(audioPreviewCurrentTime)}}/{{formatDuracion(audioPreviewDuration)}}</span>
+                        <button class="wa-abtn" (click)="cancelarAudioForo()"><i class="pi pi-trash"></i></button>
+                        <button class="wa-abtn wa-abtn-send" [disabled]="enviandoComentarioForo" (click)="enviarComentarioForo()"><i class="pi pi-send"></i></button>
+                    }
+                </div>
+            }
+
+            @if (imagenForoPreview && !audioUriForo && !grabandoAudio) {
+                <div class="wa-img-preview">
+                    <img [src]="imagenForoPreview" alt="Preview" />
+                    <button class="wa-img-preview-cancel" (click)="cancelarImagenForo()">
+                        <i class="pi pi-times"></i>
+                    </button>
+                    <button class="wa-img-preview-send" [disabled]="enviandoComentarioForo" (click)="enviarComentarioForo()">
+                        <i class="pi pi-send"></i>
+                    </button>
+                </div>
+            }
+
+            @if (!audioUriForo && !imagenForoPreview && !grabandoAudio) {
+            <div class="wa-input-row">
+                <button class="wa-mic-btn"
+                    (mousedown)="iniciarGrabacion()"
+                    (mouseup)="detenerGrabacion()"
+                    (touchstart)="iniciarGrabacion()"
+                    (touchend)="detenerGrabacion()">
+                    <i class="pi pi-microphone"></i>
+                </button>
+                <button class="wa-img-btn" (click)="imageInput.click()">
+                    <i class="pi pi-image"></i>
+                </button>
+                <input #imageInput type="file" accept="image/*" style="display:none" (change)="onImageSelected($event)" />
+                <textarea pInputTextarea [(ngModel)]="nuevoComentarioForo" rows="1" placeholder="Escribe un mensaje..." class="wa-text-input" (keydown.enter)="!enviandoComentarioForo && onEnterKey($event)"></textarea>
+                <button class="wa-send-btn" [disabled]="(!nuevoComentarioForo.trim() && !imagenForoFile) || enviandoComentarioForo" (click)="enviarComentarioForo()">
+                    <i class="pi pi-send"></i>
+                </button>
+            </div>
+            }
+        </div>
     </ng-container>
 </p-dialog>
+
+<!-- ── DIALOG: Editar Foro ── -->
+<p-dialog header="Editar Foro" [(visible)]="dialogEditarForo" [modal]="true" styleClass="info-dialog" (onHide)="selectedForoEditar.set(null)">
+    @if (selectedForoEditar(); as foro) {
+    <div class="dialog-body">
+        <div class="dialog-icon" style="background:linear-gradient(135deg,#fef3c7,#fde68a);color:#d97706">
+            <i class="pi pi-pencil"></i>
+        </div>
+        <p class="dialog-desc">Editando la publicaci&oacute;n <strong>"{{foro.titulo}}"</strong></p>
+        <div class="dialog-filtro">
+            <label>Foro activo (visible para usuarios)</label>
+            <p-select [options]="[{label: 'Visible', value: true}, {label: 'Oculto', value: false}]" optionLabel="label" optionValue="value" [(ngModel)]="foroEditActivo" styleClass="w-full"></p-select>
+        </div>
+        @if (foro.fechaExpiracion) {
+        <div class="dialog-filtro">
+            <label>Extender fecha de expiraci&oacute;n (d&iacute;as h&aacute;biles adicionales)</label>
+            <p-inputNumber [(ngModel)]="foroEditDuracionExtra" [min]="0" [showButtons]="true" [style]="{'width':'100%'}"></p-inputNumber>
+        </div>
+        }
+    </div>
+    <div class="dialog-actions">
+        <p-button label="Cancelar" severity="secondary" (click)="dialogEditarForo = false" />
+        <p-button label="Guardar" icon="pi pi-check" (click)="guardarEdicionForo()" [loading]="cargandoEditarForo" />
+    </div>
+    }
+</p-dialog>
+

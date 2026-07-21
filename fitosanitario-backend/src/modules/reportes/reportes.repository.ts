@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DB_CONNECTION } from '../../db/db.module';
 import * as schema from '../../db/schema';
-import { desc, eq, and, sql } from 'drizzle-orm';
+import { desc, eq, and, or, sql, gte, lte, ilike } from 'drizzle-orm';
 import { ReEditarReporteDto } from './dto/re-editar-reporte.dto';
 
 @Injectable()
@@ -46,15 +46,155 @@ export class ReportesRepository {
 
   async findAll() {
     return this.db
-      .select()
+      .select({
+        id: schema.reportes.id,
+        titulo: schema.reportes.titulo,
+        descripcion: schema.reportes.descripcion,
+        descripcionProblema: schema.reportes.descripcionProblema,
+        usuarioId: schema.reportes.usuarioId,
+        cultivoId: schema.reportes.cultivoId,
+        plagaId: schema.reportes.plagaId,
+        imagenesUrls: schema.reportes.imagenesUrls,
+        audioUrl: schema.reportes.audioUrl,
+        latitud: schema.reportes.latitud,
+        longitud: schema.reportes.longitud,
+        estado: schema.reportes.estado,
+        sincronizado: schema.reportes.sincronizado,
+        motivoRechazo: schema.reportes.motivoRechazo,
+        audioRechazoUrl: schema.reportes.audioRechazoUrl,
+        createdAt: schema.reportes.createdAt,
+        usuario: {
+          id: schema.usuarios.id,
+          nombre: schema.usuarios.nombre,
+          email: schema.usuarios.email,
+          rol: schema.usuarios.rol,
+        },
+      })
       .from(schema.reportes)
+      .leftJoin(schema.usuarios, eq(schema.reportes.usuarioId, schema.usuarios.id))
       .orderBy(desc(schema.reportes.createdAt));
+  }
+
+  async findAllFiltered(params: {
+    cultivoId?: number;
+    q?: string;
+    fechaInicio?: string;
+    fechaFin?: string;
+  }) {
+    const conditions: any[] = [];
+    if (params.cultivoId) {
+      conditions.push(eq(schema.reportes.cultivoId, params.cultivoId));
+    }
+    if (params.q) {
+      const pattern = `%${params.q}%`;
+      conditions.push(
+        or(
+          ilike(schema.reportes.titulo, pattern),
+          ilike(schema.reportes.descripcion, pattern),
+          ilike(schema.reportes.descripcionProblema, pattern),
+        ),
+      );
+    }
+    if (params.fechaInicio) {
+      conditions.push(gte(schema.reportes.createdAt, new Date(params.fechaInicio)));
+    }
+    if (params.fechaFin) {
+      conditions.push(lte(schema.reportes.createdAt, new Date(params.fechaFin)));
+    }
+    const query = this.db
+      .select({
+        id: schema.reportes.id,
+        titulo: schema.reportes.titulo,
+        descripcion: schema.reportes.descripcion,
+        descripcionProblema: schema.reportes.descripcionProblema,
+        usuarioId: schema.reportes.usuarioId,
+        cultivoId: schema.reportes.cultivoId,
+        plagaId: schema.reportes.plagaId,
+        imagenesUrls: schema.reportes.imagenesUrls,
+        audioUrl: schema.reportes.audioUrl,
+        latitud: schema.reportes.latitud,
+        longitud: schema.reportes.longitud,
+        estado: schema.reportes.estado,
+        sincronizado: schema.reportes.sincronizado,
+        motivoRechazo: schema.reportes.motivoRechazo,
+        audioRechazoUrl: schema.reportes.audioRechazoUrl,
+        createdAt: schema.reportes.createdAt,
+        usuario: {
+          id: schema.usuarios.id,
+          nombre: schema.usuarios.nombre,
+          email: schema.usuarios.email,
+          rol: schema.usuarios.rol,
+        },
+      })
+      .from(schema.reportes)
+      .leftJoin(schema.usuarios, eq(schema.reportes.usuarioId, schema.usuarios.id));
+    if (conditions.length > 0) {
+      query.where(and(...conditions));
+    }
+    return query.orderBy(desc(schema.reportes.createdAt));
+  }
+
+  async findWithUsuario(id: number) {
+    const result = await this.db
+      .select({
+        id: schema.reportes.id,
+        titulo: schema.reportes.titulo,
+        descripcion: schema.reportes.descripcion,
+        descripcionProblema: schema.reportes.descripcionProblema,
+        usuarioId: schema.reportes.usuarioId,
+        cultivoId: schema.reportes.cultivoId,
+        plagaId: schema.reportes.plagaId,
+        imagenesUrls: schema.reportes.imagenesUrls,
+        audioUrl: schema.reportes.audioUrl,
+        latitud: schema.reportes.latitud,
+        longitud: schema.reportes.longitud,
+        estado: schema.reportes.estado,
+        sincronizado: schema.reportes.sincronizado,
+        motivoRechazo: schema.reportes.motivoRechazo,
+        audioRechazoUrl: schema.reportes.audioRechazoUrl,
+        createdAt: schema.reportes.createdAt,
+        usuario: {
+          id: schema.usuarios.id,
+          nombre: schema.usuarios.nombre,
+          email: schema.usuarios.email,
+          rol: schema.usuarios.rol,
+        },
+      })
+      .from(schema.reportes)
+      .leftJoin(schema.usuarios, eq(schema.reportes.usuarioId, schema.usuarios.id))
+      .where(eq(schema.reportes.id, id))
+      .limit(1);
+    return result[0] ?? null;
   }
 
   async findById(id: number) {
     const result = await this.db
-      .select()
+      .select({
+        id: schema.reportes.id,
+        titulo: schema.reportes.titulo,
+        descripcion: schema.reportes.descripcion,
+        descripcionProblema: schema.reportes.descripcionProblema,
+        usuarioId: schema.reportes.usuarioId,
+        cultivoId: schema.reportes.cultivoId,
+        plagaId: schema.reportes.plagaId,
+        imagenesUrls: schema.reportes.imagenesUrls,
+        audioUrl: schema.reportes.audioUrl,
+        latitud: schema.reportes.latitud,
+        longitud: schema.reportes.longitud,
+        estado: schema.reportes.estado,
+        sincronizado: schema.reportes.sincronizado,
+        motivoRechazo: schema.reportes.motivoRechazo,
+        audioRechazoUrl: schema.reportes.audioRechazoUrl,
+        createdAt: schema.reportes.createdAt,
+        usuario: {
+          id: schema.usuarios.id,
+          nombre: schema.usuarios.nombre,
+          email: schema.usuarios.email,
+          rol: schema.usuarios.rol,
+        },
+      })
       .from(schema.reportes)
+      .leftJoin(schema.usuarios, eq(schema.reportes.usuarioId, schema.usuarios.id))
       .where(eq(schema.reportes.id, id))
       .limit(1);
 
@@ -63,16 +203,64 @@ export class ReportesRepository {
 
   async findByUsuario(usuarioId: number) {
     return this.db
-      .select()
+      .select({
+        id: schema.reportes.id,
+        titulo: schema.reportes.titulo,
+        descripcion: schema.reportes.descripcion,
+        descripcionProblema: schema.reportes.descripcionProblema,
+        usuarioId: schema.reportes.usuarioId,
+        cultivoId: schema.reportes.cultivoId,
+        plagaId: schema.reportes.plagaId,
+        imagenesUrls: schema.reportes.imagenesUrls,
+        audioUrl: schema.reportes.audioUrl,
+        latitud: schema.reportes.latitud,
+        longitud: schema.reportes.longitud,
+        estado: schema.reportes.estado,
+        sincronizado: schema.reportes.sincronizado,
+        motivoRechazo: schema.reportes.motivoRechazo,
+        audioRechazoUrl: schema.reportes.audioRechazoUrl,
+        createdAt: schema.reportes.createdAt,
+        usuario: {
+          id: schema.usuarios.id,
+          nombre: schema.usuarios.nombre,
+          email: schema.usuarios.email,
+          rol: schema.usuarios.rol,
+        },
+      })
       .from(schema.reportes)
+      .leftJoin(schema.usuarios, eq(schema.reportes.usuarioId, schema.usuarios.id))
       .where(eq(schema.reportes.usuarioId, usuarioId))
       .orderBy(desc(schema.reportes.createdAt));
   }
 
   async findPendientes() {
     return this.db
-      .select()
+      .select({
+        id: schema.reportes.id,
+        titulo: schema.reportes.titulo,
+        descripcion: schema.reportes.descripcion,
+        descripcionProblema: schema.reportes.descripcionProblema,
+        usuarioId: schema.reportes.usuarioId,
+        cultivoId: schema.reportes.cultivoId,
+        plagaId: schema.reportes.plagaId,
+        imagenesUrls: schema.reportes.imagenesUrls,
+        audioUrl: schema.reportes.audioUrl,
+        latitud: schema.reportes.latitud,
+        longitud: schema.reportes.longitud,
+        estado: schema.reportes.estado,
+        sincronizado: schema.reportes.sincronizado,
+        motivoRechazo: schema.reportes.motivoRechazo,
+        audioRechazoUrl: schema.reportes.audioRechazoUrl,
+        createdAt: schema.reportes.createdAt,
+        usuario: {
+          id: schema.usuarios.id,
+          nombre: schema.usuarios.nombre,
+          email: schema.usuarios.email,
+          rol: schema.usuarios.rol,
+        },
+      })
       .from(schema.reportes)
+      .leftJoin(schema.usuarios, eq(schema.reportes.usuarioId, schema.usuarios.id))
       .where(eq(schema.reportes.estado, 'PENDIENTE'))
       .orderBy(desc(schema.reportes.createdAt));
   }

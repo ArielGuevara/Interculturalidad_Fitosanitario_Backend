@@ -10,18 +10,24 @@ export type Recomendacion = {
   totalValoraciones: number;
   moderado: boolean;
   createdAt: string;
-  usuario: {
-    id: number;
-    nombre: string;
-  };
-  cultivo: {
-    id: number;
-    nombre: string;
-  } | null;
-  plaga: {
-    id: number;
-    nombre: string;
-  } | null;
+  usuario: { id: number; nombre: string };
+  cultivo: { id: number; nombre: string } | null;
+  plaga: { id: number; nombre: string } | null;
+  imagenUrl: string | null;
+};
+
+export type SaberAncestral = {
+  id: number;
+  titulo: string;
+  descripcion: string;
+  solucion: string;
+  comentarioModerador: string | null;
+  valoracionPromedio: number;
+  totalValoraciones: number;
+  createdAt: string;
+  usuario: { id: number; nombre: string };
+  cultivo: { id: number; nombre: string } | null;
+  plaga: { id: number; nombre: string } | null;
 };
 
 export type CreateRecomendacionInput = {
@@ -31,6 +37,7 @@ export type CreateRecomendacionInput = {
   titulo: string;
   descripcion: string;
   tipo: TipoRecomendacion;
+  imagenUrl?: string;
 };
 
 export type Valoracion = {
@@ -48,6 +55,7 @@ export type ComentarioForo = {
   id: number;
   contenido: string;
   audioUrl?: string | null;
+  imagenUrl?: string | null;
   usuario: {
     id: number;
     nombre: string;
@@ -56,4 +64,5 @@ export type ComentarioForo = {
   respuestas?: ComentarioForo[];
   activo: boolean;
   fechaComentario: string;
+  esModerador?: boolean;
 };

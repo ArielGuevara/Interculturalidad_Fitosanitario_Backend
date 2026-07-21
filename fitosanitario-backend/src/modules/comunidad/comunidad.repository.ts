@@ -203,7 +203,7 @@ export class ComunidadRepository {
   async createComentario(
     recomendacionId: number,
     usuarioId: number,
-    dto: CreateComentarioDto & { audioUrl?: string | null },
+    dto: CreateComentarioDto & { audioUrl?: string | null; imagenUrl?: string | null },
   ) {
     const result = await this.db
       .insert(schema.comentariosForo)
@@ -213,13 +213,14 @@ export class ComunidadRepository {
         comentarioPadreId: dto.comentarioPadreId ?? null,
         contenido: dto.contenido,
         audioUrl: dto.audioUrl ?? null,
+        imagenUrl: dto.imagenUrl ?? null,
       })
       .returning();
 
     return result[0];
   }
 
-  // Trae comentarios raíz con sus respuestas anidadas (un nivel)
+  // Trae comentarios como árbol de profundidad arbitraria (estilo WhatsApp)
   async findComentariosByRecomendacion(recomendacionId: number) {
     const todos = await this.db
       .select({
@@ -227,6 +228,7 @@ export class ComunidadRepository {
         comentarioPadreId: schema.comentariosForo.comentarioPadreId,
         contenido: schema.comentariosForo.contenido,
         audioUrl: schema.comentariosForo.audioUrl,
+        imagenUrl: schema.comentariosForo.imagenUrl,
         fechaComentario: schema.comentariosForo.fechaComentario,
         usuario: {
           id: schema.usuarios.id,
@@ -246,14 +248,22 @@ export class ComunidadRepository {
       )
       .orderBy(schema.comentariosForo.fechaComentario);
 
-    // Armar árbol: raíces con sus respuestas anidadas
-    const raices = todos.filter((c) => !c.comentarioPadreId);
-    const respuestas = todos.filter((c) => c.comentarioPadreId);
+    const map = new Map<number, any>();
+    const raices: any[] = [];
 
-    return raices.map((raiz) => ({
-      ...raiz,
-      respuestas: respuestas.filter((r) => r.comentarioPadreId === raiz.id),
-    }));
+    for (const c of todos) {
+      map.set(c.id, { ...c, respuestas: [] });
+    }
+
+    for (const c of map.values()) {
+      if (c.comentarioPadreId && map.has(c.comentarioPadreId)) {
+        map.get(c.comentarioPadreId).respuestas.push(c);
+      } else {
+        raices.push(c);
+      }
+    }
+
+    return raices;
   }
 
   async findComentarioById(id: number) {

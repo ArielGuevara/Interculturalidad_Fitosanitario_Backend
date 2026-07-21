@@ -98,7 +98,7 @@
 }
 
 .white-section,
-.dark-actions {
+.actions-section {
     border-radius: 28px;
     padding: 2rem;
     box-shadow: 0 20px 40px -24px rgba(15, 23, 42, 0.22);
@@ -108,9 +108,8 @@
     background: white;
 }
 
-.dark-actions {
-    background: #0f172a;
-    color: white;
+.actions-section {
+    background: #f0fdf4;
     display: flex;
     flex-direction: column;
     gap: 1rem;
@@ -210,7 +209,7 @@ h3 {
 }
 
 .warning-text {
-    color: #fbbf24;
+    color: #d97706;
     font-weight: 700;
 }
 

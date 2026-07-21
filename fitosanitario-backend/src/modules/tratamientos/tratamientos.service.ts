@@ -79,8 +79,37 @@ export class TratamientosService {
     return this.tratamientosRepo.update(id, dto);
   }
 
+  async findByReporte(reporteId: number) {
+    return this.tratamientosRepo.findByReporte(reporteId);
+  }
+
+  async updateWithNotification(id: number, dto: UpdateTratamientoDto, moderadorId: number) {
+    const tratamiento = await this.findById(id);
+
+    const updated = await this.tratamientosRepo.update(id, dto);
+
+    // Notificar al agricultor si el tratamiento está ligado a un reporte
+    if (tratamiento.reporteId) {
+      const reporte = await this.reportesService.findById(tratamiento.reporteId);
+      await this.notificationEvent.notifyUser(
+        reporte.usuarioId,
+        'Tratamiento actualizado',
+        `El tratamiento oficial de tu reporte "${reporte.titulo}" ha sido actualizado por el moderador #${moderadorId}. Revisa los cambios.`,
+        { type: 'tratamiento_actualizado', reporteId: reporte.id, tratamientoId: id },
+      );
+    }
+
+    return updated;
+  }
+
   async marcarEnciclopedia(id: number, enEnciclopedia: boolean) {
     await this.findById(id);
     return this.tratamientosRepo.marcarEnciclopedia(id, enEnciclopedia);
+  }
+
+  async delete(id: number) {
+    await this.findById(id);
+    await this.tratamientosRepo.delete(id);
+    return { message: `Tratamiento #${id} eliminado` };
   }
 }
