@@ -29,7 +29,7 @@ export class Layout implements OnInit {
 
   baseNavItems = [
     { label: 'Inicio', icon: 'pi pi-chart-bar', route: '/dashboard' },
-    { label: 'Cultivos', icon: 'pi pi-map', route: '/cultivos' },
+    { label: 'Cultivos', icon: 'pi-plant-custom', route: '/cultivos' },
     { label: 'Plagas', icon: 'pi pi-shield', route: '/plagas' },
     { label: 'Productos', icon: 'pi pi-th-large', route: '/productos' },
     { label: 'Reportes', icon: 'pi pi-inbox', route: '/reportes' },

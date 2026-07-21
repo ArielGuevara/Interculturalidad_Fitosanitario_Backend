@@ -152,7 +152,9 @@ h1, h2, h3, h4 {
 }
 
 /* Inputs */
-.p-inputtext {
+.p-inputtext,
+.p-textarea,
+textarea {
     border-radius: 12px !important;
     border: 1px solid var(--slate-300) !important;
     background: #ffffff !important;
@@ -168,7 +170,13 @@ h1, h2, h3, h4 {
 .p-select-list,
 .p-dropdown-items,
 .p-select-option,
-.p-dropdown-item {
+.p-dropdown-item,
+.p-multiselect,
+.p-multiselect-overlay,
+.p-multiselect-panel,
+.p-multiselect-list,
+.p-multiselect-items,
+.p-multiselect-item {
     background: #ffffff !important;
     color: #000000 !important;
 }
@@ -178,16 +186,34 @@ h1, h2, h3, h4 {
 .p-select-option span,
 .p-dropdown-item span,
 .p-select-empty-message,
-.p-dropdown-empty-message {
+.p-dropdown-empty-message,
+.p-multiselect-label {
     color: #000000 !important;
 }
 
 .p-select-option:hover,
 .p-dropdown-item:hover,
 .p-select-option.p-focus,
-.p-dropdown-item.p-focus {
+.p-dropdown-item.p-focus,
+.p-multiselect-item:hover,
+.p-multiselect-item.p-focus {
     background: var(--slate-100) !important;
     color: #000000 !important;
+}
+
+.p-multiselect {
+    border-radius: 12px !important;
+    border: 1px solid var(--slate-300) !important;
+    width: 100% !important;
+}
+
+/* InputGroup Addon */
+.p-inputgroup-addon,
+.p-inputgroupaddon,
+p-inputgroupaddon {
+    background: var(--slate-100) !important;
+    color: var(--slate-700) !important;
+    border: 1px solid var(--slate-300) !important;
 }
 
 /* Search Bar Component */

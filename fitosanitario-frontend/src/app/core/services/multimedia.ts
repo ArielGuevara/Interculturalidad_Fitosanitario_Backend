@@ -30,17 +30,35 @@ export class MultimediaService {
   }
 
   /**
-   * Corrige URLs de MinIO que puedan venir con 'localhost' o IPs incorrectas
-   * para que el navegador siempre apunte al servidor real.
+   * Corrige URLs de MinIO y del backend proxy que puedan venir con 'localhost' o IPs incorrectas
+   * para que el navegador/dispositivo siempre apunte al servidor real.
    */
   fixMinioUrl(url: string | undefined | null): string {
     if (!url) return '';
+    
     try {
         const urlObj = new URL(url);
-        const apiUrl = new URL(environment.apiUrl);
-        urlObj.hostname = apiUrl.hostname;
-        urlObj.port = apiUrl.port;
-        urlObj.protocol = apiUrl.protocol;
+        
+        // Caso 1: Es una URL de proxy del backend (tiene la ruta /api/multimedia)
+        if (urlObj.pathname.includes('/api/multimedia')) {
+            const apiBase = new URL(environment.apiUrl);
+            // Solo corregimos si apunta a localhost/127.0.0.1 y la API no está en localhost
+            if ((urlObj.hostname === 'localhost' || urlObj.hostname === '127.0.0.1') && 
+                apiBase.hostname !== 'localhost' && apiBase.hostname !== '127.0.0.1') {
+                urlObj.protocol = apiBase.protocol;
+                urlObj.hostname = apiBase.hostname;
+                urlObj.port = apiBase.port;
+            }
+            return urlObj.toString();
+        }
+
+        // Caso 2: Es una URL directa a MinIO (generalmente puerto 9000)
+        const publicMinioUrl = new URL(environment.minioPublicUrl);
+        if (urlObj.port === '9000' || urlObj.hostname === 'localhost' || urlObj.hostname === '127.0.0.1') {
+            urlObj.protocol = publicMinioUrl.protocol;
+            urlObj.hostname = publicMinioUrl.hostname;
+            urlObj.port = publicMinioUrl.port;
+        }
         return urlObj.toString();
     } catch {
         return url;

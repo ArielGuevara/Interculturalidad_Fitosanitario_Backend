@@ -35,7 +35,10 @@
     </ng-template>
     <ng-template pTemplate="body" let-plaga>
         <tr>
-            <td><span class="p-column-title">ID</span><span class="text-slate-400 font-mono text-xs">#{{plaga.id}}</span></td>
+            <td>
+                <span class="p-column-title">ID</span>
+                <div class="text-slate-400 font-mono text-xs">#{{plaga.id}}</div>
+            </td>
             <td>
                 <span class="p-column-title">Muestra</span>
                 <img [src]="plaga.imagenUrl || 'https://via.placeholder.com/60?text=P'" 

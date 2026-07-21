@@ -17,14 +17,14 @@
                 </div>
                 <span class="brand-name">Fitosani</span>
             </div>
-            <p-button [icon]="isCollapsed() ? 'pi pi-angle-right' : 'pi pi-angle-left'" 
-                      styleClass="p-button-rounded p-button-text p-button-secondary toggle-btn" 
+            <p-button [icon]="isCollapsed() ? 'pi pi-angle-right' : 'pi pi-angle-left'"
+                      styleClass="p-button-rounded p-button-text p-button-secondary toggle-btn"
                       (onClick)="toggleSidebar()"></p-button>
         </header>
 
         <nav class="sidebar-nav">
             @for (item of navItems(); track item.route) {
-              <a [routerLink]="[item.route]" 
+              <a [routerLink]="[item.route]"
                  routerLinkActive="active-link"
                  class="nav-item"
                  [pTooltip]="isCollapsed() && !isMobile() ? item.label : ''"
@@ -38,17 +38,28 @@
         </nav>
 
         <footer class="sidebar-footer">
-            <div class="profile-section" [routerLink]="['/perfil']" style="cursor:pointer">
-                <div class="user-avatar-box shadow-sm">
-                    <i class="pi pi-user" style="font-size: 1.1rem"></i>
+            <div class="profile-section">
+                <!-- User Information (Left Group) -->
+                <div class="profile-info">
+                    <div class="user-avatar-box shadow-sm">
+                        <i class="pi pi-user" style="font-size: 1.1rem"></i>
+                    </div>
+                    <div class="user-details">
+                        <span class="user-name">{{ authService.currentUser()?.nombre }}</span>
+                        <span class="user-role">{{ authService.currentUser()?.rol }}</span>
+                    </div>
                 </div>
-                <div class="user-details">
-                    <span class="user-name">{{ authService.currentUser()?.nombre }}</span>
-                    <span class="user-role">{{ authService.currentUser()?.rol }}</span>
+
+                <!-- Action Buttons (Right Group) -->
+                <div class="profile-actions">
+                    <div class="notif-btn-wrapper">
+                        <p-button icon="pi pi-bell" styleClass="p-button-text p-button-secondary profile-action-btn" (onClick)="toggleNotif($event)"></p-button>
+                        <span *ngIf="noLeidas() > 0" class="notification-badge-sm">{{ noLeidas() }}</span>
+                    </div>
+                    <p-button icon="pi pi-sign-out"
+                              styleClass="p-button-text p-button-danger profile-action-btn logout-btn"
+                              (onClick)="onLogout()"></p-button>
                 </div>
-                <p-button icon="pi pi-sign-out" 
-                          styleClass="p-button-text p-button-danger p-2 logout-btn" 
-                          (onClick)="onLogout()"></p-button>
             </div>
         </footer>
     </aside>
@@ -72,7 +83,7 @@
                     <small>{{noLeidas()}} sin leer</small>
                 </div>
                 <div *ngIf="notificaciones().length === 0" class="p-3 text-center text-gray-500">Sin notificaciones</div>
-                <div *ngFor="let n of notificaciones()" 
+                <div *ngFor="let n of notificaciones()"
                      (click)="clickNotificacion(n)"
                      class="notif-item"
                      [class.notif-unread]="!n.leida">
