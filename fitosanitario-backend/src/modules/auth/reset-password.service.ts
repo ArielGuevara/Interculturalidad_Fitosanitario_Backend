@@ -43,13 +43,13 @@ export class ResetPasswordService {
     return { message: 'Código válido' };
   }
 
-  async resetPassword(telefono: string, codigo: string, newPassword: string) {
+  async resetPassword(telefono: string, codigo: string, nuevaPassword: string) {
     const token = await this.resetTokensRepo.findValid(telefono, codigo);
     if (!token) {
       throw new BadRequestException('Código inválido o expirado');
     }
 
-    const passwordHash = await bcrypt.hash(newPassword, 10);
+    const passwordHash = await bcrypt.hash(nuevaPassword, 10);
     await this.usuariosRepo.updatePassword(token.usuarioId, passwordHash);
     await this.resetTokensRepo.markAsUsed(token.id);
 

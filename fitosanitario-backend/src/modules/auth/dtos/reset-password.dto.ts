@@ -9,6 +9,6 @@ export class ResetPasswordDto {
   codigo = '';
 
   @IsString()
-  @MinLength(8)
-  newPassword = '';
+  @MinLength(6)
+  nuevaPassword = '';
 }

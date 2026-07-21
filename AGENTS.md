@@ -1,3 +1,12 @@
+# Session Summary — Jul 21, 2026
+
+## What we did this session
+
+### Password Recovery Fix (Jul 21)
+- **Backend**: 3 endpoint mismatches fixed in `reset-password.controller.ts` — `POST /auth/request-reset` → `POST /auth/forgot-password`, `POST /auth/verify-reset` → `POST /auth/verify-code`, DTO field `newPassword` → `nuevaPassword` with `@MinLength(6)` instead of `@MinLength(8)`. Service parameter updated.
+- **401 on `/api/notificaciones`**: Added `catchError(() => { ... return EMPTY; })` to `cargarNotificaciones()` in `layout.ts` (line 65) so failed notification requests silently return empty arrays instead of flooding console with 401 errors.
+- Frontend builds clean (`ng build` OK).
+
 # Session Summary — Jul 19, 2026
 
 ## What we did so far

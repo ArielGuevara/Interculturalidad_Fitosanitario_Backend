@@ -8,13 +8,13 @@ import { ResetPasswordDto } from './dtos/reset-password.dto';
 export class ResetPasswordController {
   constructor(private readonly resetPasswordService: ResetPasswordService) {}
 
-  @Post('request-reset')
+  @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
   requestReset(@Body() dto: RequestResetDto) {
     return this.resetPasswordService.requestReset(dto.telefono);
   }
 
-  @Post('verify-reset')
+  @Post('verify-code')
   @HttpCode(HttpStatus.OK)
   verifyCode(@Body() dto: VerifyResetDto) {
     return this.resetPasswordService.verifyCode(dto.telefono, dto.codigo);
@@ -23,6 +23,6 @@ export class ResetPasswordController {
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
   resetPassword(@Body() dto: ResetPasswordDto) {
-    return this.resetPasswordService.resetPassword(dto.telefono, dto.codigo, dto.newPassword);
+    return this.resetPasswordService.resetPassword(dto.telefono, dto.codigo, dto.nuevaPassword);
   }
 }

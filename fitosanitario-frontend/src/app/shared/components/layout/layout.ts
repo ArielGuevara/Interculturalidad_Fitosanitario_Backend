@@ -7,6 +7,7 @@ import { AuthService } from '../../../core/services/auth';
 import { NotificacionesService } from '../../../core/services/notificaciones';
 import { Notificacion } from '../../../core/models/notificacion.model';
 import { CommonModule } from '@angular/common';
+import { catchError, EMPTY } from 'rxjs';
 
 @Component({
   selector: 'app-layout',
@@ -63,7 +64,13 @@ export class Layout implements OnInit {
   }
 
   cargarNotificaciones() {
-    this.notifService.findMine().subscribe((n) => {
+    this.notifService.findMine().pipe(
+      catchError(() => {
+        this.notificaciones.set([]);
+        this.noLeidas.set(0);
+        return EMPTY;
+      })
+    ).subscribe((n) => {
       this.notificaciones.set(n);
       this.noLeidas.set(n.filter((x) => !x.leida).length);
     });

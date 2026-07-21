@@ -29,16 +29,19 @@ export class TwilioService {
   }
 
   async sendWhatsApp(telefono: string, codigo: string): Promise<boolean> {
-    const cleaned = telefono.startsWith('+')
-      ? `+${telefono.replace(/[^0-9]/g, '')}`
-      : telefono.replace(/[^0-9]/g, '');
-    const to = `whatsapp:${cleaned}`;
+    const digits = telefono.replace(/[^0-9]/g, '');
+    const e164 = digits.startsWith('593')
+      ? `+${digits}`
+      : `+593${digits.replace(/^0/, '')}`;
+    const to = `whatsapp:${e164}`;
     const body = `🔐 Tu código de recuperación Fitosanitario es: ${codigo}\nVálido por 15 minutos. No compartas este código con nadie.`;
 
     if (!this.enabled || !this.client) {
       this.logger.log(`[DEV] WhatsApp to ${to}: ${body}`);
       return true;
     }
+
+    this.logger.log(`Código para ${telefono}: ${codigo}`);
 
     try {
       await this.client.messages.create({ from: this.from, to, body });
