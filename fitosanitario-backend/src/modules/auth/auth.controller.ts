@@ -5,6 +5,7 @@ import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { UsuariosService } from '../usuarios/usuarios.service';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -34,7 +35,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   updateProfile(
     @CurrentUser() user: { id: number },
-    @Body() dto: { nombre?: string; email?: string },
+    @Body() dto: UpdateProfileDto,
   ) {
     return this.usuariosService.update(user.id, dto);
   }

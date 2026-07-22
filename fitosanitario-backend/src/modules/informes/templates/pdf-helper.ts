@@ -6,12 +6,14 @@ export interface Column {
   align?: 'left' | 'center' | 'right';
 }
 
-export function createPdfDoc(): PDFKit.PDFDocument {
+export function createPdfDoc() {
   const doc = new PDFDocument({ margin: 50, size: 'A4' });
   return doc;
 }
 
-export function addHeader(doc: PDFKit.PDFDocument, title: string, subtitle?: string) {
+type PdfDocument = ReturnType<typeof createPdfDoc>;
+
+export function addHeader(doc: PdfDocument, title: string, subtitle?: string) {
   doc.fontSize(18).font('Helvetica-Bold').text(title, { align: 'center' });
   if (subtitle) {
     doc.fontSize(10).font('Helvetica').fillColor('#666').text(subtitle, { align: 'center' });
@@ -20,7 +22,7 @@ export function addHeader(doc: PDFKit.PDFDocument, title: string, subtitle?: str
   doc.moveDown(1.5);
 }
 
-export function addFooter(doc: PDFKit.PDFDocument) {
+export function addFooter(doc: PdfDocument) {
   const pages = doc.bufferedPageRange();
   const dateStr = new Date().toLocaleDateString('es-EC', {
     day: '2-digit', month: 'long', year: 'numeric',
@@ -42,7 +44,7 @@ const BOTTOM_MARGIN = 80;
 const MARGIN = 50;
 
 export function drawTable(
-  doc: PDFKit.PDFDocument,
+  doc: PdfDocument,
   columns: Column[],
   rows: string[][],
   startY?: number,

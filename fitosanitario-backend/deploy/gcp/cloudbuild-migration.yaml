@@ -1,0 +1,11 @@
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - --target
+      - migration
+      - --tag
+      - us-central1-docker.pkg.dev/$PROJECT_ID/fitosanitario/migration:latest
+      - .
+images:
+  - us-central1-docker.pkg.dev/$PROJECT_ID/fitosanitario/migration:latest

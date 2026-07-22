@@ -45,6 +45,7 @@ export class MultimediaController {
   }
 
   @Post('upload-image')
+  @UseGuards(JwtAuthGuard)
   @UseInterceptors(
     FilesInterceptor('images', 10, {
       storage: memoryStorage(),
@@ -67,6 +68,7 @@ export class MultimediaController {
   }
 
   @Post('upload-audio')
+  @UseGuards(JwtAuthGuard)
   @UseInterceptors(
     FileInterceptor('audio', {
       storage: memoryStorage(),

@@ -10,4 +10,9 @@ export class AppController {
     const msg = this.appService.getHello();
     return msg;
   }
+
+  @Get('health')
+  getHealth() {
+    return { status: 'ok' };
+  }
 }

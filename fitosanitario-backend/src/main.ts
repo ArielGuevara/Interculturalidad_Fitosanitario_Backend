@@ -12,8 +12,8 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
-  const port = process.env.PORT || 3000;
-  await app.listen(port);
+  const port = Number(process.env.PORT) || 3000;
+  await app.listen(port, '0.0.0.0');
   console.log(`🚀 Servidor corriendo en http://localhost:${port}/api`);
 }
 

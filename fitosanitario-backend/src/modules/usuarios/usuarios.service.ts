@@ -15,35 +15,45 @@ export class UsuariosService {
   ) {}
 
   async findAll(rol?: string) {
-    if (rol) {
-      return this.repo.findByRole([rol]);
-    }
-    return this.repo.findAll();
+    const users = rol
+      ? await this.repo.findByRole([rol])
+      : await this.repo.findAll();
+    return users.map((user) => this.withoutPassword(user));
   }
 
   async findById(id: number) {
+    return this.withoutPassword(await this.findByIdRecord(id));
+  }
+
+  private async findByIdRecord(id: number) {
     const user = await this.repo.findById(id);
     if (!user) throw new NotFoundException('Usuario no encontrado');
     return user;
   }
 
+  private withoutPassword<T extends { passwordHash?: string }>(user: T | null) {
+    if (!user) throw new NotFoundException('Usuario no encontrado');
+    const { passwordHash: _passwordHash, ...safeUser } = user;
+    return safeUser;
+  }
+
   async update(id: number, data: { nombre?: string; email?: string; telefono?: string; cargo?: string; rol?: 'AGRICULTOR' | 'MODERADOR' | 'ADMIN'; permisos?: string[]; activo?: boolean }) {
-    const user = await this.findById(id);
+    const user = await this.findByIdRecord(id);
     if (data.email && data.email !== user.email) {
       const existing = await this.repo.findByEmail(data.email);
       if (existing) throw new BadRequestException('El email ya está en uso');
     }
-    return this.repo.update(id, data);
+    return this.withoutPassword(await this.repo.update(id, data));
   }
 
   async logicalDelete(id: number) {
     await this.findById(id);
-    return this.repo.update(id, { activo: false });
+    return this.withoutPassword(await this.repo.update(id, { activo: false }));
   }
 
   async restore(id: number) {
     await this.findById(id);
-    return this.repo.update(id, { activo: true });
+    return this.withoutPassword(await this.repo.update(id, { activo: true }));
   }
 
   async createModerator(data: {
@@ -57,7 +67,7 @@ export class UsuariosService {
     if (existing) throw new BadRequestException('El email ya está registrado');
 
     const passwordHash = await bcrypt.hash('Moderador123', 10);
-    return this.repo.create({
+    return this.withoutPassword(await this.repo.create({
       nombre: data.nombre,
       email: data.email,
       telefono: data.telefono || null,
@@ -65,11 +75,11 @@ export class UsuariosService {
       rol: 'MODERADOR',
       cargo: data.cargo || null,
       permisos: data.permisos || [],
-    });
+    }));
   }
 
   async changePassword(userId: number, currentPassword: string, newPassword: string) {
-    const user = await this.findById(userId);
+    const user = await this.findByIdRecord(userId);
 
     const valid = await bcrypt.compare(currentPassword, user.passwordHash);
     if (!valid) throw new BadRequestException('La contraseña actual no es correcta');

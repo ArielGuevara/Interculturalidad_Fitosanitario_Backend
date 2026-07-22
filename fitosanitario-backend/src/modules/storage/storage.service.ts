@@ -63,7 +63,6 @@ export class StorageService implements OnModuleInit {
         this.logger.log(`Bucket creado: ${this.bucket}`);
       }
 
-      await this.ensurePublicReadPolicy();
     } catch (error) {
       this.logger.error('Error creando/verificando bucket', error as Error);
 
@@ -71,22 +70,6 @@ export class StorageService implements OnModuleInit {
         'Error inicializando storage (MinIO)',
       );
     }
-  }
-
-  private async ensurePublicReadPolicy() {
-    const policy = {
-      Version: '2012-10-17',
-      Statement: [
-        {
-          Effect: 'Allow',
-          Principal: { AWS: ['*'] },
-          Action: ['s3:GetObject'],
-          Resource: [`arn:aws:s3:::${this.bucket}/*`],
-        },
-      ],
-    };
-
-    await this.minio.setBucketPolicy(this.bucket, JSON.stringify(policy));
   }
 
   generateObjectKey(params: {
