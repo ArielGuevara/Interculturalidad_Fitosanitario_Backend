@@ -46,6 +46,13 @@ function formatTime(dateStr: string): string {
 }
 
 // ── Chat Bubble ──
+function formatDuration(totalSec: number): string {
+  if (!totalSec || totalSec <= 0) return '0:00';
+  const m = Math.floor(totalSec / 60);
+  const s = Math.floor(totalSec % 60);
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
 function ChatBubble({
   comentario,
   isOwn,
@@ -56,6 +63,7 @@ function ChatBubble({
   playingAudio,
   onPlayAudio,
   audioProgress,
+  audioDuration,
 }: {
   comentario: ComentarioForo;
   isOwn: boolean;
@@ -66,6 +74,7 @@ function ChatBubble({
   playingAudio: boolean;
   onPlayAudio: () => void;
   audioProgress: number;
+  audioDuration: number;
 }) {
   const isModerator = (comentario as any).esModerador;
 
@@ -121,13 +130,21 @@ function ChatBubble({
           <Pressable onPress={onPlayAudio} style={styles.audioBubble}>
             <Ionicons
               name={playingAudio ? 'pause-circle' : 'play-circle'}
-              size={24}
+              size={28}
               color={COLORS.primary}
             />
-            <View style={styles.audioProgressBar}>
-              <View style={[styles.audioProgressFill, { width: playingAudio ? `${audioProgress}%` : '0%' }]} />
+            <View style={styles.audioRight}>
+              <View style={styles.audioProgressBar}>
+                <View style={[styles.audioProgressFill, { width: playingAudio || audioProgress > 0 ? `${audioProgress}%` : '0%' }]} />
+              </View>
+              {playingAudio || audioProgress > 0 ? (
+                <Text style={styles.audioTime}>
+                  {formatDuration(audioProgress * audioDuration / 100)} / {formatDuration(audioDuration)}
+                </Text>
+              ) : (
+                <Text style={styles.audioTime}>{formatDuration(audioDuration)}</Text>
+              )}
             </View>
-            <Ionicons name="volume-high" size={14} color="#64748b" />
           </Pressable>
         ) : null}
 
@@ -186,6 +203,7 @@ export function RecomendacionDetailScreen({ route }: Props) {
   const [audioPreviewDuration, setAudioPreviewDuration] = useState(0);
   const [imagenUri, setImagenUri] = useState<string | null>(null);
   const [audioProgress, setAudioProgress] = useState(0);
+  const [audioDuration, setAudioDuration] = useState(0);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Build flat comments list with reply content
@@ -374,10 +392,14 @@ export function RecomendacionDetailScreen({ route }: Props) {
       soundRef.current = sound;
       sound.setOnPlaybackStatusUpdate((status: any) => {
         if (status.isLoaded) {
-          if (status.durationMillis) setAudioProgress(status.positionMillis / status.durationMillis * 100);
+          if (status.durationMillis) {
+            setAudioDuration(status.durationMillis / 1000);
+            setAudioProgress(status.positionMillis / status.durationMillis * 100);
+          }
           if (!status.isPlaying && status.didJustFinish) {
             setPlayingAudioId(null);
             setAudioProgress(0);
+            setAudioDuration(0);
             sound.unloadAsync();
             soundRef.current = null;
           }
@@ -542,6 +564,7 @@ export function RecomendacionDetailScreen({ route }: Props) {
                 playingAudio={playingAudioId === c.id}
                 onPlayAudio={() => playAudio(c)}
                 audioProgress={audioProgress}
+                audioDuration={audioDuration}
               />
             ))
           ) : (
@@ -819,25 +842,29 @@ const styles = StyleSheet.create({
   audioBubble: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
     backgroundColor: 'rgba(5, 150, 105, 0.08)',
     borderRadius: 12,
     padding: 8,
     marginTop: 4,
   },
-  audioProgressBar: {
+  audioRight: {
     flex: 1,
-    height: 4,
+    gap: 4,
+  },
+  audioProgressBar: {
+    width: '100%',
+    height: 6,
     backgroundColor: '#e2e8f0',
-    borderRadius: 2,
+    borderRadius: 3,
+    overflow: 'hidden',
   },
   audioProgressFill: {
-    height: 4,
+    height: 6,
     backgroundColor: COLORS.primary,
-    borderRadius: 2,
-    width: '30%',
+    borderRadius: 3,
   },
-  audioDuration: { fontSize: 11, color: '#64748b', fontWeight: '600' },
+  audioTime: { fontSize: 11, color: '#64748b', fontWeight: '600', textAlign: 'right' },
 
   // ── Empty state ──
   emptyChat: { alignItems: 'center', paddingTop: 60, paddingHorizontal: 32 },
