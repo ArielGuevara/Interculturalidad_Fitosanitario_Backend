@@ -134,9 +134,7 @@ function ChatBubble({
         {/* Footer: hora + reply */}
         <View style={[styles.bubbleFooter, isOwn && styles.bubbleFooterOwn]}>
           <Text style={styles.bubbleTime}>{formatTime(comentario.fechaComentario)}</Text>
-          {isOwn && (
-            <Ionicons name="checkmark-done" size={14} color="#65a30d" />
-          )}
+
         </View>
       </View>
 
