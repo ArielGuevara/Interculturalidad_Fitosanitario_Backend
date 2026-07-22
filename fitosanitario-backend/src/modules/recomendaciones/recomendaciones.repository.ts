@@ -520,6 +520,8 @@ export class RecomendacionesRepository {
         id: schema.comentariosForo.id,
         comentarioPadreId: schema.comentariosForo.comentarioPadreId,
         contenido: schema.comentariosForo.contenido,
+        audioUrl: schema.comentariosForo.audioUrl,
+        imagenUrl: schema.comentariosForo.imagenUrl,
         fechaComentario: schema.comentariosForo.fechaComentario,
         esModerador: schema.usuarios.rol,
         usuario: {
