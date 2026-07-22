@@ -845,8 +845,10 @@ const styles = StyleSheet.create({
     gap: 10,
     backgroundColor: 'rgba(5, 150, 105, 0.08)',
     borderRadius: 12,
-    padding: 8,
-    marginTop: 4,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginTop: 6,
+    minWidth: 200,
   },
   audioRight: {
     flex: 1,
@@ -854,17 +856,17 @@ const styles = StyleSheet.create({
   },
   audioProgressBar: {
     width: '100%',
-    height: 6,
+    height: 8,
     backgroundColor: '#e2e8f0',
-    borderRadius: 3,
+    borderRadius: 4,
     overflow: 'hidden',
   },
   audioProgressFill: {
-    height: 6,
+    height: 8,
     backgroundColor: COLORS.primary,
-    borderRadius: 3,
+    borderRadius: 4,
   },
-  audioTime: { fontSize: 11, color: '#64748b', fontWeight: '600', textAlign: 'right' },
+  audioTime: { fontSize: 12, color: '#64748b', fontWeight: '600', textAlign: 'right' },
 
   // ── Empty state ──
   emptyChat: { alignItems: 'center', paddingTop: 60, paddingHorizontal: 32 },
