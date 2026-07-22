@@ -20,7 +20,9 @@ import * as Location from 'expo-location';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Audio, AVPlaybackSource } from 'expo-av';
 import * as FileSystem from 'expo-file-system/legacy';
+import NetInfo from '@react-native-community/netinfo';
 import { enqueueReporte } from '../../../infrastructure/offline/pendingReportes';
+import { syncPendingReportes } from '../../../infrastructure/offline/sync';
 import { getCache, setCache } from '../../../infrastructure/offline/cache';
 import { getCultivos } from '../../../infrastructure/data/catalogos/cultivosApi';
 import type { Cultivo } from '../../../domain/catalogos/types';
@@ -498,20 +500,42 @@ export function CreateReporteScreen() {
     }
 
     savingRef.current = true;
-    await enqueueReporte({
-      titulo: titulo.trim(),
-      descripcion: descripcion.trim() || undefined,
-      cultivoId,
-      latitud,
-      longitud,
-      imageUris,
-      audioUri: audioUri ?? undefined,
-    });
-    if (easyMode) { speak('Reporte guardado correctamente'); }
-    Alert.alert(
-      'Guardado correctamente',
-      'Se enviará automáticamente cuando tengas conexión a internet.'
-    );
+    setIsSaving(true);
+    try {
+      await enqueueReporte({
+        titulo: titulo.trim(),
+        descripcion: descripcion.trim() || undefined,
+        cultivoId,
+        latitud,
+        longitud,
+        imageUris,
+        audioUri: audioUri ?? undefined,
+      });
+      const netState = await NetInfo.fetch();
+      const online = netState.isConnected && netState.isInternetReachable !== false;
+      if (online) {
+        const result = await syncPendingReportes();
+        if (result.synced > 0) {
+          if (easyMode) speak('Reporte enviado');
+          Alert.alert('Enviado', 'El reporte se ha enviado correctamente.');
+        } else {
+          if (easyMode) speak('Reporte guardado correctamente');
+          Alert.alert(
+            'Guardado correctamente',
+            'No se pudo enviar ahora. Se enviará automáticamente cuando tengas conexión a internet.'
+          );
+        }
+      } else {
+        if (easyMode) speak('Reporte guardado correctamente');
+        Alert.alert(
+          'Guardado correctamente',
+          'Se enviará automáticamente cuando tengas conexión a internet.'
+        );
+      }
+    } finally {
+      setIsSaving(false);
+      savingRef.current = false;
+    }
     setTitulo('');
     setDescripcion('');
     setCultivoId(0);
@@ -519,8 +543,6 @@ export function CreateReporteScreen() {
     setAudioUri(null);
     setWizardStep(1);
     getLocation();
-    savingRef.current = false;
-
     reportesApi.getSuspensionActiva().catch(() => {});
   };
 

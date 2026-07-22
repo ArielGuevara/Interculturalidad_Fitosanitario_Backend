@@ -351,7 +351,7 @@ export function ReporteDetailScreen({ route }: Props) {
             {reporte.imagenesUrls.map((url: string, i: number) => (
               <Pressable key={i} onPress={() => setSelectedImage(url)}>
                 <Image
-                  source={{ uri: url }}
+                  source={{ uri: fixMediaUrl(url)! }}
                   style={styles.image}
                   resizeMode="cover"
                 />

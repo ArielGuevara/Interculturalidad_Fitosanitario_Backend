@@ -3,25 +3,17 @@ import { syncPendingReportes, syncPendingRecomendaciones } from '../../infrastru
 
 let isSyncing = false;
 let hasInitialized = false;
-let lastSyncTime = 0;
-const MIN_SYNC_INTERVAL = 10_000; // 10 segundos mínimo entre syncs
 
 let unsubscribe: (() => void) | null = null;
 
 /**
- * Ejecuta sincronización segura (con control de duplicados y cooldown)
+ * Ejecuta sincronización segura (con control de duplicados)
  */
 async function runSync(source: 'network' | 'app') {
-  const now = Date.now();
-
-  // Evita sincronizaciones muy seguidas
-  if (now - lastSyncTime < MIN_SYNC_INTERVAL) return;
-
   // Evita ejecución paralela
   if (isSyncing) return;
 
   isSyncing = true;
-  lastSyncTime = now;
 
   try {
     console.log(`[SYNC] Ejecutando sync desde: ${source}`);
@@ -50,7 +42,7 @@ export function startAutoSync() {
     isInternetReachable: state.isInternetReachable,
   });
 
-  if (state.isConnected && state.isInternetReachable) {
+  if (state.isConnected && state.isInternetReachable !== false) {
     runSync('network');
   }
 });

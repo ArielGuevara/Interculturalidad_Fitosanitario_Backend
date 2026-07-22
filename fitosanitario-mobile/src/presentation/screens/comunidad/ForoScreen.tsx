@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import {
-  View, Text, FlatList, Pressable, ActivityIndicator, StyleSheet,
+  Alert, View, Text, FlatList, Pressable, ActivityIndicator, StyleSheet,
   RefreshControl, SafeAreaView, ScrollView, Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,6 +10,7 @@ import { getCultivos } from '../../../infrastructure/data/catalogos/cultivosApi'
 import { getPlagas } from '../../../infrastructure/data/catalogos/plagasApi';
 import { getCache, setCache } from '../../../infrastructure/offline/cache';
 import { useAuthStore } from '../../../infrastructure/auth/authStore';
+import { getSuspensionActiva } from '../../../infrastructure/data/reportes/reportesApi';
 import type { Recomendacion, SaberAncestral } from '../../../domain/recomendaciones/types';
 import type { Cultivo, Plaga } from '../../../domain/catalogos/types';
 import { SearchBar } from '../../../presentation/components/SearchBar';
@@ -63,6 +64,7 @@ export function ForoScreen() {
   const [showCultivoSelect, setShowCultivoSelect] = useState(false);
   const [showPlagaSelect, setShowPlagaSelect] = useState(false);
   const [showCultivoSaberSelect, setShowCultivoSaberSelect] = useState(false);
+  const [suspension, setSuspension] = useState<{ motivo: string } | null>(null);
 
   const tipos = [
     { key: 'RECOMENDACION', label: 'Recomendación', icon: 'bulb-outline', color: '#059669' },
@@ -153,6 +155,7 @@ export function ForoScreen() {
       loadCatalogs();
       if (tabActivo === 'foros') loadForos();
       else loadSaberes();
+      getSuspensionActiva().then((s) => setSuspension(s));
     }, [tabActivo, loadForos, loadSaberes, loadCatalogs])
   );
 
@@ -355,7 +358,16 @@ export function ForoScreen() {
 
       {/* FAB - only for foros tab */}
       {tabActivo === 'foros' && (
-        <Pressable style={styles.fab} onPress={() => navigation.navigate('RecomendacionForm', {})}>
+        <Pressable
+          style={[styles.fab, suspension && { opacity: 0.5 }]}
+          onPress={() => {
+            if (suspension) {
+              Alert.alert('Cuenta bloqueada', `No puede interactuar en el foro, usted tiene la cuenta bloqueada. Motivo: ${suspension.motivo}`);
+              return;
+            }
+            navigation.navigate('RecomendacionForm', {});
+          }}
+        >
           <Text style={styles.fabText}>+</Text>
         </Pressable>
       )}

@@ -14,7 +14,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { Reporte } from '../../../domain/reportes/types';
-import { getReportes } from '../../../infrastructure/data/reportes/reportesApi';
+import { getReportes, getSuspensionActiva } from '../../../infrastructure/data/reportes/reportesApi';
 import { getCache, setCache } from '../../../infrastructure/offline/cache';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -95,6 +95,7 @@ export function ReportesScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [page, setPage] = useState(1);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [suspension, setSuspension] = useState<{ motivo: string } | null>(null);
 
   const displayedItems = allItems.slice(0, page * PAGE_SIZE);
   const hasMore = displayedItems.length < allItems.length;
@@ -131,6 +132,7 @@ export function ReportesScreen() {
   useFocusEffect(
     useCallback(() => {
       loadData();
+      getSuspensionActiva().then((s) => setSuspension(s));
     }, [])
   );
 
@@ -202,9 +204,15 @@ export function ReportesScreen() {
       )}
 
       {/* Floating Action Button (FAB) para crear un nuevo reporte */}
-      <Pressable 
-        style={styles.fab}
-        onPress={() => navigation.navigate('CreateReporte')}
+      <Pressable
+        style={[styles.fab, suspension && { opacity: 0.5 }]}
+        onPress={() => {
+          if (suspension) {
+            Alert.alert('Cuenta bloqueada', `No puede crear un reporte, usted tiene la cuenta bloqueada. Motivo: ${suspension.motivo}`);
+            return;
+          }
+          navigation.navigate('CreateReporte');
+        }}
       >
         <LinearGradient
           colors={['#10b981', '#059669']}

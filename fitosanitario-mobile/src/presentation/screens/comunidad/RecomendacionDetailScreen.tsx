@@ -10,9 +10,11 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import type { AppStackParamList } from '../../navigation/RootNavigator';
 import { recomendacionesApi } from '../../../infrastructure/data/recomendaciones/recomendacionesApi';
+import { getSuspensionActiva } from '../../../infrastructure/data/reportes/reportesApi';
 import { fixMediaUrl } from '../../../shared/utils/mediaUrl';
 import type { Recomendacion, ComentarioForo } from '../../../domain/recomendaciones/types';
 import { useAuthStore } from '../../../infrastructure/auth/authStore';
+import { ImageViewerModal } from '../../../presentation/components/ImageViewerModal';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'RecomendacionDetail'>;
 
@@ -64,6 +66,7 @@ function ChatBubble({
   onPlayAudio,
   audioProgress,
   audioDuration,
+  onImagePress,
 }: {
   comentario: ComentarioForo;
   isOwn: boolean;
@@ -75,6 +78,7 @@ function ChatBubble({
   onPlayAudio: () => void;
   audioProgress: number;
   audioDuration: number;
+  onImagePress: (url: string) => void;
 }) {
   const isModerator = (comentario as any).esModerador;
 
@@ -117,7 +121,9 @@ function ChatBubble({
 
         {/* Image */}
         {comentario.imagenUrl ? (
-          <Image source={{ uri: fixMediaUrl(comentario.imagenUrl)! }} style={styles.bubbleImage} resizeMode="cover" />
+          <TouchableOpacity onPress={() => onImagePress(comentario.imagenUrl!)}>
+            <Image source={{ uri: fixMediaUrl(comentario.imagenUrl)! }} style={styles.bubbleImage} resizeMode="cover" />
+          </TouchableOpacity>
         ) : null}
 
         {/* Contenido */}
@@ -204,6 +210,8 @@ export function RecomendacionDetailScreen({ route }: Props) {
   const [imagenUri, setImagenUri] = useState<string | null>(null);
   const [audioProgress, setAudioProgress] = useState(0);
   const [audioDuration, setAudioDuration] = useState(0);
+  const [imageViewerUrl, setImageViewerUrl] = useState<string | null>(null);
+  const [suspension, setSuspension] = useState<{ motivo: string } | null>(null);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Build flat comments list with reply content
@@ -211,10 +219,12 @@ export function RecomendacionDetailScreen({ route }: Props) {
 
   const loadData = useCallback(async () => {
     try {
-      const [rec, comentariosData] = await Promise.all([
+      const [rec, comentariosData, susp] = await Promise.all([
         recomendacionesApi.getById(id),
         recomendacionesApi.getComentarios(id),
+        getSuspensionActiva(),
       ]);
+      setSuspension(susp);
       setRecomendacion(rec);
 
       // Build map of id→content + author for replies
@@ -565,6 +575,7 @@ export function RecomendacionDetailScreen({ route }: Props) {
                 onPlayAudio={() => playAudio(c)}
                 audioProgress={audioProgress}
                 audioDuration={audioDuration}
+                onImagePress={(url) => setImageViewerUrl(url)}
               />
             ))
           ) : (
@@ -645,57 +656,66 @@ export function RecomendacionDetailScreen({ route }: Props) {
             </View>
           )}
 
-          <View style={styles.inputRow}>
-            {/* Mic button */}
-            {isRecording ? (
-              <View style={{ flexDirection: 'row', gap: 4 }}>
-                <Pressable style={styles.micBtnSmall} onPress={isPaused ? resumeRecording : pauseRecording}>
-                  <Ionicons name={isPaused ? 'play' : 'pause'} size={16} color="#fff" />
-                </Pressable>
-                <Pressable style={[styles.micBtnSmall, { backgroundColor: '#ef4444' }]} onPress={stopRecording}>
-                  <Ionicons name="stop" size={16} color="#fff" />
-                </Pressable>
-              </View>
-            ) : (
-              <Pressable
-                style={[styles.micBtn]}
-                onPressIn={startRecording}
-                onPressOut={stopRecording}
-              >
-                <Ionicons name="mic" size={20} color="#64748b" />
-              </Pressable>
-            )}
-
-            {/* Camera/Image button */}
-            <Pressable style={styles.imgBtn} onPress={pickImage}>
-              <Ionicons name="image-outline" size={20} color="#64748b" />
-            </Pressable>
-
-            {/* Text input */}
-            <TextInput
-              style={styles.inputField}
-              placeholder="Escribe un comentario..."
-              placeholderTextColor="#94a3b8"
-              value={nuevoComentario}
-              onChangeText={setNuevoComentario}
-              multiline
-            />
-
-            {/* Send button */}
-            <Pressable
-              style={[styles.sendBtn, (!nuevoComentario.trim() && !audioUri && !imagenUri) && styles.sendBtnDisabled]}
-              onPress={handleEnviarComentario}
-              disabled={(!nuevoComentario.trim() && !audioUri && !imagenUri) || enviandoComentario}
-            >
-              {enviandoComentario ? (
-                <ActivityIndicator size="small" color="#fff" />
+          {suspension ? (
+            <View style={styles.suspendedInputBanner}>
+              <Ionicons name="lock-closed" size={16} color="#ef4444" />
+              <Text style={styles.suspendedInputText}>
+                No puede interactuar en el foro, usted tiene la cuenta bloqueada
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.inputRow}>
+              {/* Mic button */}
+              {isRecording ? (
+                <View style={{ flexDirection: 'row', gap: 4 }}>
+                  <Pressable style={styles.micBtnSmall} onPress={isPaused ? resumeRecording : pauseRecording}>
+                    <Ionicons name={isPaused ? 'play' : 'pause'} size={16} color="#fff" />
+                  </Pressable>
+                  <Pressable style={[styles.micBtnSmall, { backgroundColor: '#ef4444' }]} onPress={stopRecording}>
+                    <Ionicons name="stop" size={16} color="#fff" />
+                  </Pressable>
+                </View>
               ) : (
-                <Ionicons name="send" size={18} color="#fff" />
+                <Pressable
+                  style={[styles.micBtn]}
+                  onPressIn={startRecording}
+                  onPressOut={stopRecording}
+                >
+                  <Ionicons name="mic" size={20} color="#64748b" />
+                </Pressable>
               )}
-            </Pressable>
-          </View>
+
+              {/* Text input */}
+              <TextInput
+                style={styles.inputField}
+                placeholder="Escribe un comentario..."
+                placeholderTextColor="#94a3b8"
+                value={nuevoComentario}
+                onChangeText={setNuevoComentario}
+                multiline
+              />
+
+              {/* Send button */}
+              <Pressable
+                style={[styles.sendBtn, (!nuevoComentario.trim() && !audioUri && !imagenUri) && styles.sendBtnDisabled]}
+                onPress={handleEnviarComentario}
+                disabled={(!nuevoComentario.trim() && !audioUri && !imagenUri) || enviandoComentario}
+              >
+                {enviandoComentario ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Ionicons name="send" size={18} color="#fff" />
+                )}
+              </Pressable>
+            </View>
+          )}
         </View>
       </View>
+      <ImageViewerModal
+        visible={imageViewerUrl !== null}
+        imageUrl={imageViewerUrl ?? ''}
+        onClose={() => setImageViewerUrl(null)}
+      />
     </View>
   );
 }
@@ -940,11 +960,27 @@ const styles = StyleSheet.create({
   micBtnActive: {
     backgroundColor: '#fee2e2',
   },
+  suspendedInputBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#fef2f2',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderTopWidth: 1,
+    borderTopColor: '#fecaca',
+  },
+  suspendedInputText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#dc2626',
+    fontWeight: '600',
+  },
   micBtnSmall: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#f59e0b',
+    backgroundColor: '#64748b',
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useRef, useState } from 'react';
+﻿import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Animated,
@@ -11,7 +11,7 @@ import {
   StatusBar,
   Platform,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useAuthStore } from '../../../infrastructure/auth/authStore';
 import { syncPendingReportes } from '../../../infrastructure/offline/sync';
 import { listPendingReportes } from '../../../infrastructure/offline/pendingReportes';
@@ -20,6 +20,8 @@ import { fetchReportes } from '../../../infrastructure/data/reportes/reportesApi
 import { Ionicons } from '@expo/vector-icons';
 import { AccessibleButton } from '../../../shared/components/AccessibleButton';
 import { useAccessibilityStore } from '../../../shared/stores/accessibilityStore';
+import { useAccessibility } from '../../../shared/contexts/AccessibilityContext';
+import { getSuspensionActiva } from '../../../infrastructure/data/reportes/reportesApi';
 
 const { width: W } = Dimensions.get('window');
 const CARD_GAP = 12;
@@ -39,28 +41,37 @@ export function HomeScreen() {
   const navigation = useNavigation<any>();
   const usuario = useAuthStore((s) => s.usuario);
   const easyMode = useAccessibilityStore((s) => s.easyMode);
+  const { speak } = useAccessibility();
   const [comunidadCount, setComunidadCount] = useState(0);
   const [reporteCount, setReporteCount] = useState(0);
   const [pendingCount, setPendingCount] = useState(0);
+  const [suspension, setSuspension] = useState<{ motivo: string; fechaFin: string } | null>(null);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [recomendaciones, reportes, pendings] = await Promise.all([
-          recomendacionesApi.getAll(),
-          fetchReportes(),
-          listPendingReportes(),
-        ]);
-        setComunidadCount(recomendaciones.length);
-        setReporteCount(reportes.length);
-        setPendingCount(pendings.length);
-      } catch {}
-    };
-    loadData();
+  const loadData = useCallback(async () => {
+    try {
+      const [recomendaciones, reportes, pendings, susp] = await Promise.all([
+        recomendacionesApi.getAll(),
+        fetchReportes(),
+        listPendingReportes(),
+        getSuspensionActiva(),
+      ]);
+      setComunidadCount(recomendaciones.length);
+      setReporteCount(reportes.length);
+      setPendingCount(pendings.length);
+      setSuspension(susp);
+    } catch {}
   }, []);
+
+  useEffect(() => { loadData(); }, [loadData]);
+
+  useFocusEffect(
+    useCallback(() => {
+      getSuspensionActiva().then((susp) => setSuspension(susp));
+    }, []),
+  );
 
   useEffect(() => {
     Animated.parallel([
@@ -69,7 +80,33 @@ export function HomeScreen() {
     ]).start();
   }, []);
 
+  const handleCreateReporte = () => {
+    if (suspension) {
+      const msg = `No puede crear un reporte, usted tiene la cuenta bloqueada. Motivo: ${suspension.motivo}`;
+      if (easyMode) speak(msg);
+      Alert.alert('Cuenta bloqueada', msg);
+      return;
+    }
+    navigation.navigate('CreateReporte');
+  };
+
+  const handleForo = () => {
+    if (suspension) {
+      const msg = `No puede interactuar en el foro, usted tiene la cuenta bloqueada. Motivo: ${suspension.motivo}`;
+      if (easyMode) speak(msg);
+      Alert.alert('Cuenta bloqueada', msg);
+      return;
+    }
+    navigation.navigate('ForoList');
+  };
+
   const onSync = async () => {
+    if (suspension) {
+      const msg = `No puede sincronizar, usted tiene la cuenta bloqueada. Motivo: ${suspension.motivo}`;
+      if (easyMode) speak(msg);
+      Alert.alert('Cuenta bloqueada', msg);
+      return;
+    }
     try {
       const result = await syncPendingReportes();
       Alert.alert('Sincronización', `Enviados: ${result.synced}\nFallidos: ${result.failed}`);
@@ -100,9 +137,9 @@ export function HomeScreen() {
     },
     {
       icon: 'chatbubbles-outline',
-      label: 'Foro',
-      color: '#F8E8C0',
-      onPress: () => navigation.navigate('ForoList'),
+      label: suspension ? 'Foro bloqueado' : 'Foro',
+      color: suspension ? '#a0aec0' : '#F8E8C0',
+      onPress: handleForo,
     },
     {
       icon: 'notifications-outline',
@@ -112,8 +149,8 @@ export function HomeScreen() {
     },
     {
       icon: 'cloud-outline',
-      label: 'Sincronizar',
-      color: '#7FAA8F',
+      label: suspension ? 'Sincronización bloqueada' : 'Sincronizar',
+      color: suspension ? '#a0aec0' : '#7FAA8F',
       onPress: onSync,
     },
   ];
@@ -145,18 +182,18 @@ export function HomeScreen() {
             <>
               <AccessibleButton
                 icon="clipboard-outline"
-                label="Nuevo reporte"
-                onPress={() => navigation.navigate('CreateReporte')}
+                label={suspension ? 'Reportes bloqueados' : 'Nuevo reporte'}
+                onPress={handleCreateReporte}
                 color="#7DD3FC"
                 textColor="#143A22"
-                style={{ marginBottom: 12 }}
+                style={[suspension && { opacity: 0.5 }, { marginBottom: 12 }]}
               />
               <AccessibleButton
                 icon="cloud-upload-outline"
-                label="Subir pendientes"
+                label={suspension ? 'Sincronización bloqueada' : 'Subir pendientes'}
                 onPress={onSync}
                 color="#2D6A4F"
-                style={{ marginBottom: 20 }}
+                style={[suspension && { opacity: 0.5 }, { marginBottom: 20 }]}
               />
               <AccessibleButton
                 icon="bug"
@@ -167,11 +204,11 @@ export function HomeScreen() {
               />
               <AccessibleButton
                 icon="chatbubbles"
-                label={`Foro (${comunidadCount})`}
-                onPress={() => navigation.navigate('ForoList')}
+                label={suspension ? 'Foro bloqueado' : `Foro (${comunidadCount})`}
+                onPress={handleForo}
                 color="#F8E8C0"
                 textColor="#143A22"
-                style={{ marginBottom: 12 }}
+                style={[suspension && { opacity: 0.5 }, { marginBottom: 12 }]}
               />
               <AccessibleButton
                 icon="notifications"
@@ -182,9 +219,10 @@ export function HomeScreen() {
               />
               <AccessibleButton
                 icon="cloud"
-                label="Sincronizar"
+                label={suspension ? 'Sincronización bloqueada' : 'Sincronizar'}
                 onPress={onSync}
                 color="#7FAA8F"
+                style={suspension && { opacity: 0.5 }}
               />
             </>
           ) : (
@@ -204,7 +242,7 @@ export function HomeScreen() {
                   <Text style={styles.statValue}>{comunidadCount}</Text>
                   <Text style={styles.statLabel}>Foro</Text>
                 </View>
-                <Pressable style={styles.statCard} onPress={onSync}>
+                <Pressable style={[styles.statCard, suspension && { opacity: 0.5 }]} onPress={onSync}>
                   <View style={[styles.statIconWrap, { backgroundColor: '#fef3c7' }]}>
                     <Ionicons name="cloud-outline" size={18} color="#f59e0b" />
                   </View>
@@ -215,8 +253,8 @@ export function HomeScreen() {
               </View>
 
               <Pressable
-                style={styles.ctaButton}
-                onPress={() => navigation.navigate('CreateReporte')}
+                style={[styles.ctaButton, suspension && { opacity: 0.5 }]}
+                onPress={handleCreateReporte}
               >
                 <View style={styles.ctaShine} />
                 <View style={styles.ctaIconWrap}>

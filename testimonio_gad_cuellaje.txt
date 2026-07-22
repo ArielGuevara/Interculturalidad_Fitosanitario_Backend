@@ -1,0 +1,26 @@
+Gobierno Autónomo Descentralizado Parroquial Rural
+Seis de Julio de Cuellaje
+
+Oficio Nro. GADPR-SJDC-2026-0073
+Cuellaje, 21 de julio de 2026
+
+Asunto: Acta de conformidad sobre pruebas del Sistema Intercultural Fitosanitario
+
+Por medio del presente, el GAD de la parroquia Seis de Julio de Cuellaje, en representación de los agricultores y productores de nuestra localidad, certifica que se han realizado las pruebas correspondientes al Sistema Intercultural Fitosanitario en su versión móvil y web.
+
+El sistema fue evaluado por un grupo de productores locales y personal técnico del GAD durante las jornadas de campo realizadas entre el 15 y el 21 de julio de 2026. Durante este periodo se verificaron los siguientes módulos:
+
+- Reportes fitosanitarios con captura de imágenes y audio
+- Catálogos de cultivos, plagas y enfermedades
+- Foro intercultural con saberes ancestrales
+- Recomendaciones y tratamientos oficiales
+- Registro de dispositivos y notificaciones push
+- Funcionalidad sin conexión a internet (offline)
+
+Luego de las pruebas realizadas, manifestamos nuestra conformidad con el funcionamiento del sistema. La aplicación cumple con los requerimientos establecidos para el registro y seguimiento de novedades fitosanitarias en nuestra parroquia, integrando de manera adecuada los conocimientos técnicos y los saberes ancestrales de la comunidad.
+
+Agradecemos el desarrollo de esta herramienta que contribuirá significativamente a la gestión fitosanitaria en nuestra región.
+
+Atentamente,
+
+Por el GAD Parroquial Seis de Julio de Cuellaje

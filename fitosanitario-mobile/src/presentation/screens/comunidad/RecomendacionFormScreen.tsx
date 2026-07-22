@@ -285,19 +285,6 @@ export function RecomendacionFormScreen({ route, navigation }: Props) {
               textAlignVertical="top"
             />
 
-            <Text style={[styles.sectionLabel, { marginTop: 8 }]}>Foto (opcional)</Text>
-            <Pressable style={styles.photoBtn} onPress={openCamera} disabled={uploadingImg || saving}>
-              <Ionicons name="camera-outline" size={22} color="#059669" />
-              <Text style={styles.photoBtnText}>Tomar foto</Text>
-            </Pressable>
-            {imageUri && (
-              <View style={styles.imagePreviewContainer}>
-                <Image source={{ uri: imageUri }} style={styles.imagePreview} />
-                <Pressable style={styles.removeImage} onPress={() => setImageUri(null)} disabled={uploadingImg}>
-                  <Ionicons name="close-circle" size={24} color="#ef4444" />
-                </Pressable>
-              </View>
-            )}
           </View>
         );
 
