@@ -11,6 +11,7 @@ import type { TratamientoConRelaciones } from '../../../domain/tratamientos/type
 import type { HistorialEntry } from '../../../domain/reportes/types';
 import { useNavigation } from '@react-navigation/native';
 import { ImageViewerModal } from '../../../presentation/components/ImageViewerModal';
+import { fixMediaUrl } from '../../../shared/utils/mediaUrl';
 
 const { width: W } = Dimensions.get('window');
 
@@ -123,7 +124,7 @@ export function ReporteDetailScreen({ route }: Props) {
         return;
       }
       const { sound: s } = await Audio.Sound.createAsync(
-        { uri: reporte.audioUrl } as AVPlaybackSource,
+        { uri: fixMediaUrl(reporte.audioUrl)! } as AVPlaybackSource,
       );
       soundRef.current = s;
       setAudioPosition(0);

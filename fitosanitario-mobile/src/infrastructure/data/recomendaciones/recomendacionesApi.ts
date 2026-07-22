@@ -50,6 +50,11 @@ export const recomendacionesApi = {
     return data;
   },
 
+  getMiValoracion: async (recomendacionId: number): Promise<{ puntuacion: number | null }> => {
+    const { data } = await apiClient.get<{ puntuacion: number | null }>(`/recomendaciones/${recomendacionId}/mi-valoracion`);
+    return data;
+  },
+
   getValoraciones: async (recomendacionId: number): Promise<Valoracion[]> => {
     const { data } = await apiClient.get<Valoracion[]>(`/recomendaciones/${recomendacionId}/valoraciones`);
     return data;

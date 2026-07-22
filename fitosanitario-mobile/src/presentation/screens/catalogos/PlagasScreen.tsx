@@ -16,6 +16,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import type { Cultivo, Plaga } from '../../../domain/catalogos/types';
 import { getPlagas, getAsociaciones } from '../../../infrastructure/data/catalogos/plagasApi';
+import { fixMediaUrl } from '../../../shared/utils/mediaUrl';
 import { getCultivos } from '../../../infrastructure/data/catalogos/cultivosApi';
 import { getCache, setCache } from '../../../infrastructure/offline/cache';
 import { ImageViewerModal } from '../../../presentation/components/ImageViewerModal';
@@ -101,7 +102,7 @@ export function PlagasScreen() {
       {/* Imagen o icono */}
       {item.imagenUrl ? (
         <Pressable onPress={() => setSelectedImage(item.imagenUrl!)}>
-          <Image source={{ uri: item.imagenUrl }} style={styles.image} resizeMode="cover" />
+          <Image source={{ uri: fixMediaUrl(item.imagenUrl)! }} style={styles.image} resizeMode="cover" />
         </Pressable>
       ) : (
         <View style={styles.iconContainer}>
@@ -221,7 +222,7 @@ export function PlagasScreen() {
     <Pressable style={styles.modalContent} onPress={() => {}}>
       <ScrollView contentContainerStyle={styles.modalContentInner}>
         {selectedItem?.imagenUrl && (
-          <Image source={{ uri: selectedItem.imagenUrl }} style={styles.modalImage} resizeMode="contain" />
+          <Image source={{ uri: fixMediaUrl(selectedItem.imagenUrl)! }} style={styles.modalImage} resizeMode="contain" />
 
         )}
         <Text style={styles.modalTitle}>{selectedItem?.nombre}</Text>

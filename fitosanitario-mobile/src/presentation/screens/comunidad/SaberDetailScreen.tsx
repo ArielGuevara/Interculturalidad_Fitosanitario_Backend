@@ -28,6 +28,8 @@ export function SaberDetailScreen({ route }: Props) {
     try {
       const data = await recomendacionesApi.getById(id) as any;
       setSaber(data);
+      const miVal = await recomendacionesApi.getMiValoracion(id);
+      setUserRating(miVal.puntuacion);
     } catch {
       Alert.alert('Error', 'No se pudo cargar el saber ancestral');
     } finally {
@@ -36,10 +38,10 @@ export function SaberDetailScreen({ route }: Props) {
   };
 
   const handleValorar = async (puntuacion: number) => {
-    if (!saber || userRating) return;
+    if (!saber) return;
     try {
-      await recomendacionesApi.valorar(saber.id, puntuacion);
-      setUserRating(puntuacion);
+      const res: any = await recomendacionesApi.valorar(saber.id, puntuacion);
+      setUserRating(res.miValoracion);
       loadData();
     } catch {
       Alert.alert('Error', 'No se pudo valorar');
@@ -117,7 +119,6 @@ export function SaberDetailScreen({ route }: Props) {
           <Pressable
             style={[styles.thumbBtn, userRating === 5 && styles.thumbBtnActiveGreen]}
             onPress={() => handleValorar(5)}
-            disabled={!!userRating}
           >
             <Ionicons
               name={userRating === 5 ? 'thumbs-up' : 'thumbs-up-outline'}
@@ -129,7 +130,6 @@ export function SaberDetailScreen({ route }: Props) {
           <Pressable
             style={[styles.thumbBtn, userRating === 1 && styles.thumbBtnActiveRed]}
             onPress={() => handleValorar(1)}
-            disabled={!!userRating}
           >
             <Ionicons
               name={userRating === 1 ? 'thumbs-down' : 'thumbs-down-outline'}

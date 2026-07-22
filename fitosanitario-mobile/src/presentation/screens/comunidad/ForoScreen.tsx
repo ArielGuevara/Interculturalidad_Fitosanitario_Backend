@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, FlatList, Pressable, ActivityIndicator, StyleSheet,
   RefreshControl, SafeAreaView, ScrollView, Modal,
@@ -11,7 +11,7 @@ import { getPlagas } from '../../../infrastructure/data/catalogos/plagasApi';
 import { getCache, setCache } from '../../../infrastructure/offline/cache';
 import { useAuthStore } from '../../../infrastructure/auth/authStore';
 import type { Recomendacion, SaberAncestral } from '../../../domain/recomendaciones/types';
-import type { Cultivo } from '../../../domain/catalogos/types';
+import type { Cultivo, Plaga } from '../../../domain/catalogos/types';
 import { SearchBar } from '../../../presentation/components/SearchBar';
 
 const TIPO_ICON: Record<string, any> = {
@@ -56,6 +56,7 @@ export function ForoScreen() {
   const [filtroCultivoSaber, setFiltroCultivoSaber] = useState<number | undefined>();
 
   const [cultivos, setCultivos] = useState<Cultivo[]>([]);
+  const [plagas, setPlagas] = useState<Plaga[]>([]);
 
   // Select modals
   const [showTipoSelect, setShowTipoSelect] = useState(false);
@@ -70,12 +71,14 @@ export function ForoScreen() {
 
   const loadCatalogs = useCallback(async () => {
     try {
-      const c = await getCultivos();
+      const [c, p] = await Promise.all([getCultivos(), getPlagas()]);
       setCultivos(c);
-      await setCache('cultivos.list', c);
+      setPlagas(p);
+      await Promise.all([setCache('cultivos.list', c), setCache('plagas.list', p)]);
     } catch {
-      const cc = await getCache<Cultivo[]>('cultivos.list');
+      const [cc, pp] = await Promise.all([getCache<Cultivo[]>('cultivos.list'), getCache<Plaga[]>('plagas.list')]);
       if (cc) setCultivos(cc);
+      if (pp) setPlagas(pp);
     }
   }, []);
 
@@ -125,6 +128,26 @@ export function ForoScreen() {
     }
   }, [searchSaberes, filtroCultivoSaber]);
 
+  const forosFiltrados = useMemo(() => {
+    if (!searchQuery.trim()) return recomendaciones;
+    const q = searchQuery.toLowerCase();
+    return recomendaciones.filter(
+      (r) =>
+        r.titulo.toLowerCase().includes(q) ||
+        r.descripcion.toLowerCase().includes(q),
+    );
+  }, [recomendaciones, searchQuery]);
+
+  const saberesFiltrados = useMemo(() => {
+    if (!searchSaberes.trim()) return saberes;
+    const q = searchSaberes.toLowerCase();
+    return saberes.filter(
+      (s) =>
+        s.titulo.toLowerCase().includes(q) ||
+        s.descripcion.toLowerCase().includes(q),
+    );
+  }, [saberes, searchSaberes]);
+
   useFocusEffect(
     useCallback(() => {
       loadCatalogs();
@@ -157,11 +180,6 @@ export function ForoScreen() {
       <Text style={styles.cardDesc} numberOfLines={2}>{item.descripcion}</Text>
       <View style={styles.cardFooter}>
         <Text style={styles.author}>{item.usuario?.nombre || 'Anónimo'}</Text>
-        <View style={styles.ratingRow}>
-          <Ionicons name={item.valoracionPromedio > 0 ? 'star' : 'star-outline'} size={14} color="#f59e0b" />
-          <Text style={styles.ratingValue}>{item.valoracionPromedio > 0 ? item.valoracionPromedio.toFixed(1) : '0.0'}</Text>
-          <Text style={styles.ratingCount}>({item.totalValoraciones})</Text>
-        </View>
       </View>
       <View style={styles.tagRow}>
         {item.cultivo && (
@@ -259,7 +277,7 @@ export function ForoScreen() {
             <View style={styles.filtersRow}>
               {renderSelect('Tipo', (filtroTipo ? tipos.find(t => t.key === filtroTipo)?.label : null) || undefined, 'Tipo', () => setShowTipoSelect(true))}
               {renderSelect('Cultivo', (filtroCultivoId ? cultivos.find(c => c.id === filtroCultivoId)?.nombre : null) || undefined, 'Cultivo', () => setShowCultivoSelect(true))}
-              {renderSelect('Plaga', (filtroPlagaId ? cultivos.find(c => c.id === filtroPlagaId)?.nombre : null) || undefined, 'Plaga', () => setShowPlagaSelect(true))}
+              {renderSelect('Plaga', (filtroPlagaId ? plagas.find(p => p.id === filtroPlagaId)?.nombre : null) || undefined, 'Plaga', () => setShowPlagaSelect(true))}
               {(filtroTipo || filtroCultivoId || filtroPlagaId) && (
                 <Pressable style={styles.clearBtn} onPress={() => { setFiltroTipo(null); setFiltroCultivoId(undefined); setFiltroPlagaId(undefined); }}>
                   <Ionicons name="close" size={16} color="#ef4444" />
@@ -269,14 +287,16 @@ export function ForoScreen() {
           )}
 
           {/* Search bar */}
-          <SearchBar value={searchQuery} onChangeText={setSearchQuery} placeholder="Buscar en foros..." />
+          <View style={styles.searchWrapper}>
+            <SearchBar value={searchQuery} onChangeText={setSearchQuery} placeholder="Buscar en foros..." />
+          </View>
 
           {/* List */}
           {loading ? (
             <View style={styles.center}><ActivityIndicator size="large" color="#059669" /></View>
           ) : (
             <FlatList
-              data={recomendaciones}
+              data={forosFiltrados}
               keyExtractor={(item) => String(item.id)}
               renderItem={renderForoItem}
               contentContainerStyle={styles.list}
@@ -307,14 +327,16 @@ export function ForoScreen() {
           </View>
 
           {/* Search bar */}
-          <SearchBar value={searchSaberes} onChangeText={setSearchSaberes} placeholder="Buscar saberes ancestrales..." />
+          <View style={styles.searchWrapper}>
+            <SearchBar value={searchSaberes} onChangeText={setSearchSaberes} placeholder="Buscar saberes ancestrales..." />
+          </View>
 
           {/* List */}
           {loadingSaberes ? (
             <View style={styles.center}><ActivityIndicator size="large" color="#7c3aed" /></View>
           ) : (
             <FlatList
-              data={saberes}
+              data={saberesFiltrados}
               keyExtractor={(item) => String(item.id)}
               renderItem={renderSaberItem}
               contentContainerStyle={styles.list}
@@ -372,6 +394,14 @@ export function ForoScreen() {
           <Ionicons name="apps" size={20} color={!filtroPlagaId ? '#fff' : '#94a3b8'} />
           <Text style={[styles.modalItemText, !filtroPlagaId && styles.modalItemTextActive]}>Todas</Text>
         </Pressable>
+        <ScrollView style={styles.modalList}>
+          {plagas.map((p) => (
+            <Pressable key={p.id} style={[styles.modalItem, filtroPlagaId === p.id && styles.modalItemActive]} onPress={() => { setFiltroPlagaId(p.id); setShowPlagaSelect(false); }}>
+              <Ionicons name="bug" size={20} color={filtroPlagaId === p.id ? '#fff' : '#dc2626'} />
+              <Text style={[styles.modalItemText, filtroPlagaId === p.id && styles.modalItemTextActive]}>{p.nombre}</Text>
+            </Pressable>
+          ))}
+        </ScrollView>
       </ModalSelect>
 
       <ModalSelect visible={showCultivoSaberSelect} title="Filtrar por cultivo" onClose={() => setShowCultivoSaberSelect(false)}>
@@ -514,9 +544,6 @@ const styles = StyleSheet.create({
   cardDesc: { fontSize: 13, color: '#64748b', lineHeight: 18, marginBottom: 10 },
   cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   author: { fontSize: 12, color: '#94a3b8' },
-  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 2 },
-  ratingValue: { fontSize: 13, fontWeight: '600', color: '#374151' },
-  ratingCount: { fontSize: 11, color: '#94a3b8' },
   tagRow: { flexDirection: 'row', marginTop: 8, gap: 6 },
   tag: { fontSize: 11, color: '#059669', backgroundColor: '#d1fae5', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
   empty: { alignItems: 'center', paddingTop: 60 },
@@ -539,6 +566,8 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   fabText: { fontSize: 28, color: '#fff', fontWeight: '300', marginTop: -2 },
+
+  searchWrapper: { paddingTop: 8 },
 
   // Saber card
   saberCard: {

@@ -29,6 +29,7 @@ import { useAccessibility } from '../../../shared/contexts/AccessibilityContext'
 import { AccessibleButton } from '../../../shared/components/AccessibleButton';
 import { reportesApi } from '../../../infrastructure/data/reportes/reportesApi';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { fixMediaUrl } from '../../../shared/utils/mediaUrl';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { AppStackParamList, EditReporteData } from '../../navigation/RootNavigator';
 
@@ -599,7 +600,7 @@ export function CreateReporteScreen() {
                         onPress={() => handleSelectCultivo(c)}
                       >
                         {c.imagenUrl ? (
-                          <Image source={{ uri: c.imagenUrl }} style={styles.cultivoImage} resizeMode="cover" />
+                          <Image source={{ uri: fixMediaUrl(c.imagenUrl)! }} style={styles.cultivoImage} resizeMode="cover" />
                         ) : (
                           <View style={styles.cultivoImageFallback}>
                             <Ionicons name="leaf" size={36} color="#15803d" />

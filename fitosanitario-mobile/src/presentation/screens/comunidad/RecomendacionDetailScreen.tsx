@@ -10,6 +10,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import type { AppStackParamList } from '../../navigation/RootNavigator';
 import { recomendacionesApi } from '../../../infrastructure/data/recomendaciones/recomendacionesApi';
+import { fixMediaUrl } from '../../../shared/utils/mediaUrl';
 import type { Recomendacion, ComentarioForo } from '../../../domain/recomendaciones/types';
 import { useAuthStore } from '../../../infrastructure/auth/authStore';
 
@@ -107,7 +108,7 @@ function ChatBubble({
 
         {/* Image */}
         {comentario.imagenUrl ? (
-          <Image source={{ uri: comentario.imagenUrl }} style={styles.bubbleImage} resizeMode="cover" />
+          <Image source={{ uri: fixMediaUrl(comentario.imagenUrl)! }} style={styles.bubbleImage} resizeMode="cover" />
         ) : null}
 
         {/* Contenido */}
@@ -369,7 +370,7 @@ export function RecomendacionDetailScreen({ route }: Props) {
       setPlayingAudioId(comentario.id);
       setAudioProgress(0);
       const { sound } = await Audio.Sound.createAsync(
-        { uri: comentario.audioUrl },
+        { uri: fixMediaUrl(comentario.audioUrl)! },
         { shouldPlay: true },
       );
       soundRef.current = sound;
@@ -390,14 +391,14 @@ export function RecomendacionDetailScreen({ route }: Props) {
   const pickImage = async () => {
     const result = await launchImageLibrary({ mediaType: 'photo', quality: 0.8 });
     if (!result.didCancel && result.assets?.[0]) {
-      setImagenUri(result.assets[0].uri);
+      setImagenUri(result.assets[0].uri ?? null);
     }
   };
 
   const takePhoto = async () => {
     const result = await launchCamera({ mediaType: 'photo', quality: 0.8 });
     if (!result.didCancel && result.assets?.[0]) {
-      setImagenUri(result.assets[0].uri);
+      setImagenUri(result.assets[0].uri ?? null);
     }
   };
 
@@ -502,7 +503,7 @@ export function RecomendacionDetailScreen({ route }: Props) {
           ) : null}
           {recomendacion.imagenUrl && (
             <Image
-              source={{ uri: recomendacion.imagenUrl }}
+              source={{ uri: fixMediaUrl(recomendacion.imagenUrl)! }}
               style={styles.headerImage}
               resizeMode="cover"
             />

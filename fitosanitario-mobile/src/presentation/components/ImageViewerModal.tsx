@@ -10,6 +10,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { fixMediaUrl } from '../../shared/utils/mediaUrl';
 
 const { width: W, height: H } = Dimensions.get('window');
 
@@ -59,7 +60,7 @@ export function ImageViewerModal({ visible, imageUrl, onClose }: ImageViewerProp
         >
           <TouchableOpacity onPress={handleZoom} activeOpacity={1}>
             <Image
-              source={{ uri: imageUrl }}
+              source={{ uri: fixMediaUrl(imageUrl)! }}
               style={styles.image}
               resizeMode="contain"
             />

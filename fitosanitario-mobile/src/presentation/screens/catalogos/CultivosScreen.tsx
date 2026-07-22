@@ -16,6 +16,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import type { Cultivo } from '../../../domain/catalogos/types';
 import { getCultivos } from '../../../infrastructure/data/catalogos/cultivosApi';
+import { fixMediaUrl } from '../../../shared/utils/mediaUrl';
 import { getCache, setCache } from '../../../infrastructure/offline/cache';
 import { ImageViewerModal } from '../../../presentation/components/ImageViewerModal';
 import { SearchBar } from '../../../presentation/components/SearchBar';
@@ -76,7 +77,7 @@ export function CultivosScreen() {
       {/* Imagen o icono representativo */}
       {item.imagenUrl ? (
         <Pressable onPress={() => setSelectedImage(item.imagenUrl!)}>
-          <Image source={{ uri: item.imagenUrl }} style={styles.image} resizeMode="cover" />
+          <Image source={{ uri: fixMediaUrl(item.imagenUrl)! }} style={styles.image} resizeMode="cover" />
         </Pressable>
       ) : (
         <View style={styles.iconContainer}>
@@ -161,7 +162,7 @@ export function CultivosScreen() {
         <Pressable style={styles.modalOverlay} onPress={() => setSelectedItem(null)}>
           <Pressable style={styles.modalContent} onPress={() => {}}>
             {selectedItem?.imagenUrl && (
-              <Image source={{ uri: selectedItem.imagenUrl }} style={styles.modalImage} resizeMode="contain" />
+              <Image source={{ uri: fixMediaUrl(selectedItem.imagenUrl)! }} style={styles.modalImage} resizeMode="contain" />
 
             )}
             <Text style={styles.modalTitle}>{selectedItem?.nombre}</Text>
